@@ -11,6 +11,7 @@ pluginManagement {
   }
 }
 
+
 // Need this or you will get:
 // Using a toolchain installed via auto-provisioning, but having no toolchain repositories configured. This behavior is deprecated. Consider defining toolchain download repositories, otherwise the build might fail in clean environments; see https://docs.gradle.org/8.6/userguide/toolchains.html#sub:download_repositories
 // at org.gradle.jvm.toolchain.internal.JavaToolchainQueryService.warnIfAutoProvisionedToolchainUsedWithoutRepositoryDefinitions(JavaToolchainQueryService.java:171)

@@ -28,6 +28,7 @@ kotlin {
 
   jvm()
   linuxX64()
+  mingwX64()
 
   sourceSets {
     val commonMain by getting {
