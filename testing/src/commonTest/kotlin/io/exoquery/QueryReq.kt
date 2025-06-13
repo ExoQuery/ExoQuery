@@ -1,5 +1,3 @@
-@file:io.exoquery.annotation.TracesEnabled(io.exoquery.util.TraceType.Standard::class, io.exoquery.util.TraceType.Normalizations::class, io.exoquery.util.TraceType.SqlNormalizations::class)
-
 package io.exoquery
 
 import io.exoquery.annotation.CapturedFunction
@@ -203,6 +201,110 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
           }
         ) { r -> r.second == p.id }
         p to innerRobot
+      }
+      shouldBeGolden(q.xr, "XR")
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+  }
+
+  "transformation of nested select clauses" - {
+    "where clauses are combined" {
+      val addresses = capture.select {
+        val a = from(Table<Address>())
+        where { a.city == "Someplace" }
+        a
+      }
+      val q = capture.select {
+        val p = from(Table<Person>())
+        val a = from(addresses)
+        where { p.name == "Joe" }
+        p to a
+      }
+      shouldBeGolden(q.xr, "XR")
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+
+    "groupBy clauses cause nesting" - {
+      "variation A" {
+        val addresses = capture.select {
+          val a = from(Table<Address>())
+          groupBy(a.city)
+          a
+        }
+        val q = capture.select {
+          val p = from(Table<Person>())
+          val a = from(addresses)
+          where { p.name == "Joe" }
+          p to a
+        }
+        shouldBeGolden(q.xr, "XR")
+        shouldBeGolden(q.build<PostgresDialect>())
+      }
+      "Variation B" {
+        val addresses = capture.select {
+          val a = from(Table<Address>())
+          groupBy(a.city)
+          a
+        }
+        val q = capture.select {
+          val p = from(Table<Person>())
+          val a = from(addresses)
+          groupBy(p.name)
+          p to a
+        }
+        shouldBeGolden(q.xr, "XR")
+        shouldBeGolden(q.build<PostgresDialect>())
+      }
+    }
+
+    "sortBy clauses cause nesting" - {
+      "variation A" {
+        val addresses = capture.select {
+          val a = from(Table<Address>())
+          sortBy(a.city to Ord.Asc)
+          a
+        }
+        val q = capture.select {
+          val p = from(Table<Person>())
+          val a = from(addresses)
+          where { p.name == "Joe" }
+          p to a
+        }
+        shouldBeGolden(q.xr, "XR")
+        shouldBeGolden(q.build<PostgresDialect>())
+      }
+      "Variation B" {
+        val addresses = capture.select {
+          val a = from(Table<Address>())
+          sortBy(a.city to Ord.Asc)
+          a
+        }
+        val q = capture.select {
+          val p = from(Table<Person>())
+          val a = from(addresses)
+          sortBy(p.name to Ord.Desc)
+          p to a
+        }
+        shouldBeGolden(q.xr, "XR")
+        shouldBeGolden(q.build<PostgresDialect>())
+      }
+    }
+
+    "combo of all cases will cause nesting" {
+      val addresses = capture.select {
+        val a = from(Table<Address>())
+        where { a.city == "Someplace" }
+        groupBy(a.city)
+        sortBy(a.street to Ord.Asc)
+        a
+      }
+      val q = capture.select {
+        val p = from(Table<Person>())
+        val a = from(addresses)
+        where { p.name == "Joe" }
+        groupBy(p.name)
+        sortBy(p.age to Ord.Desc)
+        p to a
       }
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>())

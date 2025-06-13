@@ -283,7 +283,10 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
     data class Context(val ctx: FromContext) : Layer
     data class Grouping(val groupBy: XR.Expression) : Layer
     data class Sorting(val criteria: List<XR.OrderField>) : Layer
-    data class Filtering(val where: XR.Expression) : Layer
+    data class Filtering(val where: XR.Expression) : Layer {
+      infix fun combine(other: Layer.Filtering) =
+        Layer.Filtering(XR.BinaryOp(this.where, OP.And, other.where))
+    }
     companion object {
       fun fromFlatUnit(xr: XR.U.FlatUnit): Layer =
         when (xr) {

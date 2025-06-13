@@ -1130,7 +1130,7 @@ sealed interface XR {
     interface Convertable : CustomQuery {
       override fun handleStatelessTransform(transformer: StatelessTransformer): Convertable
       override fun <S> handleStatefulTransformer(transformer: StatefulTransformer<S>): Pair<Convertable, StatefulTransformer<S>>
-      fun toQueryXR(): XR.Query
+      fun toQueryXR(isOutermost: Boolean): XR.Query
     }
 
     interface Tokenizeable : CustomQuery {

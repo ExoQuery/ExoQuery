@@ -150,5 +150,41 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "flat joins inside subquery/sortBy" to cr(
       "SELECT p.id, p.name, p.age, r.first, r.second FROM Person p INNER JOIN (SELECT r.name AS first, r.ownerId AS second FROM Robot r ORDER BY r.name DESC) AS r ON r.second = p.id"
     ),
+    "transformation of nested select clauses/where clauses are combined/XR" to kt(
+      "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); where(a.city == Someplace); a }); where(p.name == Joe); Tuple(first = p, second = a) }"
+    ),
+    "transformation of nested select clauses/where clauses are combined" to cr(
+      "SELECT p.id, p.name, p.age, unused.ownerId, unused.street, unused.city FROM Person p, Address a WHERE a.city = 'Someplace' AND p.name = 'Joe'"
+    ),
+    "transformation of nested select clauses/groupBy clauses cause nesting/variation A/XR" to kt(
+      "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); groupBy(a.city); a }); where(p.name == Joe); Tuple(first = p, second = a) }"
+    ),
+    "transformation of nested select clauses/groupBy clauses cause nesting/variation A" to cr(
+      "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM Person p, (SELECT a.ownerId, a.street, a.city FROM Address a GROUP BY a.city) AS a WHERE p.name = 'Joe'"
+    ),
+    "transformation of nested select clauses/groupBy clauses cause nesting/Variation B/XR" to kt(
+      "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); groupBy(a.city); a }); groupBy(p.name); Tuple(first = p, second = a) }"
+    ),
+    "transformation of nested select clauses/groupBy clauses cause nesting/Variation B" to cr(
+      "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM Person p, (SELECT a.ownerId, a.street, a.city FROM Address a GROUP BY a.city) AS a GROUP BY p.name"
+    ),
+    "transformation of nested select clauses/sortBy clauses cause nesting/variation A/XR" to kt(
+      "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); sortBy(a.city to Asc); a }); where(p.name == Joe); Tuple(first = p, second = a) }"
+    ),
+    "transformation of nested select clauses/sortBy clauses cause nesting/variation A" to cr(
+      "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM Person p, (SELECT a.ownerId, a.street, a.city FROM Address a ORDER BY a.city ASC) AS a WHERE p.name = 'Joe'"
+    ),
+    "transformation of nested select clauses/sortBy clauses cause nesting/Variation B/XR" to kt(
+      "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); sortBy(a.city to Asc); a }); sortBy(p.name to Desc); Tuple(first = p, second = a) }"
+    ),
+    "transformation of nested select clauses/sortBy clauses cause nesting/Variation B" to cr(
+      "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM Person p, (SELECT a.ownerId, a.street, a.city FROM Address a ORDER BY a.city ASC) AS a ORDER BY p.name DESC"
+    ),
+    "transformation of nested select clauses/combo of all cases will cause nesting/XR" to kt(
+      "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); where(a.city == Someplace); groupBy(a.city); sortBy(a.street to Asc); a }); where(p.name == Joe); groupBy(p.name); sortBy(p.age to Desc); Tuple(first = p, second = a) }"
+    ),
+    "transformation of nested select clauses/combo of all cases will cause nesting" to cr(
+      "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM Person p, (SELECT a.ownerId, a.street, a.city FROM Address a WHERE a.city = 'Someplace' GROUP BY a.city ORDER BY a.street ASC) AS a WHERE p.name = 'Joe' GROUP BY p.name ORDER BY p.age DESC"
+    ),
   )
 }

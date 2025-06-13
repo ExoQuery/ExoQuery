@@ -4,6 +4,7 @@ import io.decomat.Is
 import io.decomat.Pattern
 import io.decomat.Pattern2
 import io.decomat.Typed
+import io.exoquery.xr.CollectXR
 import io.exoquery.xr._And_
 import io.exoquery.xr.XR
 import io.exoquery.xrError
@@ -17,11 +18,19 @@ fun List<SqlQueryApply.Layer>.findComponentsOrNull(): LayerComponents {
   val sortings = this.mapNotNull { if (it is SqlQueryApply.Layer.Sorting) it else null }
   if (sortings.size > 1) xrError("Multiple sortings detected, this is illegal:\n" + sortings.map { it.criteria }.joinToString("\n"))
 
+  // Having multiple filterings is actually fine, we can combine them with &&
   val filterings = this.mapNotNull { if (it is SqlQueryApply.Layer.Filtering) it else null }
-  if (filterings.size > 1) xrError("Multiple sortings detected, this is illegal:\n" + filterings.map { it.where }.joinToString("\n"))
+  val filtering = if (filterings.isEmpty()) null else filterings.reduce { a, b -> a combine b }
 
-  return LayerComponents(groupings.firstOrNull(), sortings.firstOrNull(), filterings.firstOrNull())
+  return LayerComponents(groupings.firstOrNull(), sortings.firstOrNull(), filtering)
 }
+
+fun XR.Query.findFlatUnits(): Triple<List<XR.FlatGroupBy>, List<XR.FlatSortBy>, List<XR.FlatFilter>> =
+  Triple(
+    CollectXR.byType<XR.FlatGroupBy>(this),
+    CollectXR.byType<XR.FlatSortBy>(this),
+    CollectXR.byType<XR.FlatFilter>(this)
+  )
 
 
 fun combineWhereClauses(expr: XR.Expression?, combineWith: XR.Expression) =

@@ -4,15 +4,24 @@ import io.exoquery.util.tail
 import io.exoquery.xr.XR.*
 
 object SelectClauseToXR {
-  operator fun invoke(selectClause: SelectClause): XR.Query = run {
+  operator fun invoke(selectClause: SelectClause, isOutermost: Boolean): XR.Query = run {
     // TODO cover case where there is no from-clause
-    // COMPLEX! Need to walk throught the select-clause and recurisvley use `nest` function to nest things in each-other
+    // COMPLEX! Need to walk through the select-clause and recurisvley use `nest` function to nest things in each-other
     val components = selectClause.allComponents()
     if (components.isEmpty()) {
       XR.ExprToQuery(selectClause.select)
     } else {
       val firstFrom = components.first() as? SX.From ?: error("First clause must be a FROM clause but was ${components.first()}")
-      nest(firstFrom.xr, firstFrom.variable, components.tail(), selectClause.select)
+      val tranformed = nest(firstFrom.xr, firstFrom.variable, components.tail(), selectClause.select)
+      when {
+        // If we are the outermost query don't ever need to nest here
+        isOutermost -> tranformed
+        // If we ARE outermost and we've got group-bys/sort-bys don't need to nest
+        !isOutermost && (selectClause.groupBy != null || selectClause.sortBy != null) -> XR.Nested(tranformed)
+        // Otherwise don't need to nest
+        else -> tranformed
+      }
+
     }
   }
 

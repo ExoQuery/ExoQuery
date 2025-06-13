@@ -19,7 +19,7 @@ data class SelectClause(
   override val loc: XR.Location = XR.Location.Synth
 ) : XR.CustomQuery.Convertable {
 
-  override fun toQueryXR(): XR.Query = SelectClauseToXR(this)
+  override fun toQueryXR(isOutermost: Boolean): XR.Query = SelectClauseToXR(this, isOutermost)
   fun allComponents(): List<SX> = assignments + listOfNotNull(where, groupBy, sortBy)
 
   // Do nothing for now, in the cuture recurse in queries and expressions inside the SX clauses
@@ -69,7 +69,8 @@ data class SelectClause(
     ): SelectClause = SelectClause(assignments, where, groupBy, sortBy, select, type, loc)
   }
 
-  fun toXrTransform(): XR.Query = SelectClauseToXR(this)
+  /** Do the equivalent of [io.exoquery.norm.NormalizeCustomQueries] for user introspection. Assume the segment being acted on is the top-level query */
+  fun toXrTransform(): XR.Query = SelectClauseToXR(this, true)
   fun toXrRef(): XR.CustomQueryRef = XR.CustomQueryRef(this)
 
 
