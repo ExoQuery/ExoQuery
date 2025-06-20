@@ -2,6 +2,7 @@ package io.exoquery
 
 import io.exoquery.printing.GoldenResult
 import io.exoquery.printing.cr
+import io.exoquery.printing.kt
 
 object AtomicValueSelectSpecGolden: GoldenQueryFile {
   override val queries = mapOf<String, GoldenResult>(
@@ -52,13 +53,18 @@ object AtomicValueSelectSpecGolden: GoldenQueryFile {
       FROM
         (
           SELECT
-            p.name AS value
+            n.value_value AS value
           FROM
-            Person p
+            (
+              SELECT
+                p.name AS value
+              FROM
+                Person p
+            ) AS n
+          GROUP BY
+            n.value_value
         ) AS n
         INNER JOIN Address a ON n.value = a.street
-      GROUP BY
-        n.value
       """
     ),
   )
