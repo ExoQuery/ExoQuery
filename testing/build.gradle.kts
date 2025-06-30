@@ -1,7 +1,7 @@
 plugins {
   id("conventions-multiplatform")
   kotlin("multiplatform") version "2.2.0"
-  id("io.kotest.multiplatform") version "6.0.0.M1"
+  alias(libs.plugins.kotest)
   id("io.exoquery.exoquery-plugin")
 
   // NEED serialization to be able to read the encoded XR, in the future the GradlePlugin should probably add this to the classpath
@@ -28,8 +28,9 @@ kotlin {
         api(libs.kotlinx.serialization.core)
         api(libs.kotlinx.serialization.protobuf)
 
-        implementation("io.kotest:kotest-framework-engine:6.0.0.M1")
-        implementation("io.kotest:kotest-assertions-core:6.0.0.M1")
+        implementation(libs.kotest.framework)
+        implementation(libs.kotest.assertions)
+
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))

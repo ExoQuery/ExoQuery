@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.defaultType
+import org.jetbrains.kotlin.ir.util.isAnnotationClass
 import org.jetbrains.kotlin.ir.util.isClass
 import org.jetbrains.kotlin.ir.util.isObject
 import org.jetbrains.kotlin.name.ClassId
@@ -53,7 +54,7 @@ context(CX.Scope, CX.Builder) fun makeClassFromString(fullPath: String, args: Li
 context(CX.Scope, CX.Builder) fun makeClassFromId(fullPath: ClassId, args: List<IrExpression>, types: List<IrType> = listOf(), overrideType: IrType? = null): IrConstructorCall {
   val cls = pluginCtx.referenceClass(fullPath) ?: parseError("Could not find the reference for a class in the context: $fullPath")
 
-  if (!cls.owner.isClass)
+  if (!cls.owner.isClass && !cls.owner.isAnnotationClass)
     parseError("Attempting to create an instance of $fullPath which is not a class")
 
   return (cls.constructors.firstOrNull() ?: liftingError("Could not find a constructor for a class in the context: $fullPath"))

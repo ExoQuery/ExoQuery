@@ -9,7 +9,6 @@ plugins {
   id("conventions-multiplatform-nativeonly")
   kotlin("multiplatform")
   kotlin("plugin.serialization") version "2.2.0"
-  id("io.kotest.multiplatform") version "6.0.0.M1"
   id("io.exoquery.exoquery-plugin")
 }
 
@@ -45,13 +44,12 @@ kotlin {
       dependencies {
         api(project(":exoquery-runner-core"))
 
-        implementation("io.kotest:kotest-framework-engine:6.0.0.M1")
-        implementation("io.kotest:kotest-assertions-core:6.0.0.M1")
+        implementation(libs.kotest.framework)
+        implementation(libs.kotest.assertions)
 
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        //implementation("io.kotest:kotest-framework-engine:5.9.1")
       }
     }
   }

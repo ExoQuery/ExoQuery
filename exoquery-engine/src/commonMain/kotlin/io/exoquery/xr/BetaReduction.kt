@@ -17,17 +17,27 @@ sealed interface EmptyProductTypeBehavior {
   object Ignore : EmptyProductTypeBehavior
 }
 
+sealed interface FunctionApplyBehavior {
+  object AnsiApply : FunctionApplyBehavior
+  object AnsiApplyWithSubstitution : FunctionApplyBehavior
+}
+
+sealed interface ApplyFunctionsBehavior {
+  object DoApply: ApplyFunctionsBehavior
+  object SkipApply: ApplyFunctionsBehavior
+}
+
 // I think beta reduction should be used for QueryOrExpression in all the cases, shuold
 // move forward and find out if this is actually the case. If it is not, can probably
 // just add `case ast if map.contains(ast) =>` to the apply for Query, Function, etc...
 // maybe should have separate maps for Query, Function, etc... for that reason if those cases even exist
-data class BetaReduction(val map: Map<QueryOrExpression, QueryOrExpression>, val typeBehavior: TypeBehavior, val emptyBehavior: EmptyProductTypeBehavior) :
+data class BetaReduction(val map: Map<QueryOrExpression, QueryOrExpression>, val typeBehavior: TypeBehavior, val emptyBehavior: EmptyProductTypeBehavior, val applyFunctions: ApplyFunctionsBehavior) :
   StatelessTransformer {
 
   private fun replaceWithReduction() = typeBehavior == TypeBehavior.ReplaceWithReduction
 
   private fun BetaReduce(map: Map<QueryOrExpression, QueryOrExpression>) =
-    BetaReduction(map, typeBehavior, emptyBehavior)
+    BetaReduction(map, typeBehavior, emptyBehavior, applyFunctions)
 
   private fun correctTheTypeOfReplacement(orig: QueryOrExpression, rep: QueryOrExpression): QueryOrExpression =
     when {
@@ -141,7 +151,7 @@ data class BetaReduction(val map: Map<QueryOrExpression, QueryOrExpression>, val
       case(XR.FunctionN[Is(), Is<XR.QueryToExpr>()]).thenThis { params, queryToExpr ->
         replaceAtHead(XR.FunctionN(params, queryToExpr.head))
       },
-      case(XR.FunctionApply[Is<XR.FunctionN>(), Is()]).thenThis { func, args ->
+      case(XR.FunctionApply[Is<XR.FunctionN>(), Is()]).thenIf { _, _ -> applyFunctions == ApplyFunctionsBehavior.DoApply }.thenThis { func, args ->
         simplifyFunctionApply(this)
       },
       case(XR.Block[Is(), Is()]).thenThis { _, _ ->
@@ -325,31 +335,31 @@ data class BetaReduction(val map: Map<QueryOrExpression, QueryOrExpression>, val
 
   companion object {
     fun ofXR(ast: XR, vararg t: Pair<QueryOrExpression, QueryOrExpression>): XR =
-      ofXR(ast, TypeBehavior.SubstituteSubtypes, EmptyProductTypeBehavior.Ignore, *t)
+      ofXR(ast, TypeBehavior.SubstituteSubtypes, EmptyProductTypeBehavior.Ignore, ApplyFunctionsBehavior.DoApply, *t)
 
-    fun ofXR(ast: XR, typeBehavior: TypeBehavior, emptyBehavior: EmptyProductTypeBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): XR =
-      invokeTyped(ast, t.toMap(), typeBehavior, emptyBehavior, { be, ir -> be.invoke(ir) })
+    fun ofXR(ast: XR, typeBehavior: TypeBehavior, emptyBehavior: EmptyProductTypeBehavior, applyFunctionsBehavior: ApplyFunctionsBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): XR =
+      invokeTyped(ast, t.toMap(), typeBehavior, emptyBehavior, applyFunctionsBehavior, { be, ir -> be.invoke(ir) })
 
     operator fun invoke(ast: QueryOrExpression, vararg t: Pair<QueryOrExpression, QueryOrExpression>): QueryOrExpression =
-      invoke(ast, TypeBehavior.SubstituteSubtypes, EmptyProductTypeBehavior.Ignore, *t)
+      invoke(ast, TypeBehavior.SubstituteSubtypes, EmptyProductTypeBehavior.Ignore, ApplyFunctionsBehavior.DoApply, *t)
 
     fun ReplaceWithReduction(ast: QueryOrExpression, vararg t: Pair<QueryOrExpression, QueryOrExpression>): QueryOrExpression =
-      invoke(ast, TypeBehavior.ReplaceWithReduction, EmptyProductTypeBehavior.Ignore, *t)
+      invoke(ast, TypeBehavior.ReplaceWithReduction, EmptyProductTypeBehavior.Ignore, ApplyFunctionsBehavior.DoApply, *t)
 
-    operator fun invoke(ast: QueryOrExpression, typeBehavior: TypeBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): QueryOrExpression =
-      invokeTyped(ast, t.toMap(), typeBehavior, EmptyProductTypeBehavior.Ignore, { be, ir -> be.invoke(ir) })
+    operator fun invoke(ast: QueryOrExpression, typeBehavior: TypeBehavior, applyFunctionsBehavior: ApplyFunctionsBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): QueryOrExpression =
+      invokeTyped(ast, t.toMap(), typeBehavior, EmptyProductTypeBehavior.Ignore, ApplyFunctionsBehavior.DoApply, { be, ir -> be.invoke(ir) })
 
-    operator fun invoke(ast: QueryOrExpression, typeBehavior: TypeBehavior, emptyBehavior: EmptyProductTypeBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): QueryOrExpression =
-      invokeTyped(ast, t.toMap(), typeBehavior, emptyBehavior, { be, ir -> be.invoke(ir) })
+    operator fun invoke(ast: QueryOrExpression, typeBehavior: TypeBehavior, emptyBehavior: EmptyProductTypeBehavior, applyFunctionsBehavior: ApplyFunctionsBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): QueryOrExpression =
+      invokeTyped(ast, t.toMap(), typeBehavior, emptyBehavior, applyFunctionsBehavior, { be, ir -> be.invoke(ir) })
 
-    fun ofQuery(ast: XR.Query, typeBehavior: TypeBehavior, emptyBehavior: EmptyProductTypeBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): XR.Query =
-      invokeTyped(ast, t.toMap(), typeBehavior, emptyBehavior, { be, ir -> be.invoke(ir) })
+    fun ofQuery(ast: XR.Query, typeBehavior: TypeBehavior, emptyBehavior: EmptyProductTypeBehavior, applyFunctionsBehavior: ApplyFunctionsBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): XR.Query =
+      invokeTyped(ast, t.toMap(), typeBehavior, emptyBehavior, applyFunctionsBehavior, { be, ir -> be.invoke(ir) })
 
     fun ofQuery(ast: XR.Query, typeBehavior: TypeBehavior, vararg t: Pair<QueryOrExpression, QueryOrExpression>): XR.Query =
-      invokeTyped(ast, t.toMap(), typeBehavior, EmptyProductTypeBehavior.Ignore, { be, ir -> be.invoke(ir) })
+      invokeTyped(ast, t.toMap(), typeBehavior, EmptyProductTypeBehavior.Ignore, ApplyFunctionsBehavior.DoApply, { be, ir -> be.invoke(ir) })
 
     fun ofQuery(ast: XR.Query, vararg t: Pair<QueryOrExpression, QueryOrExpression>): XR.Query =
-      invokeTyped(ast, t.toMap(), TypeBehavior.SubstituteSubtypes, EmptyProductTypeBehavior.Ignore, { be, ir -> be.invoke(ir) })
+      invokeTyped(ast, t.toMap(), TypeBehavior.SubstituteSubtypes, EmptyProductTypeBehavior.Ignore, ApplyFunctionsBehavior.DoApply, { be, ir -> be.invoke(ir) })
 
 
     internal fun <X : XR> invokeTyped(
@@ -357,9 +367,10 @@ data class BetaReduction(val map: Map<QueryOrExpression, QueryOrExpression>, val
       replacements: Map<QueryOrExpression, QueryOrExpression>,
       typeBehavior: TypeBehavior,
       emptyBehavior: EmptyProductTypeBehavior,
+      applyFunctionsBehavior: ApplyFunctionsBehavior,
       astLevelInvoker: (BetaReduction, X) -> X
     ): X {
-      val reducedAst = astLevelInvoker(BetaReduction(replacements, typeBehavior, emptyBehavior), ast)
+      val reducedAst = astLevelInvoker(BetaReduction(replacements, typeBehavior, emptyBehavior, applyFunctionsBehavior), ast)
       if (typeBehavior == TypeBehavior.SubstituteSubtypes) checkTypes(ast, replacements.toList(), emptyBehavior)
       return when {
         // Since it is possible for the AST to match but the match not be exactly the same (e.g.
@@ -368,7 +379,7 @@ data class BetaReduction(val map: Map<QueryOrExpression, QueryOrExpression>, val
         reducedAst == ast -> reducedAst
         // Perform an additional beta reduction on the reduced XR since it may not have been fully reduced yet
         // TODO add a recursion guard here?
-        else -> invokeTyped<X>(reducedAst, mapOf<QueryOrExpression, QueryOrExpression>(), typeBehavior, emptyBehavior, astLevelInvoker)
+        else -> invokeTyped<X>(reducedAst, mapOf<QueryOrExpression, QueryOrExpression>(), typeBehavior, emptyBehavior, applyFunctionsBehavior, astLevelInvoker)
       }
     }
 

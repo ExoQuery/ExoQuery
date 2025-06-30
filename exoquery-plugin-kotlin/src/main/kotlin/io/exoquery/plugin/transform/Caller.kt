@@ -4,7 +4,7 @@ import io.decomat.Components1
 import io.decomat.Pattern
 import io.decomat.customPattern1
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import io.decomat.HasProductClass as PC
 import io.decomat.productComponentsOf as productOf
 
@@ -18,7 +18,7 @@ sealed class ReceiverCaller(open val reciver: IrExpression) : Caller, PC<Receive
       }
   }
 
-  fun <D> transform(transformer: IrElementTransformer<D>, data: D) =
+  fun <D> transform(transformer: IrTransformer<D>, data: D) =
     when (this) {
       is Caller.Dispatch -> Caller.Dispatch(reciver.transform(transformer, data))
       is Caller.Extension -> Caller.Extension(reciver.transform(transformer, data))

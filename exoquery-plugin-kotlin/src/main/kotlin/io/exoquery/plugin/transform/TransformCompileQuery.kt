@@ -67,7 +67,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
     fun extractDialectConstructor(dialectType: IrType) = run {
       // get the empty-args constructor from the dialect-type, if it doesn''t we need to know about it. If it does exist we'll use it if we need to use a runtime query
       val dialectCls = (dialectType.classOrNull ?: parseError("The dialect type must be a class but instead it was: ${dialectType.dumpKotlinLike()}", expr))
-      val construct = dialectCls.constructors.find { it.owner.valueParameters.size == 1 } ?: parseError("The dialect type must have 1-arg constructor that takes a trace-types argument but it did not", expr)
+      val construct = dialectCls.constructors.find { it.owner.regularParams.size == 1 } ?: parseError("The dialect type must have 1-arg constructor that takes a trace-types argument but it did not", expr)
 
       // see if we can get the dialect instance at compile-time if we can't then create an error
       // TODO if the user has marked the file with a special annotation then allow the runtime `construct` to create the dialect if the class.forName fails otherwise immediately throw an error here

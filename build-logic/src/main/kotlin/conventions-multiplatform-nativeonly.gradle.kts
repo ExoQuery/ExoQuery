@@ -30,8 +30,10 @@ kotlin {
 
   // Github sees these but no targets enabled below. Not sure why, maybe it doesn't see isCI. Need to investigage
   linuxX64()
-  macosX64()
-  macosArm64()
+  if (HostManager.hostIsMac) {
+    macosX64()
+    macosArm64()
+  }
 
   val linuxCI = HostManager.hostIsLinux && isCI
   val mingCI = HostManager.hostIsMingw && isCI

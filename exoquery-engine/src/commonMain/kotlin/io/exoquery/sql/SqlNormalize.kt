@@ -1,5 +1,6 @@
 package io.exoquery.sql
 
+import io.exoquery.norm.AvoidAliasConflictApply
 import io.exoquery.norm.ExpandProductNullChecks
 import io.exoquery.norm.Normalize
 import io.exoquery.norm.NormalizeCustomQueries
@@ -21,6 +22,7 @@ class SqlNormalize(
   override val traceType = TraceType.Normalizations
   override val trace by lazy { Tracer(traceType, traceConf, 1) }
 
+  val AvoidAliasConflictPhase by lazy { AvoidAliasConflictApply(traceConf) }
   val NormalizePhase = Normalize(traceConf, disableApplyMap)
   val RepropagateTypesPhase = RepropagateTypes(traceConf)
   val ExpandProductNullChecks = io.exoquery.norm.ExpandProductNullChecks
@@ -37,6 +39,9 @@ class SqlNormalize(
         // can contain aliases would not otherwise be reduced by the beta-reducer.
         // See the note for CustomQuery (in XR.scala) for more information.
         NormalizeCustomQueriesPhase(it)
+      }
+      .andThen("AvoidAliasConflictPhase") {
+        AvoidAliasConflictPhase(it)
       }
       .andThen("BetaReduce-Initial") {
         BetaReduction.ofQuery(it)

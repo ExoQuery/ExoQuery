@@ -3,6 +3,8 @@ package io.exoquery.plugin.trees
 //import io.exoquery.xr.XR.Query
 
 import io.exoquery.*
+import io.exoquery.annotation.CapturedFunctionParamKinds
+import io.exoquery.plugin.regularParams
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.call
 import io.exoquery.plugin.transform.callDispatch
@@ -10,11 +12,14 @@ import io.exoquery.sql.*
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.isVararg
@@ -56,7 +61,7 @@ class Lifter(val builderCtx: CX.Builder) {
   val listOfRef =
     context.referenceFunctions(CallableId(FqName("kotlin.collections"), Name.identifier("listOf")))
       // Get the 1st variadic instance of listOf (note that some variations have zero args so need to do firstOrNull)
-      .first { it.owner.valueParameters.firstOrNull()?.isVararg ?: false }
+      .first { it.owner.regularParams.firstOrNull()?.isVararg ?: false }
 
   inline fun <reified T> List<T>.lift(elementLifter: (T) -> IrExpression): IrExpression {
     val elementType = typeOf<T>()
@@ -78,7 +83,7 @@ class Lifter(val builderCtx: CX.Builder) {
 
       val expressions = this.map { elementLifter(it) }
       val variadics = irBuilder.irVararg(varargType, expressions)
-      val listOfCall = irBuilder.irCall(listOfRef).apply { putValueArgument(0, variadics) }
+      val listOfCall = irBuilder.irCall(listOfRef).apply { arguments[0] = variadics }
       return listOfCall
     }
   }
@@ -95,8 +100,9 @@ class Lifter(val builderCtx: CX.Builder) {
     val variadics = irBuilder.irVararg(varargType, this)
     //builderCtx.logger.error("--------------- Expression Type -------------: ${expressionType.dumpKotlinLike()}")
     val listOfCall = irBuilder.irCall(listOfRef, context.symbols.list.typeWith(varargType)).apply {
+      // listOf(...) is a with no receivers (or context parameters)
       typeArguments[0] = varargType
-      putValueArgument(0, variadics)
+      arguments[0] = variadics
     }
     //builderCtx.logger.error("--------------- List Expression Type -------------: ${listOfCall.type.dumpKotlinLike()}\n=== ${builderCtx.currentFile.path} ===")
     return listOfCall
@@ -105,8 +111,9 @@ class Lifter(val builderCtx: CX.Builder) {
   fun List<IrExpression>.liftExprTyped(elementType: IrType): IrExpression {
     val variadics = irBuilder.irVararg(elementType, this)
     val listOfCall = irBuilder.irCall(listOfRef, context.symbols.list.typeWith(elementType)).apply {
+      // listOf(...) is a with no receivers (or context parameters)
       typeArguments[0] = elementType
-      putValueArgument(0, variadics)
+      arguments[0] = variadics
     }
     return listOfCall
   }
@@ -208,6 +215,43 @@ class Lifter(val builderCtx: CX.Builder) {
       Phase.CompileTime -> makeObject<Phase.CompileTime>()
       Phase.Runtime -> makeObject<Phase.Runtime>()
     }
+
+
+
+  fun makeCapturedFunctionParamKinds(params: List<IrValueParameter>): IrConstructorCall {
+    val types = params.map {
+      when (it.kind) {
+        IrParameterKind.DispatchReceiver -> ParamKind.Dispatch
+        IrParameterKind.Context -> ParamKind.Context
+        IrParameterKind.ExtensionReceiver -> ParamKind.Extension
+        IrParameterKind.Regular -> ParamKind.Regular
+      }
+    }.map { irBuilder.irString(it.toString()) }
+    val variadic = irBuilder.irVararg(context.symbols.string.defaultType, types)
+    return make<CapturedFunctionParamKinds>(variadic)
+  }
 }
 
 // Some top-level lift functions to use outside of the lifter
+
+sealed interface ParamKind {
+  val name: String
+
+  data object Dispatch : ParamKind { override val name = "Dispatch" }
+  data object Context : ParamKind { override val name = "Context" }
+  data object Extension : ParamKind { override val name = "Extension" }
+  data object Regular : ParamKind { override val name = "Regular" }
+
+  companion object {
+    fun fromString(name: String): ParamKind? =
+      when (name) {
+        Dispatch.name -> Dispatch
+        Context.name -> Context
+        Extension.name -> Extension
+        Regular.name -> Regular
+        else -> null
+      }
+
+    val values = listOf(Dispatch, Context, Extension, Regular)
+  }
+}

@@ -1,5 +1,6 @@
 package io.exoquery.plugin.printing
 
+import io.exoquery.plugin.regularParams
 import io.exoquery.plugin.safeName
 import org.jetbrains.kotlin.ir.util.NaiveSourceBasedFileEntryImpl
 import org.jetbrains.kotlin.ir.util.render
@@ -10,7 +11,6 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.DumpIrTreeOptions
-import org.jetbrains.kotlin.ir.util.RenderIrElementVisitor
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.jetbrains.kotlin.ir.visitors.IrVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
@@ -86,7 +86,7 @@ class DumpIrTreeVisitor(
 ) : IrVisitor<Unit, String>() {
 
   private val printer = Printer(out, "  ")
-  private val elementRenderer = RenderIrElementVisitor(options, isUsedForIrDump = true)
+  private val elementRenderer = RenderIrElementVisitorSimple(options, isUsedForIrDump = true)
   private fun IrType.render() = elementRenderer.renderType(this)
 
   private fun List<IrDeclaration>.ordered(): List<IrDeclaration> = if (options.stableOrder) stableOrdered() else this
@@ -228,10 +228,10 @@ class DumpIrTreeVisitor(
 
   override fun visitMemberAccess(expression: IrMemberAccessExpression<*>, data: String) {
     expression.dumpLabeledElementWith(data) {
-      dumpTypeArguments(expression)
+      //dumpTypeArguments(expression)
       val valueParameterNames = expression.getValueParameterNamesForDebug(options)
       for ((index, value) in expression.arguments.withIndex()) {
-        value?.accept(this, "ARG ${valueParameterNames[index]}")
+        value?.accept(this, "${valueParameterNames[index]}")
       }
     }
   }

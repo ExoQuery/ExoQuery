@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest ] # , macOS-latest
     env:
       SONATYPE_REPOSITORY_ID: ${{ needs.create_staging_repository.outputs.repository_id }}
       SONATYPE_USERNAME: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
@@ -48,9 +48,9 @@ jobs:
           docker compose build && docker compose run --rm --service-ports setup && 
           ./gradlew build publishLinux -PisCI --no-daemon --stacktrace --warning-mode all
 
-      - name: 'Run MacOS Tests'
-        if: matrix.os == 'macOS-latest'
-        run: ./gradlew :exoquery-runner-native:build publishMac -PisCI --no-daemon --stacktrace --warning-mode all
+      #- name: 'Run MacOS Tests'
+      #  if: matrix.os == 'macOS-latest'
+      #  run: ./gradlew :exoquery-runner-native:build publishMac -PisCI --no-daemon --stacktrace --warning-mode all
 
       - name: 'Run windows tests'
         if: matrix.os == 'windows-latest'

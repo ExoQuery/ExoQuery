@@ -9,6 +9,7 @@ import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.Caller
 import io.exoquery.plugin.transform.createLambda0
 import io.exoquery.plugin.trees.Ir
+import io.exoquery.plugin.trees.ParamKind
 import io.exoquery.plugin.trees.fullPathOfBasic
 import io.exoquery.plugin.trees.simpleTypeArgs
 import io.exoquery.xr.XR
@@ -54,7 +55,7 @@ val IrCall.extensionArg get(): IrExpression? = run {
   for (param in this.symbol.owner.parameters) {
     if (param.kind == IrParameterKind.ExtensionReceiver) {
       return@run this.arguments[param]
-    } else if (param.kind == IrParameterKind.DispatchReceiver) {
+    } else if (param.kind == IrParameterKind.Regular) {
       // If we find regular parameter, we can stop looking for extension receivers
       // because there can only be regular parameters after the dispatch receiver.
       return null
@@ -65,11 +66,40 @@ val IrCall.extensionArg get(): IrExpression? = run {
 
 val IrCall.dispatchArg get() =  this.dispatchReceiver
 
-val IrFunction.extensionParam get() =
-  parameters.firstOrNull { it.kind == IrParameterKind.ExtensionReceiver }
+val IrFunction.extensionParam get(): IrValueParameter? = run {
+  for (param in this.symbol.owner.parameters) {
+    if (param.kind == IrParameterKind.ExtensionReceiver) {
+      return@run param
+    } else if (param.kind == IrParameterKind.Regular) {
+      // If we find regular parameter, we can stop looking for extension receivers
+      // because there can only be regular parameters after the dispatch receiver.
+      return null
+    }
+  }
+  return null
+}
 
 val IrFunction.regularParams get() =
   this.parameters.filter { it.kind == IrParameterKind.Regular }
+
+context(CX.Scope)
+val IrCall.argumentsWithParameters get() = run {
+  // TODO optimize to return a iterator
+  val params = this.symbol.owner.parameters
+  val args = this.arguments
+  if (params.size != args.size)
+    parseError(
+      "Mismatched params (${params.size}) and args (${args.size}) in function:\nParams: ${params.map { it.dumpKotlinLike() }}\nArgs: ${args.map { it?.dumpKotlinLike() }}",
+      this
+    )
+  args zip params
+}
+
+fun IrCall.regularArgsWithParamKinds(paramKinds: List<ParamKind>) =
+  (arguments zip paramKinds).filter { (arg, kind) -> kind == ParamKind.Regular }.map { (arg, _) -> arg }
+fun IrCall.extensionArgWithParamKinds(paramKinds: List<ParamKind>): IrExpression? =
+  (arguments zip paramKinds).find { (arg, kind) -> kind == ParamKind.Extension }?.first
+
 
 val IrCall.regularArgs get() = run {
   // TODO optimize to return a iterator
@@ -77,6 +107,11 @@ val IrCall.regularArgs get() = run {
   val args = this.arguments
   params.filter { param -> param.kind == IrParameterKind.Regular }.map { args[it] }
 }
+val IrCall.regularArgsCount get() = run {
+  val params = this.symbol.owner.parameters
+  params.count { param -> param.kind == IrParameterKind.Regular }
+}
+
 val IrConstructorCall.regularArgs get() = run {
   val params = this.symbol.owner.parameters
   val args = this.arguments

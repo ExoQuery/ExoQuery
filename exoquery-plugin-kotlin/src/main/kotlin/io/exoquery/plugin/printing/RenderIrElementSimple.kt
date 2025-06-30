@@ -2,6 +2,7 @@ package io.exoquery.plugin.printing
 
 import io.exoquery.fansi.Color.Green
 import io.exoquery.fansi.Color.Red
+import io.exoquery.plugin.extensionArg
 import io.exoquery.plugin.fullName
 import io.exoquery.plugin.safeName
 import org.jetbrains.kotlin.com.intellij.openapi.util.text.StringUtil
@@ -305,15 +306,8 @@ open class RenderIrElementVisitorSimple(
   override fun visitExternalPackageFragment(declaration: IrExternalPackageFragment, data: Nothing?): String =
     "[IrExternalPackageFragment] fqName:${declaration.packageFqName}"
 
-  override fun visitFile(declaration: IrFile, data: Nothing?): String {
-    val fileName = if (options.printFilePath) declaration.path else declaration.name
-    return declaration.runTrimEnd {
-      "[IrFile] " +
-          "fqName:${packageFqName} " +
-          "fileName:${options.filePathRenderer(declaration, fileName)} " +
-          renderLineStartOffsets(options)
-    }
-  }
+  override fun visitFile(declaration: IrFile, data: Nothing?): String =
+    "[IrFile] fqName:${declaration.packageFqName} fileName:${declaration.path}"
 
   override fun visitFunction(declaration: IrFunction, data: Nothing?): String = declaration.runTrimEnd {
     "[IrFunction]${renderOffsets(options)} ${renderOriginIfNonTrivial(options)}"
@@ -328,14 +322,13 @@ open class RenderIrElementVisitorSimple(
       "[IrSimpleFunction]" +
           "${renderOffsets(options)} " +
           renderOriginIfNonTrivial(options) +
-          "name:$name " +
+          "$name " +
           renderSignatureIfEnabled(options.printSignatures) +
-          "visibility:$visibility modality:$modality " +
           (if (!isUsedForIrDump) {
             renderTypeParameters() + " " +
                 renderValueParameterTypes() + " "
           } else "") +
-          "returnType:${renderReturnType(this@RenderIrElementVisitorSimple, options)} " +
+          "ret:${renderReturnType(this@RenderIrElementVisitorSimple, options)} " +
           renderSimpleFunctionFlags(flagsRenderer)
     }
 
@@ -355,7 +348,7 @@ open class RenderIrElementVisitorSimple(
             renderTypeParameters() + " " +
                 renderValueParameterTypes() + " "
           } else "") +
-          "returnType:${renderReturnType(this@RenderIrElementVisitorSimple, options)} " +
+          "ret:${renderReturnType(this@RenderIrElementVisitorSimple, options)} " +
           renderConstructorFlags(flagsRenderer)
     }
 
@@ -363,7 +356,6 @@ open class RenderIrElementVisitorSimple(
     declaration.runTrimEnd {
       "[IrProperty]" +
           "${renderOffsets(options)} " +
-          renderOriginIfNonTrivial(options) +
           "name:$name " +
           renderSignatureIfEnabled(options.printSignatures) +
           "visibility:$visibility modality:$modality " +
@@ -479,11 +471,13 @@ open class RenderIrElementVisitorSimple(
         "${expression.renderOffsets(options)} " +
         "type=${expression.type.render()} from='${expression.returnTargetSymbol.renderReference()}'"
 
-  override fun visitCall(expression: IrCall, data: Nothing?): String =
-    "${Green("[IrCall]")}" +
-        "${expression.renderOffsets(options)} " +
-        "'${expression.symbol.renderReference()}' ${expression.renderSuperQualifier()}" +
-        "type=${expression.type.render()} origin=${expression.origin}"
+  override fun visitCall(expression: IrCall, data: Nothing?): String {
+    val receiver =
+      expression.dispatchReceiver?.let { "dispatch=${it.type.classFqName?.asString()}" }
+        ?: (expression.extensionArg?.let { "extension=${it.type.classFqName?.asString()}" })
+        ?: "<root:${expression.symbol.fullName}>"
+    return "${Green("[IrCall]")} ${Red(expression.symbol.renderReference())} - ${receiver}"
+  }
 
   private fun IrCall.renderSuperQualifier(): String =
     superQualifierSymbol?.let { "superQualifier='${it.renderReference()}' " } ?: ""
@@ -514,11 +508,8 @@ open class RenderIrElementVisitorSimple(
         "${expression.renderOffsets(options)} " +
         "'${expression.symbol.renderReference()}' type=${expression.type.render()} origin=${expression.origin}"
 
-  override fun visitGetField(expression: IrGetField, data: Nothing?): String = buildTrimEnd {
-    append("[IrGetField]${expression.renderOffsets(options)} '${expression.symbol.renderReference()}' type=${expression.type.render()}")
-    appendSuperQualifierSymbol(expression)
-    append(" origin=${expression.origin}")
-  }
+  override fun visitGetField(expression: IrGetField, data: Nothing?): String =
+    "[IrSetField] ${expression.symbol.renderReference()}:${expression.type.render()} (orig=${expression.origin})"
 
   override fun visitSetField(expression: IrSetField, data: Nothing?): String = buildTrimEnd {
     append("[IrSetField]${expression.renderOffsets(options)} '${expression.symbol.renderReference()}' type=${expression.type.render()}")
@@ -553,13 +544,13 @@ open class RenderIrElementVisitorSimple(
     "[IrBranch]${branch.renderOffsets(options)}"
 
   override fun visitWhileLoop(loop: IrWhileLoop, data: Nothing?): String =
-    "WHILE${loop.renderOffsets(options)} label=${loop.label} origin=${loop.origin}"
+    "[IrWhileLoop]${loop.renderOffsets(options)} label=${loop.label} origin=${loop.origin}"
 
   override fun visitDoWhileLoop(loop: IrDoWhileLoop, data: Nothing?): String =
-    "DO_WHILE${loop.renderOffsets(options)} label=${loop.label} origin=${loop.origin}"
+    "[IrDoWhileLoop]${loop.renderOffsets(options)} label=${loop.label} origin=${loop.origin}"
 
   override fun visitBreak(jump: IrBreak, data: Nothing?): String =
-    "BREAK${jump.renderOffsets(options)} label=${jump.label} loop.label=${jump.loop.label}"
+    "[IrBreak]${jump.renderOffsets(options)} label=${jump.label} loop.label=${jump.loop.label}"
 
   override fun visitContinue(jump: IrContinue, data: Nothing?): String =
     "CONTINUE${jump.renderOffsets(options)} label=${jump.label} loop.label=${jump.loop.label}"
@@ -691,7 +682,7 @@ internal fun IrValueParameter.renderValueParameterName(options: DumpIrTreeOption
     val parent = try { parent } catch (e: Exception) { null }
     if (parent is IrFunction) {
       if (parent.parameters.any { it !== this && it.renderValueParameterName(options) == name }) {
-        return "$name(index:${indexInParameters})"
+        return "(${indexInParameters})"
       }
     }
   }

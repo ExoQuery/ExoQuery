@@ -6,6 +6,7 @@ import io.exoquery.plugin.getAnnotation
 import io.exoquery.plugin.isClass
 import io.exoquery.plugin.logging.CompileLogger
 import io.exoquery.plugin.printing.dumpSimple
+import io.exoquery.plugin.regularArgs
 import io.exoquery.plugin.source
 import io.exoquery.plugin.trees.simpleTypeArgs
 import io.exoquery.plugin.varargValues
@@ -13,7 +14,6 @@ import io.exoquery.util.FilePrintOutputSink
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import io.exoquery.util.Tracer
-import org.jetbrains.kotlin.ir.backend.js.utils.regularArgs
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
 import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrExpression

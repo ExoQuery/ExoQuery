@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
-import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 
 private fun IrGetValue.isGetting(batchParam: IrValueParameter): Boolean =
   this.symbol.owner == batchParam

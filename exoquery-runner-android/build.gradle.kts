@@ -9,10 +9,11 @@ plugins {
   kotlin("multiplatform")
   id("com.android.library")
   kotlin("plugin.serialization") version "2.2.0"
-  id("io.kotest.multiplatform") version "6.0.0.M1"
+  alias(libs.plugins.kotest)
   id("io.exoquery.exoquery-plugin")
+
   // Already on the classpath
-  //id("org.jetbrains.kotlin.android") version "1.9.23"
+  //id("org.jetbrains.kotlin.android") version "2.2.0"
 
   id("com.google.devtools.ksp") version "2.2.0-2.0.2"
   id("androidx.room") version "2.7.1"

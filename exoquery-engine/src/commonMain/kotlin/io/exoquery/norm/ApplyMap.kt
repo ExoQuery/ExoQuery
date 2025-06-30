@@ -62,7 +62,7 @@ class ApplyMap(val traceConfig: TraceConfig) {
   // Note, since the purpose of this beta reduction is to check isomorphism types should not actually be
   // checked here since they may be wrong (i.e. if there is no actual isomorphism).
   private fun isomorphic(e: XR.Expression, c: XR.Expression, alias: Ident): Boolean =
-    BetaReduction(e, TypeBehavior.ReplaceWithReduction, alias to c) == c
+    BetaReduction(e, TypeBehavior.ReplaceWithReduction, ApplyFunctionsBehavior.DoApply, alias to c) == c
 
   // Scala
   //private def isomorphic(e: Ast, c: Ast, alias: Ident) =

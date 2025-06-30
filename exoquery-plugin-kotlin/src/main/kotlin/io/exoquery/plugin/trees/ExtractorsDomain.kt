@@ -11,7 +11,6 @@ import io.exoquery.plugin.transform.UnaryOperators
 import io.exoquery.xr.BinaryOperator
 import io.exoquery.xr.OP
 import io.exoquery.xr.UnaryOperator
-import org.jetbrains.kotlin.ir.backend.js.utils.regularArgs
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.*
@@ -23,7 +22,6 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
 object ExtractorsDomain {
-
   fun IsSelectFunction() = Ir.Expr.ClassOf<SelectClauseCapturedBlock>()
 
   object SqlBuildFunction {
@@ -84,7 +82,7 @@ object ExtractorsDomain {
 
     context(CX.Scope)
     private fun isPrettyBuildForCall(call: IrCall): Boolean =
-      ((call.extensionReceiver ?: call.dispatchReceiver) as? IrCall)?.let {
+      ((call.extensionArg ?: call.dispatchReceiver) as? IrCall)?.let {
         if (it.symbol.safeName == "buildPrettyFor") true
         else if (it.symbol.safeName == "buildFor") false
         else parseError("Invalid buildFor function name: ${it.symbol.safeName}", it)
@@ -166,7 +164,7 @@ object ExtractorsDomain {
             if (!call.symbol.owner.isPrimary)
               parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.")
 
-            val params = call.symbol.owner.simpleValueParams.map { it.name.asString() }.toList()
+            val params = call.symbol.owner.regularParams.map { it.name.asString() }.toList()
             val args = call.regularArgs.toList()
             if (params.size != args.size)
               parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
@@ -182,12 +180,12 @@ object ExtractorsDomain {
     context(CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, y: BP) =
       customPattern2("CaseClassConstructorCall1", x, y) { call: IrConstructorCall ->
         when {
-          call.symbol.safeName == "<init>" && call.symbol.owner.simpleValueParams.size == 1 -> {
+          call.symbol.safeName == "<init>" && call.symbol.owner.regularParams.size == 1 -> {
             val className: String = call.type.classFqName?.asString() ?: call.type.dumpKotlinLike()
             if (!call.symbol.owner.isPrimary)
               parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.")
 
-            val params = call.symbol.owner.simpleValueParams.map { it.name.asString() }.toList()
+            val params = call.symbol.owner.regularParams.map { it.name.asString() }.toList()
             val args = call.regularArgs.toList()
             if (params.size != args.size)
               parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
@@ -204,12 +202,12 @@ object ExtractorsDomain {
     context(CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, y: BP) =
       customPattern2("CaseClassConstructorCall1Plus", x, y) { call: IrConstructorCall ->
         when {
-          call.symbol.safeName == "<init>" && call.symbol.owner.simpleValueParams.size >= 1 -> {
+          call.symbol.safeName == "<init>" && call.symbol.owner.regularParams.size >= 1 -> {
             val className: String = call.type.classFqName?.asString() ?: call.type.dumpKotlinLike()
             if (!call.symbol.owner.isPrimary)
               parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.")
 
-            val params = call.symbol.owner.simpleValueParams.map { it.name.asString() }.toList()
+            val params = call.symbol.owner.regularParams.map { it.name.asString() }.toList()
             val args = call.regularArgs.toList()
             if (params.size != args.size)
               parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
@@ -357,7 +355,7 @@ object ExtractorsDomain {
               arg.match(
                 // printExpr(.. { stuff }: IrFunctionExpression  ..): FunctionCall
                 case(Ir.FunctionExpression.withReturnOnlyBlock[Is()]).thenThis { output ->
-                  val firstArg = this.function.simpleValueParams.firstOrNull() ?: parseError("CaptureBatchAction must have a single argument but was: ${it.regularArgs.map { it?.dumpKotlinLike() }}", it)
+                  val firstArg = this.function.regularParams.firstOrNull() ?: parseError("CaptureBatchAction must have a single argument but was: ${it.regularArgs.map { it?.dumpKotlinLike() }}", it)
                   Components2(Data(firstArg, batchCollection), output)
                 }
               )
@@ -393,7 +391,7 @@ object ExtractorsDomain {
         context(CX.Scope) operator fun <AP : Pattern<IrExpression>> get(call: AP) =
           customPattern1("Call.UseExpression.Receiver", call) { it: IrCall ->
             if (it.ownerHasAnnotation<ExoUseExpression>()) {
-              val receiver = it.extensionReceiver ?: parseError("UseExpression must have a receiver", it)
+              val receiver = it.extensionArg ?: parseError("UseExpression must have a receiver", it)
               Components1(receiver)
             } else {
               null
@@ -520,7 +518,7 @@ object ExtractorsDomain {
         customPattern2("x to y", x, y) { it: IrCall ->
           // TODO see what other descriptors it has to make sure it's only a system-level a to b
           (it.symbol.safeName == "to").thenLet {
-            it.extensionReceiver?.let { argA ->
+            it.extensionArg?.let { argA ->
               it.regularArgs.first()?.let { argB ->
                 Components2(argA, argB)
               }
@@ -564,3 +562,21 @@ sealed interface CallData {
     }
   }
 }
+
+context(CX.Scope)
+fun IrCall.extractCapturedFunctionParamKinds(): List<ParamKind>? =
+  this.symbol.owner.getAnnotationArgs<CapturedFunctionParamKinds>().first().let { arg ->
+    val vararg =
+      arg as? IrVararg ?: parseError(
+        "CapturedFunctionArgTypes annotation must have a single argument that is a vararg of ArgType",
+        this
+      )
+    vararg.elements.map { elem ->
+      val str = (elem as? IrConst ?: parseError("CapturedFunctionArgTypes Element ${elem.dumpKotlinLike()} was not a const string"))
+        .value.toString()
+      ParamKind.fromString(str) ?: parseError(
+        "CapturedFunctionArgTypes Element ${elem.dumpKotlinLike()} was not a valid ArgType, expected one of: ${ParamKind.values.joinToString(", ")}",
+        this
+      )
+    }
+  }

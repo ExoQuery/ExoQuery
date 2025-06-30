@@ -5,10 +5,10 @@ import io.decomat.case
 import io.decomat.match
 import io.exoquery.parseError
 import io.exoquery.plugin.printing.dumpSimple
+import io.exoquery.plugin.regularArgs
 import io.exoquery.plugin.trees.ExtractorsDomain
 import io.exoquery.plugin.trees.Parser
 import io.exoquery.plugin.trees.SqlQueryExpr
-import io.exoquery.plugin.trees.regularArgs
 import io.exoquery.xr.XR
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression

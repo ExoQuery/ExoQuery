@@ -1,6 +1,6 @@
 package io.exoquery.plugin.transform
 
-import org.jetbrains.kotlin.ir.backend.js.utils.regularArgs
+import io.exoquery.plugin.regularArgs
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike

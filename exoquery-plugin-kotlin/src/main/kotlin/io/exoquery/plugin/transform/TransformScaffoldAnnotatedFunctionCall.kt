@@ -3,9 +3,16 @@ package io.exoquery.plugin.transform
 import io.exoquery.annotation.CapturedFunction
 import io.exoquery.fansi.nullableAsList
 import io.exoquery.parseError
+import io.exoquery.plugin.argumentsWithParameters
+import io.exoquery.plugin.extensionArg
+import io.exoquery.plugin.extensionArgWithParamKinds
 import io.exoquery.plugin.hasAnnotation
+import io.exoquery.plugin.printing.dumpSimple
+import io.exoquery.plugin.regularArgs
+import io.exoquery.plugin.regularArgsWithParamKinds
+import io.exoquery.plugin.trees.ExtractorsDomain
 import io.exoquery.plugin.trees.PT.io_exoquery_util_scaffoldCapFunctionQuery
-import io.exoquery.plugin.trees.regularArgs
+import io.exoquery.plugin.trees.extractCapturedFunctionParamKinds
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irVararg
@@ -14,6 +21,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
 context(CX.Scope, CX.Builder)
@@ -48,8 +56,26 @@ class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransfor
 
   context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
   override fun transform(call: IrCall): IrExpression {
-    val originalArgs = call.regularArgs
-    val extensionReceiverArg = call.extensionReceiver
+    val paramKinds = call.extractCapturedFunctionParamKinds() ?: parseError("Could not extract the parameter kinds from the call, the annotation CapturedFunctionParamKinds was not attached internally. The owner function is defined as:\n${call.symbol.owner.dumpSimple()}", call)
+    // CANNOT invoke call.regularArgs here because we have blanked-out the arguments in the TransformAnnotationFunction stage. That is why we saved
+    // the original arguments a CapturedFunctionParamKinds annotation that we then use to infer the original argument types.
+    val originalArgs = call.regularArgsWithParamKinds(paramKinds)
+
+    //logger.warn("""
+    //  |--------------------------- From Scaffolded call: ---------------------------
+    //  |${call.dumpSimple()}
+    //  |Param Kinds:
+    //  |${paramKinds}
+    //  |Args:
+    //  |${(call.arguments.map { it?.dumpKotlinLike() })}
+    //  |Args With Param Kinds:
+    //  |${(call.arguments zip paramKinds).withIndex().map { (i, argAndParam) ->
+    //    val (it, pk) = argAndParam
+    //    "$i-${pk}) " +  it?.dumpKotlinLike() ?: "null" }.joinToString("\n") { "  $it" }
+    //  }
+    //""".trimMargin())
+
+    val extensionReceiverArg = call.extensionArgWithParamKinds(paramKinds)
     val zeroizedCallRaw = call.zeroisedArgs()
 
     // Need to project the call to make it uprootable in the paresr in later stages.
@@ -111,11 +137,6 @@ class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransfor
 
     val scaffoldedCall = buildScaffolding(zeroizedCall, call.type, projectedArgs)
     //throw IllegalStateException("------------------- Scaffolding ------------------\n${scaffoldedCall.dumpKotlinLike()}")
-
-    //error("""
-    //  |--------------------------- Scaffolded call: ---------------------------
-    //  |${scaffoldedCall.dumpKotlinLike()}
-    //""".trimMargin())
 
     return scaffoldedCall
   }

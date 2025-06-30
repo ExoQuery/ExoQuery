@@ -53,7 +53,7 @@ object ParseAction {
 
           on(lambdaRaw).match(
             case(Ir.FunctionExpression.withReturnOnlyBlock[Is()]).thenThis { blockBody ->
-              val extensionParam = this.function.symbol.owner.extensionReceiverParameter
+              val extensionParam = this.function.symbol.owner.extensionParam
               val actionAlias = extensionParam?.makeIdent() ?: parseError("Could not find the extension receiver parameter of the insert/update call", expr)
               parseActionComposite(blockBody, insertType, actionAlias, compositeType)
             }
@@ -74,7 +74,7 @@ object ParseAction {
         val filterAlias =
           when (funName) {
             "filter" -> args.first().makeIdent()
-            "where" -> compRight.function.symbol.owner.extensionReceiverParameter?.makeIdent() ?: parseError("Could not find the extension receiver parameter of the `where` call.", compRight)
+            "where" -> compRight.function.symbol.owner.extensionParam?.makeIdent() ?: parseError("Could not find the extension receiver parameter of the `where` call.", compRight)
             else -> parseError("Unknown function name: ${funName}", expr)
           }
         val filterExpr = ParseExpression.parseFunctionBlockBody(lambdaBody)
@@ -100,7 +100,7 @@ object ParseAction {
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlAction<*, *>>(), Is("returningKeys"), Ir.FunctionExpression.withBlock[Is(), Is()]]).then { actionExpr, (_, lambdaBody) ->
         val explain = "\n${Messages.ReturningKeysExplanation}"
         val alias =
-          (compRight as IrFunctionExpression).function.symbol.owner.extensionReceiverParameter?.makeIdent() ?: parseError("Could not find the extension receiver parameter of the returningKeys call.${explain}", expr)
+          (compRight as IrFunctionExpression).function.symbol.owner.extensionParam?.makeIdent() ?: parseError("Could not find the extension receiver parameter of the returningKeys call.${explain}", expr)
 
         fun validateProperty(prop: XR.Property) {
           if (prop.core() != alias)

@@ -44,6 +44,11 @@ fun IrCall.paramCallHumanName() = run {
         "The 'humanName' argument of the param function must be a constant string, but found: ${lastArg.dumpKotlinLike()}",
         this
       )
+    } else if (lastArg !is IrConst) {
+      parseError(
+        "The expected the argument-value `${lastArg.dumpKotlinLike()}` to be a constant but it was a ${lastArg::class}",
+        this
+      )
     }
     (args.last() as IrConst).value.toString()
   }

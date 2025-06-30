@@ -88,6 +88,9 @@ annotation class ParamCustom
 @Retention(AnnotationRetention.BINARY)
 annotation class ParamCustomValue
 
+// Used internally
+annotation class CapturedFunctionParamKinds(vararg val types: String)
+
 /**
  * Used to annotate a type so that the ExoQuery system knows that it is a value (i.e. a value-XRType)
  * that needs to be encoded/decoded itself and not further broken down into its components during

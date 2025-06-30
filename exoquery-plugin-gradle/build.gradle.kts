@@ -47,3 +47,8 @@ gradlePlugin {
     }
   }
 }
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+}

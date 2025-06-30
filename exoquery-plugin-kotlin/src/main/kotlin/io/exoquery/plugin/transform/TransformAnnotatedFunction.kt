@@ -18,6 +18,7 @@ import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.regularParams
 import io.exoquery.plugin.trees.DynamicsAccum
 import io.exoquery.plugin.trees.ExtractorsDomain.Call
+import io.exoquery.plugin.trees.Lifter
 import io.exoquery.plugin.trees.Parser
 import io.exoquery.plugin.trees.SqlExpressionExpr
 import io.exoquery.plugin.trees.SqlQueryExpr
@@ -113,7 +114,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     }
     val funBody = capFun.body!!
 
-    val originalParams = capFun.regularParams
+    val originalRegularParams = capFun.regularParams
 
     val capFunReturn =
       capFun.getSingleReturnExpr() ?: parseError(Messages.CapturedFunctionFormWrong("Outer form of the captured-function was wrong."), capFun)
@@ -125,25 +126,30 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
           // It can either be a `select { ... }` or a `capture { ... }`
           case(Call.CaptureQuery[Is()]).thenThis {
             val (rawQueryXR, dynamics) = TransformCapturedQuery.parseCapturedQuery(it, superTransformer)
-            processQuery(recieiverParam, rawQueryXR, dynamics, originalParams, capFun.locationXR(), capFunReturn)
+            processQuery(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn)
           },
           case(Call.CaptureSelect[Is()]).thenThis {
             val (rawQueryXR, dynamics) = TransformSelectClause.parseSelectClause(it, superTransformer)
-            processQuery(recieiverParam, rawQueryXR, dynamics, originalParams, capFun.locationXR(), capFunReturn)
+            processQuery(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn)
           },
           case(Call.CaptureExpression[Is()]).thenThis {
             val (rawQueryXR, dynamics) = TransformCapturedExpression.parseSqlExpression(it, superTransformer)
-            processExpression(recieiverParam, rawQueryXR, dynamics, originalParams, capFun.locationXR(), capFunReturn)
+            processExpression(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn)
           }
         ) ?: parseError(Messages.CapturedFunctionFormWrong("Invalid capture-function body. ${errorText}"), capFunReturn)
       }
+
+    // Create a helper annotation so we know what the original Param-Kinds of the function so that later in
+    // the TransformScaffoldAnnotatedFunctionCall we can reconstruct what the arguments of the function were
+    // in order to know how to interpret the parameters.
+    val originalParamKindsAnnotation = Lifter(this@Builder).makeCapturedFunctionParamKinds(capFun.extensionParam.nullableAsList() + originalRegularParams)
+    capFun.annotations = capFun.annotations + listOf(originalParamKindsAnnotation)
 
     // The function should not have any parameters since they will be captured in the XR
     // i.e. they will be arguments of the XR.FunctionApply when the scaffold is parsed
     // the extension reciever gets dropped and used like a variable
     // Only the the dispatch-reciever to a annotated function remains so if it is there put it in,
     // otherwise put in an empty list
-
     capFun.parameters =
       capFun.dispatchReceiverParameter?.let { listOf(it) } ?: emptyList()
 

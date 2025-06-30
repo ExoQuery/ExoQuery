@@ -1,6 +1,7 @@
 package io.exoquery.xr
 
 import io.exoquery.BID
+import io.exoquery.Minimal
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.be
 import io.kotest.matchers.should
@@ -58,7 +59,7 @@ class EncodingSpecXR: FreeSpec({
       XR.UnaryOp(OP.Minus, one).let { xr -> xr.encode().decodeXR() shouldBeXR xr }
     }
     "TagForParam" {
-      val xr = XR.TagForParam(BID.Companion.new(), XR.ParamType.Single, XRType.Value)
+      val xr = XR.TagForParam.Minimal(BID.Companion.new(), XR.ParamType.Single, XRType.Value)
       xr.encode().decodeXR() shouldBeXR xr
     }
     "TagForSqlExpression" {

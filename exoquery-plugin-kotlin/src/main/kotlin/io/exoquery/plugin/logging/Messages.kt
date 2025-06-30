@@ -148,14 +148,29 @@ on the function to allow it to be used in this context.
 context(CX.Scope)
 fun ValueLookupComingFromExternalInExpression(variable: IrGetValue, captureTypeName: String = "select") =
 """
-It looks like the variable `${variable.symbol.safeName}` is coming from outside the capture/${captureTypeName} block. Typically
-this is a runtime-value that you need to bring into the query as a parameter like this: `param(${variable.symbol.safeName})`.
+It looks like the variable `${variable.symbol.safeName}` is coming from outside the capture/${captureTypeName} block. 
+If this is a runtime-value (i.e. a value that is NOT being plugged in from some other captured-block query), you need to bring into
+the query as a parameter like this: `param(${variable.symbol.safeName})`.
 For example:
 
 val nameVariable = "Joe"
 val query = select { Table<Person>().filter { p -> p.name == param(nameVariable) } }
 > This will create the query:
 > SELECT p.id, p.name, p.age FROM Person p WHERE p.name = ?
+
+If this is a value that some other captured-query is plugging into a function, you need to use the @CapturedFunction
+to mark function for ExoQuery to introspect. For example:
+
+val people = capture.select {
+  val p = from(Table<Person>())
+  // The `p` variable is being plugged-in from the capture.select block
+  where { getName(p) == "Joe" }
+  p
+}
+// ...so we need to add the @CapturedFunction to this function: 
+@CapturedFunction
+fun getName(p: Person): SqlQuery<Person> = capture.expression { p.name }
+
 
 (Lineage: ${variable.showLineage()})
 """.trimIndent()

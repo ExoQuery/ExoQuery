@@ -3,8 +3,11 @@ package io.exoquery.norm
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import io.exoquery.util.Tracer
+import io.exoquery.xr.ApplyFunctionsBehavior
 import io.exoquery.xr.BetaReduction
+import io.exoquery.xr.EmptyProductTypeBehavior
 import io.exoquery.xr.StatefulTransformer
+import io.exoquery.xr.TypeBehavior
 import io.exoquery.xr.XR
 import io.exoquery.xr.XR.*
 import io.exoquery.xr.copy.*
@@ -211,7 +214,11 @@ data class AvoidAliasConflict(override val state: Set<String>, val detemp: Boole
     val fresh = freshIdent(id)
     val newBody =
       trace("RecurseAndApply ${label()} Replace: $id -> $fresh: ").andReturnIf {
-        BetaReduction.ofXR(body, id to fresh)
+        BetaReduction.ofXR(
+          body,
+          TypeBehavior.SubstituteSubtypes, EmptyProductTypeBehavior.Ignore, ApplyFunctionsBehavior.SkipApply,
+          id to fresh
+        )
       }({ it != body })
     return fresh to (newBody as Body)
   }

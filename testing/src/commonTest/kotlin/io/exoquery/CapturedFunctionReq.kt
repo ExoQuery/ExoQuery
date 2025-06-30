@@ -6,11 +6,10 @@ import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 
 
-class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, Mode.ExoGoldenTest(), {
+class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, Mode.ExoGoldenOverride(), {
   @CapturedFunction
   fun joes(people: SqlQuery<Person>) = capture { people.filter { p -> p.name == "Joe" } }
   val foo: Boolean = true
-  println("helloo")
 
   "static function capture - structural tests" - {
     "cap { capFun(Table) }" {
@@ -178,6 +177,25 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
       shouldBeGolden(det.runtimes.runtimes.first().second.xr, "XR->Runimtes.first.XR")
       shouldBeTrueInGolden { det.runtimes.runtimes.first().second.xr == tbl.xr }
       shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
+    }
+  }
+
+  "shadowing" - {
+    "query with variable shadow" {
+      @CapturedFunction
+      fun calculateScoresForPerson(personId: Int) =
+        capture {
+          Table<Person>()
+            .filter { p -> p.id == personId }
+            .map { it.age }
+        }
+
+      // The clause should have p1.id == p.id and not p1.id == p1.id
+      val q = capture.select {
+        Table<Person>().map { p -> p.id to calculateScoresForPerson(p.id).sum() }
+      }
+      shouldBeGolden(q.determinizeDynamics().xr, "XR")
+      shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
   }
 })

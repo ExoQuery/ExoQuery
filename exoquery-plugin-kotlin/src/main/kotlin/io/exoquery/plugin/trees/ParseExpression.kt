@@ -193,7 +193,8 @@ object ParseExpression {
       // TODO also need to handle setParams case in parseAction where a batch-param is used
       case(Ir.Call.FunctionMemN[Is(), Is.of("param", "paramCtx", "paramCustom"), Is()]).thenThis { _, args ->
         val paramValue = args.first()
-        val humanName = paramCallHumanName()
+        // Ignore human name coming from the param for now
+        //val humanName = paramCallHumanName()
 
         val paramBindTypeRaw =
           when {
@@ -247,7 +248,7 @@ object ParseExpression {
           }
 
         binds.addParam(bid, paramValue, paramBind)
-        XR.TagForParam(bid, paramType, humanName, this.type.toClassIdXR(), TypeParser.of(this), paramValue.loc)
+        XR.TagForParam(bid, paramType, null, this.type.toClassIdXR(), TypeParser.of(this), paramValue.loc)
       },
 
       // x.let { stuff(...it...) } -> Apply(stuff(...it...), x)

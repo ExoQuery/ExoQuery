@@ -6,7 +6,8 @@ plugins {
   id("maven-publish")
 
   id("io.exoquery.terpal-plugin") version "2.2.0-2.0.0.PL"
-  id("io.kotest.multiplatform") version "6.0.0.M1"
+  alias(libs.plugins.kotest)
+
   id("conventions-multiplatform")
   id("publish")
 
@@ -17,7 +18,7 @@ plugins {
 version = extra["pluginProjectVersion"].toString()
 
 dependencies {
-  add("kspCommonMainMetadata", "io.exoquery:decomat-ksp:0.6.0")
+  add("kspCommonMainMetadata", "io.exoquery:decomat-ksp:1.0.0")
   commonMainApi("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 }
 
@@ -55,8 +56,8 @@ kotlin {
 
     val commonTest by getting {
       dependencies {
-        implementation("io.kotest:kotest-framework-engine:6.0.0.M1")
-        implementation("io.kotest:kotest-assertions-core:6.0.0.M1")
+        implementation(libs.kotest.framework)
+        implementation(libs.kotest.assertions)
         //implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
@@ -114,10 +115,10 @@ repositories {
 }
 
 ksp {
-  arg("matchableName", "Mat")
-  arg("componentName", "Slot")
-  arg("middleComponentName", "MSlot")
-  arg("constructorComponentName", "CS")
+  //arg("matchableName", "Mat")
+  //arg("componentName", "Slot")
+  //arg("middleComponentName", "MSlot")
+  //arg("constructorComponentName", "CS")
   arg("fromHereFunctionName", "cs")
   arg("fromFunctionName", "csf")
   arg("renderAdtFunctions", "true")

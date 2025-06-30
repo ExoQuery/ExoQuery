@@ -9,6 +9,7 @@ import io.exoquery.xr.XR
 import io.exoquery.xr.XR.*
 import io.exoquery.xr.XRType.*
 import io.exoquery.xr.TypeBehavior.ReplaceWithReduction as RWR
+import io.exoquery.xr.ApplyFunctionsBehavior.DoApply as DA
 import io.exoquery.xr.copy.*
 
 // NOTE: Leaving Quill commneted-out code equivalents here for now for reference
@@ -89,7 +90,7 @@ class RepropagateTypes(val traceConfig: TraceConfig) : StatelessTransformer {
   fun applyBody(a: XR.Query, b: XR.Ident, c: XR.Expression, f: (XR.Query, XR.Ident, XR.Expression) -> XR.Query): XR.Query = run {
     val ar = invoke(a)
     val br = b.retypeFrom(ar.type)
-    val cr = BetaReduction(c, RWR, b to br)
+    val cr = BetaReduction(c, RWR, DA, b to br)
     trace("Repropagate ${a.type.shortString()} from ${a} into:") andReturn { f(ar, br, invoke(cr).asExpr()) }
   }
 
@@ -112,13 +113,13 @@ class RepropagateTypes(val traceConfig: TraceConfig) : StatelessTransformer {
         is SortBy -> {
           val ar = invoke(head)
           val idr = id.retypeFrom(ar.type)
-          val cr = criteria.map { ord -> ord.transform { BetaReduction(it, RWR, id to idr).asExpr() } }
+          val cr = criteria.map { ord -> ord.transform { BetaReduction(it, RWR, DA, id to idr).asExpr() } }
           trace("Repropagate ${head.type.shortString()} from $head into:") andReturn { SortBy.cs(ar, idr, cr.map { ord -> ord.transform { invoke(it) } }) }
         }
         is FlatJoin -> {
           val ar = invoke(head)
           val iAr = id.retypeFrom(ar.type)
-          val onr = BetaReduction(on, RWR, id to iAr)
+          val onr = BetaReduction(on, RWR, DA, id to iAr)
           trace("Repropagate ${head.type.shortString()} from $head into:") andReturn { FlatJoin.cs(ar, iAr, invoke(onr).asExpr()) }
         }
         // FlatFilter, FlatGroupBy, FlatSortBy, Nested, and Distinct etc... do not have head-fields to repropagate types from
