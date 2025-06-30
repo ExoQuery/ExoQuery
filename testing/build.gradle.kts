@@ -55,6 +55,9 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         implementation("io.kotest:kotest-runner-junit5:6.0.0.M1")
+        implementation("io.kotest:kotest-framework-api:6.0.0.M1")
+        implementation("io.kotest:kotest-framework-discovery:6.0.0.M1")
+        implementation("io.kotest:kotest-framework-engine:6.0.0.M1")
       }
     }
   }
@@ -98,7 +101,9 @@ dependencies {
 }
 
 tasks.named<Test>("jvmTest") {
-  useJUnitPlatform()
+  useJUnitPlatform {
+    includeEngines("kotest")
+  }
   filter {
     isFailOnNoMatchingTests = false
   }
@@ -111,4 +116,14 @@ tasks.named<Test>("jvmTest") {
     )
     exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
   }
+
+  // Add Kotest system properties for test discovery
+  systemProperty("kotest.framework.discovery.enabled", "true")
+  systemProperty("kotest.framework.classpath.scanning.config.disable", "false")
+  systemProperty("kotest.framework.classpath.scanning.autoscan.disable", "false")
+
+  // Additional Kotest configuration
+  systemProperty("kotest.framework.timeout", "10000")
+  systemProperty("kotest.framework.dump.config", "true")
+  systemProperty("kotest.framework.parallelism", "1")
 }

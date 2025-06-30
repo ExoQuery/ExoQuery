@@ -6,7 +6,6 @@ plugins {
   id("maven-publish")
 
   id("io.exoquery.terpal-plugin") version "2.2.0-2.0.0.PL"
-  alias(libs.plugins.kotest)
 
   id("conventions-multiplatform")
   id("publish")

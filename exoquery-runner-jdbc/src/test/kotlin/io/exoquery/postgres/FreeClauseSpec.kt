@@ -6,7 +6,6 @@ import io.exoquery.SqlQuery
 import io.exoquery.sql.PostgresDialect
 import io.exoquery.TestDatabases
 import io.exoquery.capture
-import io.exoquery.controller.jdbc.JdbcController
 import io.exoquery.controller.runActions
 import io.exoquery.joe
 import io.exoquery.people
@@ -15,7 +14,7 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 
-class FreeSpec : FreeSpec({
+class FreeClauseSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
   beforeEach {

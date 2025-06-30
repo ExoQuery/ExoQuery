@@ -6,6 +6,7 @@ import io.exoquery.printing.QueryFileKotlinMaker
 import io.exoquery.sql.Renderer
 import io.exoquery.xr.XR
 import io.kotest.core.spec.DslDrivenSpec
+import io.kotest.core.spec.style.FreeSpec
 import io.kotest.core.spec.style.scopes.FreeSpecRootScope
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestScope
@@ -36,7 +37,7 @@ abstract class GoldenSpecDynamic(
   val goldenQueries: GoldenQueryFile,
   val mode: Mode,
   body: io.exoquery.GoldenSpecDynamic.() -> Unit
-): DslDrivenSpec(), FreeSpecRootScope {
+): FreeSpec(body as Function1<FreeSpec, Unit>) {
 
   val outputQueries = mutableListOf<PrintableValue>()
 
