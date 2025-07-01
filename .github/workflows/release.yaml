@@ -4,30 +4,12 @@ on:
   workflow_dispatch
 
 jobs:
-  create_staging_repository:
-    runs-on: ubuntu-latest
-    name: Create staging repository
-    outputs:
-      repository_id: ${{ steps.create.outputs.repository_id }}
-    steps:
-      - id: create
-        uses: nexus-actions/create-nexus-staging-repo@main
-        with:
-          username: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
-          password: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEPASSWORD }}
-          staging_profile_id: ${{ secrets.SONATYPE_PROFILE_ID }}
-          # Defaults to the https://oss.sonatype.org, not https://s01.oss.sonatype.org
-          base_url: https://s01.oss.sonatype.org/service/local/
-          description: ${{ github.repository }}/${{ github.workflow }}#${{ github.run_number }}
-
   release:
-    needs: [ create_staging_repository ]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-latest, macOS-latest, windows-latest ]
     env:
-      SONATYPE_REPOSITORY_ID: ${{ needs.create_staging_repository.outputs.repository_id }}
       SONATYPE_USERNAME: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEPASSWORD }}
       NEW_SIGNING_KEY_ID_BASE64: ${{ secrets.NEW_SIGNING_KEY_ID_BASE64 }}
