@@ -19,6 +19,10 @@ annotation class CapturedFunction
 @Retention(AnnotationRetention.BINARY)
 annotation class WindowFun(val name: String)
 
+// Internal. Identifies which functions ExoQuery transformations have seen already
+@Retention(AnnotationRetention.BINARY)
+annotation class Seen
+
 @Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.LOCAL_VARIABLE)
 @Retention(AnnotationRetention.BINARY)
 annotation class CapturedDynamic

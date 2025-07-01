@@ -102,8 +102,8 @@ object ExtractorsDomain {
             call.isExternal() && expr.isSqlQuery() &&
                 (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedFunction>()
           }.then { _ -> true },
-          case(Ir.GetField[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true },
-          case(Ir.GetValue[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true }
+          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true },
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true }
         ) ?: false
         if (matches)
           Components1(expr)
@@ -117,8 +117,8 @@ object ExtractorsDomain {
     operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("DynamicExprCall", x) { expr: IrExpression ->
         val matches = expr.match(
-          case(Ir.GetField[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
-          case(Ir.GetValue[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
+          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
           case(Ir.Call[Is()]).thenIf { call ->
             (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedDynamic>()
           }.then { _ -> true }
@@ -135,8 +135,8 @@ object ExtractorsDomain {
     operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("DynamicActionCall", x) { expr: IrExpression ->
         val matches = expr.match(
-          case(Ir.GetField[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
-          case(Ir.GetValue[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
+          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
           case(Ir.Call[Is()]).thenIf { call ->
             (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedDynamic>()
           }.then { _ -> true }
@@ -213,6 +213,28 @@ object ExtractorsDomain {
             if (params.size != args.size)
               parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
             Components2(className, args.first())
+          }
+          else -> null
+        }
+      }
+  }
+
+  object CaseClassConstructorCall1PlusLenient {
+    context(CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, y: BP) =
+      customPattern2("CaseClassConstructorCall1Plus", x, y) { call: IrConstructorCall ->
+        when {
+          call.symbol.safeName == "<init>" && call.symbol.owner.regularParams.size >= 1 -> {
+            val className: String = call.type.classFqName?.asString() ?: call.type.dumpKotlinLike()
+            if (!call.symbol.owner.isPrimary)
+              null
+            else {
+              val params = call.symbol.owner.regularParams.map { it.name.asString() }.toList()
+              val args = call.regularArgs.toList()
+              if (params.size != args.size)
+                null
+              else
+                Components2(className, args.first())
+            }
           }
           else -> null
         }

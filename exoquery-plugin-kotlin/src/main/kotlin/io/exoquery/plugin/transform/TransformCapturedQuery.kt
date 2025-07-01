@@ -4,21 +4,23 @@ import io.decomat.Is
 import io.decomat.case
 import io.decomat.on
 import io.exoquery.parseError
+import io.exoquery.plugin.sourceOrDump
 import io.exoquery.plugin.trees.ExtractorsDomain
 import io.exoquery.plugin.trees.Parser
 import io.exoquery.plugin.trees.SqlQueryExpr
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
-class TransformCapturedQuery(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
+class TransformCapturedQuery(val superTransformer: VisitTransformExpressions, val calledFrom: String) : Transformer<IrCall>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureQuery[Is()].matchesAny(expression)
 
   // parent symbols are collected in the parent context
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun transform(expression: IrCall): IrExpression {
     val (xr, dynamics) = parseCapturedQuery(expression, superTransformer)
 
@@ -27,16 +29,27 @@ class TransformCapturedQuery(val superTransformer: VisitTransformExpressions) : 
       if (dynamics.noRuntimes()) {
         SqlQueryExpr.Uprootable.plantNewUprootable(xr, paramsExprModel)
       } else {
+        //parseError("----------------------- Pluckable Query Found -----------------------\n${expression.sourceOrDump()}\n---------------- Dynamics Were --------------------${dynamics.getAllRuntimesCollect().withIndex().map { (i, it) -> "$i) ${it.sourceOrDump()}" }.joinToString("\n")}")
         SqlQueryExpr.Uprootable.plantNewPluckable(xr, dynamics.makeRuntimes(), paramsExprModel)
       }
 
     //logger.error("========== Output: ==========\n${newSqlQuery.dumpKotlinLike()}")
 
+//    if (currentFile.fileEntry.name.toString().contains("CapFun")) {
+//      logger.error(
+//        """|--------------------------- TRANSFORM CAPTURE (${calledFrom}) From ---------------------------
+//           |${expression.dumpKotlinLike()}
+//           |------------------------- TRANSFORM CAPTURE (${calledFrom}) To -------------------------
+//           |${newSqlQuery.prepareForPrinting()?.dumpKotlinLike()}
+//        """.trimMargin()
+//      )
+//    }
+
     return newSqlQuery
   }
 
   companion object {
-    context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+    context(CX.Scope, CX.Builder, CX.Symbology)
     fun parseCapturedQuery(expression: IrCall, superTransformer: VisitTransformExpressions) = run {
       val bodyExpr =
         on(expression).match(

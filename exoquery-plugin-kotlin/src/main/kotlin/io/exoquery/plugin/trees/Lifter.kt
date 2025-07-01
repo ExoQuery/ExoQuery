@@ -4,6 +4,7 @@ package io.exoquery.plugin.trees
 
 import io.exoquery.*
 import io.exoquery.annotation.CapturedFunctionParamKinds
+import io.exoquery.annotation.Seen
 import io.exoquery.plugin.regularParams
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.call
@@ -230,6 +231,8 @@ class Lifter(val builderCtx: CX.Builder) {
     val variadic = irBuilder.irVararg(context.symbols.string.defaultType, types)
     return make<CapturedFunctionParamKinds>(variadic)
   }
+
+  fun makeSeenAnnotation(): IrConstructorCall = make<Seen>()
 }
 
 // Some top-level lift functions to use outside of the lifter

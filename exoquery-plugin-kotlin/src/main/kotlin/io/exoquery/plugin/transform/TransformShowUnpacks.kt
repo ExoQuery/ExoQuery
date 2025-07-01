@@ -16,16 +16,24 @@ import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.visitors.IrTransformer
 
+public fun String.prepareForPrintingAdHoc() =
+  this
+    .replace(Regex("unpackQuery\\(query = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackQuery(${unpackQuery(it).show()})" } ?: "<ERROR_UNPACKING>" }
+    .replace(Regex("unpackExpr\\(expr = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackExpr(${unpackExpr(it).show()})" } ?: "<ERROR_UNPACKING>" }
+    .replace(Regex("unpackAction\\(action = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackAction(${unpackAction(it).show()})" } ?: "<ERROR_UNPACKING>" }
+
+
 // Note that if you don't do `.deepCopyWithSymbols()` then the actual Transformer will modify the original tree adding the XR.show into the unpackQuery/unpackExpr calls
 // which will obviously fail. It is non-obvious where the DeclarationIrBuilder actually does this.
 context(CX.Scope)
-public fun IrElement.prepareForPrinting() =
+public fun IrElement.prepareForPrinting() = run {
+  // Need to do this or in some cases will get: kotlin.UninitializedPropertyAccessException: lateinit property parent has not been initialized
+  val owner = (this as? IrCall)?.symbol?.owner
+  val parentOrNull = try { owner?.parent } catch (e: Exception) { null }
   TransformShowUnpacks(this@Scope).visitElement(
-    this.deepCopyWithSymbols(
-      // Need to do this or in some cases will get: kotlin.UninitializedPropertyAccessException: lateinit property parent has not been initialized
-      (this as? IrCall)?.symbol?.owner?.parent
-    ), Unit
+    this.deepCopyWithSymbols(parentOrNull), Unit
   )
+}
 
 context(CX.Scope)
 fun IrElement.dumpKotlinLikePretty() = this.dumpKotlinLike() //prepareForPrinting().dumpKotlinLike()

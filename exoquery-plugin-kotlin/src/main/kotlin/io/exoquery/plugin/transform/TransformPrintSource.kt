@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.name.Name
 
 class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expression: IrCall): Boolean =
     expression.symbol.owner.hasAnnotation<ExoExtras>()
 
@@ -36,7 +36,7 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
     data class Single(val ir: IrExpression) : MatchedType
   }
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun transform(expression: IrCall): IrExpression =
     with(compileLogger) {
       with(makeLifter()) {
@@ -83,7 +83,7 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
     }
       ?: parseError("Parsing Failed\n================== The expresson was not a Global Function (with one argument-block): ==================\n" + expression.dumpKotlinLike() + "\n--------------------------\n" + expression.dumpSimple())
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   fun transformPrintSource(argsRaw: MatchedType, applySuperTransform: Boolean = true) = run {
     val args = when (argsRaw) {
       is MatchedType.Single ->

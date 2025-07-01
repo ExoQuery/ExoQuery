@@ -90,7 +90,10 @@ data class SymbolSet(
     // @CapturedFunction fun Person.firstAndLastName() = capture.expression { this.first() + this.last() }
     val extensionParam = capFun.symbol.owner.extensionParam?.let { listOf(it) } ?: emptyList()
     val dispatchParam = capFun.symbol.owner.dispatchReceiverParameter?.let { listOf(it) } ?: emptyList()
-    SymbolSet(symbols, this.capturedFunctionParameters + capFun.regularParams + extensionParam + dispatchParam)
+    SymbolSet(symbols, this.capturedFunctionParameters + capFun.regularParams + extensionParam) // don't include the dispatch param! (+ dispatchParam)
   }
 
+  companion object {
+    val empty = SymbolSet(emptyList())
+  }
 }

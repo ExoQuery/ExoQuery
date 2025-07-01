@@ -69,13 +69,27 @@ fun IrDeclarationReference.isCapturedFunctionArgument(): Boolean = run {
   symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it } != null
 }
 
+context(CX.Symbology)
+fun IrDeclarationReference.findCapturedFunctionArgument() = run {
+  val gv = this
+  symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it }
+}
+
 // To be used with IrGetValue and IrGetField
 context(CX.Scope)
 fun IrDeclarationReference.isCapturedVariable(): Boolean {
   tailrec fun rec(elem: IrElement, recurseCount: Int): Boolean =
     when {
       recurseCount == 0 -> false
+      // TODO if we want to not need captured-function-variables tracking in our symbology we can just check it here. Should think about whether to do it like this
+      //      note that every identifier needs to be checked this way already so I don't think this is a big performance hit
+      // If the owner is a captured-function then we immediately know it's a captured variable
+      //elem is IrFunction && elem.isCapturedFunction() -> true
+
+      // If the owner of the function is a ExoQuery captured-block (i.e. inside of a capture { ... } function of some sort) we immediately
+      // know the parent function was defined inside of the capture and is therefore a "captured variable"
       elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> true
+      // Otherwise we need to keep recursing up to the owner
       elem is IrFunction -> rec(elem.symbol.owner.parent, recurseCount - 1)
       elem is IrValueParameter -> rec(elem.symbol.owner.parent, recurseCount - 1)
       elem is IrVariable -> rec(elem.symbol.owner.parent, recurseCount - 1)

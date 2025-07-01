@@ -24,10 +24,9 @@ fun batchParamError(batchParamName: String) = "Detected an invalid use of the ba
 
 fun cannotUseForwardReferenceCapturedFunction(functionName: String, dumpedFunction: String) =
 """
-You have attempted to use a captured function that is defined after the place where it is being used.
-Kotlin allows this class and object functions but ExoQuery is more strict please define the `${functionName}` function.
-before the place where it is being used.
-(Internally this is known when Parameter-Kinds of a captured function scaffold are not found)
+You have attempted to use the captured function `${functionName}` that is defined after the place where it is being used.
+Normally this is not a problem because ExoQuery can work backwards and transform captured-functions but in this case it did not work.
+As a last-resort you can try to move the function to before the place where it is being used.
 
 ---------------- The following function needs to be moved: ----------------
 ${dumpedFunction}

@@ -15,11 +15,11 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
 class TransformCapturedAction(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureAction[Is.Companion()].matchesAny(expression)
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun transform(expression: IrCall): IrExpression {
     val (xr, dynamics) = parseCapturedAction(expression, superTransformer)
 
@@ -36,7 +36,7 @@ class TransformCapturedAction(val superTransformer: VisitTransformExpressions) :
   }
 
   companion object {
-    context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+    context(CX.Scope, CX.Builder, CX.Symbology)
     fun parseCapturedAction(expression: IrCall, superTransformer: VisitTransformExpressions) = run {
       val bodyExpr =
         on(expression).match(
@@ -54,11 +54,11 @@ class TransformCapturedAction(val superTransformer: VisitTransformExpressions) :
 }
 
 class TransformCapturedBatchAction(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureBatchAction[Is.Companion()].matchesAny(expression)
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun transform(expression: IrCall): IrExpression {
     val (xr, dynamics, batchCollection) = parseCapturedBatchAction(expression, superTransformer)
 
@@ -75,7 +75,7 @@ class TransformCapturedBatchAction(val superTransformer: VisitTransformExpressio
   }
 
   companion object {
-    context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+    context(CX.Scope, CX.Builder, CX.Symbology)
     fun parseCapturedBatchAction(expression: IrCall, superTransformer: VisitTransformExpressions) = run {
       val (batchData, bodyExpr) =
         on(expression).match(

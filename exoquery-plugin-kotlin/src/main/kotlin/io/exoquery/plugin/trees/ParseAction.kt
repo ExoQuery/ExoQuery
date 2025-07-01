@@ -41,7 +41,7 @@ object ParseAction {
       case(SqlActionExpr.Uprootable[Is()]).thenThis { uprootable ->
         val sqlActionIr = this
         // Add all binds from the found SqlQuery instance, this will be truned into something like `currLifts + SqlQuery.lifts` late
-        binds.addAllParams(sqlActionIr)
+        binds.addInheritedParams(sqlActionIr)
         // Then unpack and return the XR
         uprootable.unpackOrErrorXR().successOrParseError(sqlActionIr)
       },

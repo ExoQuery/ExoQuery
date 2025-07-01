@@ -53,6 +53,7 @@ inline fun <T, R : T> R.applyIf(`if`: Boolean, body: R.() -> T): T =
   if (`if`) body() else this
 
 open class RenderIrElementVisitorSimple(
+  val color: Boolean,
   private val options: DumpIrTreeOptions = DumpIrTreeOptions(),
   private var isUsedForIrDump: Boolean = false,
 ) : IrVisitor<String, Nothing?>() {
@@ -476,7 +477,13 @@ open class RenderIrElementVisitorSimple(
       expression.dispatchReceiver?.let { "dispatch=${it.type.classFqName?.asString()}" }
         ?: (expression.extensionArg?.let { "extension=${it.type.classFqName?.asString()}" })
         ?: "<root:${expression.symbol.fullName}>"
-    return "${Green("[IrCall]")} ${Red(expression.symbol.renderReference())} - ${receiver}"
+
+
+    return if (color) {
+      "${Green("[IrCall]")} ${Red(expression.symbol.renderReference())} - ${receiver}"
+    } else {
+      "[IrCall] ${expression.symbol.renderReference()}"
+    }
   }
 
   private fun IrCall.renderSuperQualifier(): String =
@@ -509,7 +516,7 @@ open class RenderIrElementVisitorSimple(
         "'${expression.symbol.renderReference()}' type=${expression.type.render()} origin=${expression.origin}"
 
   override fun visitGetField(expression: IrGetField, data: Nothing?): String =
-    "[IrSetField] ${expression.symbol.renderReference()}:${expression.type.render()} (orig=${expression.origin})"
+    "[IrGetField] ${expression.symbol.renderReference()}:${expression.type.render()} (orig=${expression.origin})"
 
   override fun visitSetField(expression: IrSetField, data: Nothing?): String = buildTrimEnd {
     append("[IrSetField]${expression.renderOffsets(options)} '${expression.symbol.renderReference()}' type=${expression.type.render()}")
@@ -782,8 +789,8 @@ private fun IrDeclaration.renderDeclarationParentFqn(sb: StringBuilder, options:
   }
 }
 
-fun IrType.render(options: DumpIrTreeOptions = DumpIrTreeOptions()) =
-  renderTypeWithRenderer(RenderIrElementVisitorSimple(options), options)
+fun IrType.render(color: Boolean, options: DumpIrTreeOptions = DumpIrTreeOptions()) =
+  renderTypeWithRenderer(RenderIrElementVisitorSimple(color, options), options)
 
 fun IrSimpleType.render(options: DumpIrTreeOptions = DumpIrTreeOptions()) = (this as IrType).render(options)
 

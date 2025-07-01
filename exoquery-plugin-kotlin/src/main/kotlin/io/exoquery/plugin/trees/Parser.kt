@@ -9,6 +9,7 @@ import io.exoquery.annotation.DslNestingIgnore
 import io.exoquery.parseError
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX
+import io.exoquery.plugin.transform.prepareForPrintingAdHoc
 import io.exoquery.xr.*
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.*
@@ -34,11 +35,14 @@ object Parser {
   context(CX.Scope, CX.Symbology, CX.Parsing) fun parseFunctionBlockBody(blockBody: IrBlockBody): Pair<XR.Expression, DynamicsAccum> =
     ParseExpression.parseFunctionBlockBody(blockBody) to binds
 
-  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseQuery(expr: IrExpression): Pair<XR.Query, DynamicsAccum> =
+  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseQuery(expr: IrExpression): Pair<XR.Query, DynamicsAccum> = run {
+    //logger.error("------------------- Parsing Query From -------------------\n${expr.dumpKotlinLike().prepareForPrintingAdHoc()}")
     ParseQuery.parse(expr) to binds
+  }
 
   context(CX.Scope, CX.Symbology, CX.Parsing) fun parseQueryFromBlock(expr: IrBlockBody): Pair<XR.Query, DynamicsAccum> =
     run {
+      //logger.error("------------------- Parsing Query From Block -------------------\n${expr.dumpKotlinLike().prepareForPrintingAdHoc()}")
       val parsedQuery =
         on(expr).match<XR.Query>(
           case(Ir.BlockBody.ReturnOnly[Is()]).then { ParseQuery.parse(it) }

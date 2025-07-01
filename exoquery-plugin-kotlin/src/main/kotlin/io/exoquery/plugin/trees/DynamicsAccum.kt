@@ -1,6 +1,8 @@
 package io.exoquery.plugin.trees
 
 import io.exoquery.BID
+import io.exoquery.plugin.sourceOrDump
+import io.exoquery.plugin.transform.CX
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
 class DynamicsAccum {
@@ -8,34 +10,34 @@ class DynamicsAccum {
   private val runtimesCollect = mutableListOf<Pair<BID, IrExpression>>()
 
   // Other instances of SqlExpression or SqlQuery (i.e. from other uprootable SqlExpression instances that we need to compose)
-  private val allRuntimesCollect = mutableListOf<IrExpression>()
+  private val inheritedRuntimesCollect = mutableListOf<IrExpression>()
 
   // instances of Params (maybe think about something more typed here, or check that the IrExpresssion is a Params when adding)
   private val paramsCollect = mutableListOf<ParamBind>()
 
   // Other instances of SqlExpression or SqlQuery (i.e. from other uprootable SqlExpression instances that we need to compose)
-  private val allParamsCollect = mutableListOf<IrExpression>()
+  private val inheritedParamsCollect = mutableListOf<IrExpression>()
 
-  fun makeRuntimes() = RuntimesExpr(runtimesCollect, allParamsCollect)
-  fun makeParams() = ParamsExpr(paramsCollect, allParamsCollect)
+  fun makeRuntimes() = RuntimesExpr(runtimesCollect, inheritedParamsCollect)
+  fun makeParams() = ParamsExpr(paramsCollect, inheritedParamsCollect)
 
   fun getParamsCollect() = paramsCollect.toList()
-  fun getAllParamsCollect() = allParamsCollect.toList()
+  fun getInheritedParamsCollect() = inheritedParamsCollect.toList()
 
-  // TODO have a similar technique for lifts
+  fun getAllRuntimesCollect() = runtimesCollect.map { it.second }.toList() + inheritedRuntimesCollect.toList()
 
-  fun noRuntimes(): Boolean = runtimesCollect.isEmpty()
+  fun noRuntimes(): Boolean = runtimesCollect.isEmpty() && inheritedRuntimesCollect.isEmpty()
 
   fun addRuntime(bindId: BID, bind: IrExpression) {
     runtimesCollect.add(bindId to bind)
   }
 
-  fun addAllRuntimes(sqlExpressionInstance: IrExpression) {
-    allRuntimesCollect.add(sqlExpressionInstance)
+  fun addInheritedRuntimes(sqlExpressionInstance: IrExpression) {
+    inheritedRuntimesCollect.add(sqlExpressionInstance)
   }
 
-  fun addAllParams(sqlExpressionInstance: IrExpression) {
-    allParamsCollect.add(sqlExpressionInstance)
+  fun addInheritedParams(sqlExpressionInstance: IrExpression) {
+    inheritedParamsCollect.add(sqlExpressionInstance)
   }
 
   fun addParam(bindId: BID, value: IrExpression, paramType: ParamBind.Type) {
@@ -48,12 +50,12 @@ class DynamicsAccum {
     val newBinds = DynamicsAccum()
     newBinds.runtimesCollect.addAll(this.runtimesCollect)
     newBinds.runtimesCollect.addAll(other.runtimesCollect)
-    newBinds.allRuntimesCollect.addAll(this.allRuntimesCollect)
-    newBinds.allRuntimesCollect.addAll(other.allRuntimesCollect)
+    newBinds.inheritedRuntimesCollect.addAll(this.inheritedRuntimesCollect)
+    newBinds.inheritedRuntimesCollect.addAll(other.inheritedRuntimesCollect)
     newBinds.paramsCollect.addAll(this.paramsCollect)
     newBinds.paramsCollect.addAll(other.paramsCollect)
-    newBinds.allParamsCollect.addAll(this.allParamsCollect)
-    newBinds.allParamsCollect.addAll(other.allParamsCollect)
+    newBinds.inheritedParamsCollect.addAll(this.inheritedParamsCollect)
+    newBinds.inheritedParamsCollect.addAll(other.inheritedParamsCollect)
     return newBinds
   }
 

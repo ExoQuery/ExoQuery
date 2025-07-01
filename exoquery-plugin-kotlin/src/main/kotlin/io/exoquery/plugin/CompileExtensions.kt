@@ -4,6 +4,8 @@ import io.decomat.Is
 import io.decomat.case
 import io.decomat.match
 import io.exoquery.*
+import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.CapturedFunctionParamKinds
 import io.exoquery.annotation.ChangeReciever
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.Caller
@@ -378,6 +380,12 @@ inline fun <reified T> IrElement.hasAnnotation() =
     else -> false
   }
 
+fun IrFunction.isCapturedFunction() =
+  this.hasAnnotation<CapturedFunction>()
+
+fun IrFunction.isVirginCapturedFunction() =
+  this.hasAnnotation<CapturedFunction>() && !this.hasAnnotation<CapturedFunctionParamKinds>()
+
 inline fun IrElement.hasAnnotation(fqName: FqName) =
   when (this) {
     is IrAnnotationContainer ->
@@ -481,6 +489,13 @@ fun IrCall.caller() =
     Caller.Extension(it)
   } ?: this.dispatchReceiver?.let {
     Caller.Dispatch(it)
+  }
+
+context(CX.Scope)
+fun IrElement.sourceOrDump() =
+  this.source() ?: run {
+    logger.warn("[ExoQuery-WARN] Could not get the source of the element, dumping it instead: ${this.dumpKotlinLike()}")
+    this.dumpKotlinLike()
   }
 
 // Best-effort to get the source of the file

@@ -13,13 +13,11 @@ import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.containsBatchParam
 import io.exoquery.plugin.transform.isBatchParam
+import io.exoquery.plugin.transform.prepareForPrintingAdHoc
 import io.exoquery.xr.*
-import org.jetbrains.kotlin.backend.common.serialization.proto.IrGetObject
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.types.isNullableString
-import org.jetbrains.kotlin.ir.types.isString
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
@@ -164,7 +162,8 @@ object ParseExpression {
         XR.QueryToExpr(ParseQuery.parse(expr), expr.loc)
       },
 
-      case(ExtractorsDomain.CaseClassConstructorCall[Is()]).then { data ->
+      case(ExtractorsDomain.CaseClassConstructorCall[Is()]).thenThis { data ->
+        if (this.symbol.safeName == "SqlExpression" || this.symbol.safeName == "SqlQuery") parseError("Illegal state, processing ${this.symbol.safeName} as a case class constructor")
         XR.Product(data.className, data.fields.map { (name, valueOpt) -> name to (valueOpt?.let { parse(it) } ?: XR.Const.Null(expr.loc)) }, expr.loc)
       },
 
@@ -231,13 +230,27 @@ object ParseExpression {
 
         val varsUsed = IrTraversals.collectGetValue(paramValue)
         varsUsed.forEach { varUsed ->
-          if (varUsed.isInternal() && !varUsed.isCurrentlyActiveBatchParam())
+          varUsed.isInternal()
+
+          val (isCapturedVariable, isCapturedVariableReason) = varUsed.isCapturedVariable() to "The variable is captured"
+          // TODO slight improvement just use the 'find' and based the result from that
+          val (isCapturedFunctionArgument, isCapturedFunctionArgumentReason) = varUsed.isCapturedFunctionArgument() to "The variable is a captured function argument (owned by ${varUsed.findCapturedFunctionArgument()?.symbol?.safeName})"
+          val isBatchParam = varUsed.isCurrentlyActiveBatchParam()
+
+          val reason =
+            if (isCapturedVariable) isCapturedVariableReason
+            else if (isCapturedFunctionArgument) isCapturedFunctionArgumentReason
+            else null
+
+          if (!isBatchParam && (isCapturedVariable || isCapturedFunctionArgument)) {
             parseError(
               """Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the capture-block. 
                 |The `param` function is only used to bring external variables into the capture (i.e. runtime-variables that are defined outside of it). 
-                |If you want to use the `${varUsed.symbol.safeName}` symbol inside this captured block, you should be able to use it directly.""".trimMargin(),
+                |If you want to use the `${varUsed.symbol.safeName}` symbol inside this captured block, you should be able to use it directly.
+                |(reason: ${reason})""".trimMargin(),
               varUsed
             )
+          }
         }
 
         val (paramBind, paramType) =
@@ -248,6 +261,10 @@ object ParseExpression {
           }
 
         binds.addParam(bid, paramValue, paramBind)
+
+        if (paramValue.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
+          parseError("------------------------------- HERE in ParseExpression ------------------------------------\n${paramValue.dumpKotlinLike().prepareForPrintingAdHoc()}")
+
         XR.TagForParam(bid, paramType, null, this.type.toClassIdXR(), TypeParser.of(this), paramValue.loc)
       },
 
@@ -327,6 +344,10 @@ object ParseExpression {
 
         val bid = BID.Companion.new()
         binds.addParam(bid, paramValue, paramBindType)
+
+        if (paramValue.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
+          parseError("------------------------------- HERE in ParseExpression 2 ------------------------------------\n${paramValue.dumpKotlinLike().prepareForPrintingAdHoc()}")
+
         XR.TagForParam(bid, XR.ParamType.Multi, null, this.type.toClassIdXR(), TypeParser.ofFirstArgOfReturnTypeOf(this), paramValue.loc)
       },
 
@@ -360,7 +381,11 @@ object ParseExpression {
         sqlExprIr.match(
           case(SqlExpressionExpr.Uprootable[Is()]).then { uprootable ->
             // Add all binds from the found SqlExpression instance, this will be truned into something like `currLifts + SqlExpression.lifts` late
-            binds.addAllParams(sqlExprIr)
+            binds.addInheritedParams(sqlExprIr)
+
+            if (sqlExprIr.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
+              parseError("------------------------------- HERE in ParseExpression ------------------------------------\n${sqlExprIr.dumpKotlinLike().prepareForPrintingAdHoc()}")
+
             // Then unpack and return the XR
             uprootable.unpackOrErrorXR().successOrParseError(sqlExprIr)
           },
@@ -433,7 +458,7 @@ object ParseExpression {
       },
 
       // Other situations where you might have an identifier which is not an SqlVar e.g. with variable bindings in a Block (inside an expression)
-      case(Ir.GetValue[Is()]).thenIfThis { this.isCapturedVariable() || this.isCapturedFunctionArgument() }.thenThis { sym ->
+      case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isCapturedVariable() || this.isCapturedFunctionArgument() }.thenThis { sym ->
         if (this.isBatchParam()) parseError(Messages.batchParamError(), expr)
         XR.Ident(sym.sanitizedSymbolName(), TypeParser.of(this), this.locationXR()) // this.symbol.owner.type
       },
@@ -540,7 +565,11 @@ object ParseExpression {
         },
         case(SqlExpressionExpr.Uprootable[Is()]).then { uprootable ->
           // Add all binds from the found SqlExpression instance, this will be truned into something like `currLifts + SqlExpression.lifts` late
-          binds.addAllParams(sqlExprArg)
+          binds.addInheritedParams(sqlExprArg)
+
+          if (sqlExprArg.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
+            parseError("------------------------------- HERE in ParseExpression ------------------------------------\n${sqlExprArg.dumpKotlinLike().prepareForPrintingAdHoc()}")
+
           // Then unpack and return the XR
           uprootable.unpackOrErrorXR().successOrParseError(sqlExprArg)
         },

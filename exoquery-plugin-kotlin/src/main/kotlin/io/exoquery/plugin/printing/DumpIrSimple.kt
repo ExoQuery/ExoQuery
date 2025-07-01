@@ -20,11 +20,11 @@ import org.jetbrains.kotlin.utils.addToStdlib.applyIf
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
 import kotlin.text.compareTo
 
-fun IrElement.dumpSimple(normalizeNames: Boolean = false, stableOrder: Boolean = false): String =
+fun IrElement.dumpSimple(color: Boolean = true, normalizeNames: Boolean = false, stableOrder: Boolean = false): String =
   try {
     StringBuilder().also { sb ->
       accept(
-        DumpIrTreeVisitor(sb,
+        DumpIrTreeVisitor(color, sb,
           DumpIrTreeOptions(normalizeNames, stableOrder)
         ), ""
       )
@@ -33,10 +33,10 @@ fun IrElement.dumpSimple(normalizeNames: Boolean = false, stableOrder: Boolean =
     "(Full dump is not available: ${e.message})\n" + render()
   }
 
-fun IrFile.dumpTreesFromLineNumber(lineNumber: Int, normalizeNames: Boolean = false): String {
+fun IrFile.dumpTreesFromLineNumber(color: Boolean, lineNumber: Int, normalizeNames: Boolean = false): String {
   if (shouldSkipDump()) return ""
   val sb = StringBuilder()
-  accept(DumpTreeFromSourceLineVisitor(fileEntry, lineNumber, sb, DumpIrTreeOptions(normalizeNames)), null)
+  accept(DumpTreeFromSourceLineVisitor(color, fileEntry, lineNumber, sb, DumpIrTreeOptions(normalizeNames)), null)
   return sb.toString()
 }
 
@@ -81,12 +81,13 @@ internal fun List<IrDeclaration>.stableOrdered(): List<IrDeclaration> {
 }
 
 class DumpIrTreeVisitor(
+  color: Boolean,
   out: Appendable,
   private val options: DumpIrTreeOptions = DumpIrTreeOptions(),
 ) : IrVisitor<Unit, String>() {
 
   private val printer = Printer(out, "  ")
-  private val elementRenderer = RenderIrElementVisitorSimple(options, isUsedForIrDump = true)
+  private val elementRenderer = RenderIrElementVisitorSimple(color, options, isUsedForIrDump = true)
   private fun IrType.render() = elementRenderer.renderType(this)
 
   private fun List<IrDeclaration>.ordered(): List<IrDeclaration> = if (options.stableOrder) stableOrdered() else this
@@ -448,12 +449,13 @@ class DumpIrTreeVisitor(
 }
 
 class DumpTreeFromSourceLineVisitor(
+  val color: Boolean,
   val fileEntry: IrFileEntry,
   private val lineNumber: Int,
   out: Appendable,
   options: DumpIrTreeOptions,
 ) : IrVisitorVoid() {
-  private val dumper = DumpIrTreeVisitor(out, options)
+  private val dumper = DumpIrTreeVisitor(color, out, options)
 
   override fun visitElement(element: IrElement) {
     if (fileEntry.getLineNumber(element.startOffset) == lineNumber) {

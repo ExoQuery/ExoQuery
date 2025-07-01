@@ -9,6 +9,7 @@ import io.exoquery.plugin.transform.*
 import io.exoquery.xr.EncodingXR
 import io.exoquery.xr.XR
 import io.exoquery.xr.encode
+import io.exoquery.xr.of
 import kotlinx.serialization.decodeFromHexString
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.irGetObject
@@ -315,8 +316,25 @@ context(CX.Scope, CX.Builder) private fun RuntimeEmpty(): IrExpression {
   return runtimesCompanionRef.callDispatch("Empty")()
 }
 
+object ContainerExpr {
+  object Pluckable {
+    context (CX.Scope) operator fun <AP : Pattern<IrExpression>> get(x: AP) =
+      customPattern1("SqlExpressionExpr.Pluckable", x) { it: IrExpression ->
+        it.match(
+          case(ExtractorsDomain.CaseClassConstructorCall1PlusLenient[
+            Is.of(PT.io_exoquery_SqlQuery, PT.io_exoquery_SqlExpression, PT.io_exoquery_SqlAction, PT.io_exoquery_SqlBatchAction),
+            Is()
+          ])
+            .thenThis { _, _ ->
+              Components1(this)
+            }
+        )
+      }
+  }
+}
+
 object SqlExpressionExpr {
-  data class Uprootable(val packedXR: String) {
+  data class Uprootable(val packedXR: String): UprootableExpr {
     // This is an expensive operation so put it behind a lazy value that the user will invoke only if needed
     fun unpackOrErrorXR(): UnpackResult<XR.Expression> =
       try {
@@ -335,7 +353,7 @@ object SqlExpressionExpr {
     // but the varaibles referenced in the params might refer to local things that are no longer
     // avaiable as well keep inlining the SqlExpression instances
     context(CX.Scope, CX.Builder)
-    fun replant(paramsFrom: IrExpression): IrExpression {
+    override fun replant(paramsFrom: IrExpression): IrExpression {
       val strExpr = call(PT.io_exoquery_unpackExpr).invoke(builder.irString(packedXR))
       // TODO we know at this point Runtimes is Runtimes.Empty so need to add that when we add that variable
       //error(
@@ -397,11 +415,16 @@ sealed interface UnpackResult<out T> {
   }
 }
 
+sealed interface UprootableExpr {
+  context(CX.Scope, CX.Builder)
+  fun replant(paramsFrom: IrExpression): IrExpression
+}
+
 // This is effectively a carbon-copy of the SqlExpressionExpr with some different names. We can abstract out many
 // common pieces of this code into a shared Base-class or shared functions but for only two ContainerOfXR types it is
 // not worth it. Need to keep an eye on this as we add more ContainerOfXR types
 object SqlQueryExpr {
-  data class Uprootable(val packedXR: String) {
+  data class Uprootable(val packedXR: String): UprootableExpr {
 
     fun unpackOrErrorXR(): UnpackResult<XR.Query> =
       try {
@@ -411,7 +434,7 @@ object SqlQueryExpr {
       }
 
     context(CX.Scope, CX.Builder)
-    fun replant(paramsFrom: IrExpression): IrExpression {
+    override fun replant(paramsFrom: IrExpression): IrExpression {
       val strExpr = call(PT.io_exoquery_unpackQuery).invoke(builder.irString(packedXR))
       val callParams = paramsFrom.callDispatch("params").invoke()
       val make = makeClassFromString(PT.io_exoquery_SqlQuery, listOf(strExpr, RuntimeEmpty(), callParams))
@@ -454,7 +477,7 @@ object SqlQueryExpr {
 
 
 object SqlActionExpr {
-  data class Uprootable(val packedXR: String) {
+  data class Uprootable(val packedXR: String): UprootableExpr {
     fun unpackOrErrorXR(): UnpackResult<XR.Action> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Action>(packedXR))
@@ -463,7 +486,7 @@ object SqlActionExpr {
       }
 
     context(CX.Scope, CX.Builder)
-    fun replant(paramsFrom: IrExpression): IrExpression {
+    override fun replant(paramsFrom: IrExpression): IrExpression {
       val strExpr = call(PT.io_exoquery_unpackAction).invoke(builder.irString(packedXR))
       val callParams = paramsFrom.callDispatch("params").invoke()
       val inputType = paramsFrom.type.simpleTypeArgs[0]
@@ -507,7 +530,7 @@ object SqlActionExpr {
 }
 
 object SqlBatchActionExpr {
-  data class Uprootable(val packedXR: String) {
+  data class Uprootable(val packedXR: String): UprootableExpr {
     fun unpackOrErrorXR(): UnpackResult<XR.Batching> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Batching>(packedXR))
@@ -516,7 +539,7 @@ object SqlBatchActionExpr {
       }
 
     context(CX.Scope, CX.Builder)
-    fun replant(paramsFrom: IrExpression): IrExpression {
+    override fun replant(paramsFrom: IrExpression): IrExpression {
       val strExpr = call(PT.io_exoquery_unpackBatchAction).invoke(builder.irString(packedXR))
       val callParams = paramsFrom.callDispatch("params").invoke()
       val batchParam = paramsFrom.callDispatch("batchParam").invoke()

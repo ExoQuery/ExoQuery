@@ -1,10 +1,16 @@
 package io.exoquery.plugin.transform
 
+import io.decomat.Is
 import io.exoquery.ParseError
 import io.exoquery.TransformXrError
 import io.exoquery.config.ExoCompileOptions
 import io.exoquery.plugin.location
 import io.exoquery.plugin.logging.CompileLogger
+import io.exoquery.plugin.trees.ContainerExpr
+import io.exoquery.plugin.trees.SqlActionExpr
+import io.exoquery.plugin.trees.SqlBatchActionExpr
+import io.exoquery.plugin.trees.SqlExpressionExpr
+import io.exoquery.plugin.trees.SqlQueryExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocationWithRange
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
@@ -18,11 +24,16 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 
 data class VisitorContext(val symbolSet: SymbolSet, val queriesAccum: FileQueryAccum) {
   fun withNewAccum() = VisitorContext(symbolSet, FileQueryAccum.empty())
   fun withNewFileAccum(accum: FileQueryAccum) = VisitorContext(symbolSet, accum)
+
+  companion object {
+    fun empty() = VisitorContext(SymbolSet.empty, FileQueryAccum.empty())
+  }
 }
 
 class VisitTransformExpressions(
@@ -46,13 +57,20 @@ class VisitTransformExpressions(
   )
 
   context (CX.Symbology, CX.QueryAccum)
+  fun recurseWithAccum(expression: IrExpression): IrExpression =
+    when (expression) {
+      is IrCall -> visitCall(expression, makeVisitorContext()) as IrExpression
+      else -> visitExpression(expression, makeVisitorContext()) as IrExpression
+    }
+
+  context (CX.Symbology)
   fun recurse(expression: IrExpression): IrExpression =
     when (expression) {
       is IrCall -> visitCall(expression, makeVisitorContext()) as IrExpression
       else -> visitExpression(expression, makeVisitorContext()) as IrExpression
     }
 
-  context (CX.Symbology, CX.QueryAccum)
+  context (CX.Symbology)
   fun recurse(expression: IrBlockBody): IrBlockBody =
     visitBody(expression, makeVisitorContext()) as IrBlockBody
 
@@ -164,16 +182,22 @@ class VisitTransformExpressions(
   override fun visitExpression(expression: IrExpression, data: VisitorContext): IrExpression {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
     val scopeContext = makeScope(expression, scopeOwner, currentDeclarationParent)
+
+    // We should not be transforming containers that have already been transformed. TODO make them all in to one check and don't check if they're case-class-constructor multiple times!
+    with (scopeContext) {
+      if (ContainerExpr.Pluckable[Is()].matchesAny(expression)) return expression
+    }
+
     val builderContext = CX.Builder(scopeContext)
-    val transformProjectCapture = TransformProjectCapture(this)
-    val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this)
+    val transformProjectCapture = TransformProjectCapture2(this)
+    //val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this, "[ExoQuery: VisitTransformExpressions-VisitExpr]")
     val runner = ScopedRunner(scopeContext, builderContext, data)
 
     return runner.run(expression) {
       when {
         // If it is a call that needs to be scaffolded need to recurse into it as a priority (it will call superTransformer recursively and transformProjectCapture will be called on SqlQuery/SqlExpression clauses inside)
-        expression is IrCall && transformScaffoldAnnotatedFunctionCall.matches(expression) ->
-          transformScaffoldAnnotatedFunctionCall.transform(expression)
+        //expression is IrCall && transformScaffoldAnnotatedFunctionCall.matches(expression) ->
+        //  transformScaffoldAnnotatedFunctionCall.transform(expression)
 
         transformProjectCapture.matches(expression) ->
           transformProjectCapture.transform(expression) ?: run {
@@ -189,25 +213,42 @@ class VisitTransformExpressions(
   }
 
   override fun visitCall(expression: IrCall, data: VisitorContext): IrElement {
-
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
     val scopeCtx = makeScope(expression, scopeOwner, currentDeclarationParent)
     val stack = RuntimeException()
+
+
+
+    with (scopeCtx) {
+      // We should not be transforming containers that have already been transformed. TODO make them all in to one check and don't check if they're case-class-constructor multiple times!
+      if (ContainerExpr.Pluckable[Is()].matchesAny(expression)) return expression
+      // TODO add Expr, Action, BatchAction constructors so as to not recurse into them
+    }
 
     val builderContext = CX.Builder(scopeCtx)
 
     val transformPrint = TransformPrintSource(this)
     // TODO just for Expression capture or also for Query capture? Probably both
     val transformCapture = TransformCapturedExpression(this)
-    val transformCaptureQuery = TransformCapturedQuery(this)
+    val transformCaptureQuery = TransformCapturedQuery(this, "[ExoQuery: VisitTransformExpressions-VisitCall]")
     val transformSelectClause = TransformSelectClause(this)
     val transformCaptureAction = TransformCapturedAction(this)
     val transformCaptureBatchAction = TransformCapturedBatchAction(this)
     // I.e. tranforms the SqlQuery.build call (i.e. the SqlQuery should have already been transformed into an Uprootable before recursing "out" to the .build call
     // or the .build call should have recursed down into it (because it calls the superTransformer on the reciever of the .build call)
     val transformCompileQuery = TransformCompileQuery(this)
-    val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this)
+    val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this, "[ExoQuery: VisitTransformExpressions-VisitCall]")
     val runner = ScopedRunner(scopeCtx, builderContext, data)
+
+    // Can possibly call the TransformProjectCapture2 here
+    // val transformProjectCapture = TransformProjectCapture2(this)
+    //val possiblyProjected =
+    //  runner.run(expression) {
+    //    if (transformProjectCapture.matches(expression))
+    //      transformProjectCapture.transform(expression) ?: expression
+    //    else
+    //      expression
+    //  }
 
     return runner.run(expression) {
       when {

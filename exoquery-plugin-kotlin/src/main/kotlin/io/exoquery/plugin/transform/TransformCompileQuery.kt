@@ -5,6 +5,7 @@ import io.decomat.*
 import io.exoquery.*
 import io.exoquery.annotation.ExoBuildFunctionLabel
 import io.exoquery.plugin.*
+import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.trees.ExtractorsDomain.SqlBuildFunction
 import io.exoquery.plugin.trees.Lifter
 import io.exoquery.plugin.trees.SqlActionExpr
@@ -34,9 +35,9 @@ import kotlin.reflect.full.isSuperclassOf
 import kotlin.time.measureTimedValue
 
 
-class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
+class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : TransformerWithQueryAccum<IrCall>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expr: IrCall): Boolean =
     SqlBuildFunction.matches(expr)
 
@@ -63,6 +64,17 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
 
   context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
   override fun transform(expr: IrCall): IrExpression {
+
+    // Interesting IDEA. If the a file has a particular annotaiton, in the visitor before leaving it throw and error with the contents
+    //if (currentFile.fileEntry.name.toString().contains("CapFun")) {
+    //  logger.error(
+    //    """|--------------------------- Owner Before ---------------------------
+    //           |${currentFile.dumpKotlinLike().prepareForPrintingAdHoc()}
+    //           |--------------------------- Raw Before ---------------------------
+    //           |${currentFile.dumpSimple().prepareForPrintingAdHoc()}
+    //        """.trimMargin()
+    //  )
+    //}
 
     fun extractDialectConstructor(dialectType: IrType) = run {
       // get the empty-args constructor from the dialect-type, if it doesn''t we need to know about it. If it does exist we'll use it if we need to use a runtime query

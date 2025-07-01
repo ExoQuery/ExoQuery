@@ -12,6 +12,7 @@ import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.isBatchParam
 import io.exoquery.plugin.transform.prepareForPrinting
+import io.exoquery.plugin.transform.prepareForPrintingAdHoc
 import io.exoquery.xr.BetaReduction
 import io.exoquery.xr.XR
 import io.exoquery.xr.XRType
@@ -68,7 +69,10 @@ object ParseQuery {
                 case(SqlQueryExpr.Uprootable[Is()]).thenThis { uprootable ->
                   val sqlQueryIr = this
                   // Add all binds from the found SqlQuery instance, this will be truned into something like `currLifts + SqlQuery.lifts` late
-                  binds.addAllParams(sqlQueryIr)
+                  if (sqlQueryIr.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
+                    parseError("------------------------------- HERE NESTED STRANGE ------------------------------------\n${sqlQueryIr.dumpKotlinLike().prepareForPrintingAdHoc()}")
+
+                  binds.addInheritedParams(sqlQueryIr)
                   // Then unpack and return the XR
                   uprootable.unpackOrErrorXR().successOrParseError(sqlQueryArg)
                 },
@@ -101,7 +105,11 @@ object ParseQuery {
             XR.FunctionApply(warppedQueryCall, parsedArgs, expr.loc)
           },
 
-          case(Ir.GetValue[Is()]).thenIfThis { this.isCapturedVariable() || this.isCapturedFunctionArgument() }.thenThis { sym ->
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isCapturedVariable() || this.isCapturedFunctionArgument() }.thenThis { sym ->
+            val elem = this.symbol.owner
+            if (elem is IrFunction && elem.isVirginCapturedFunction())
+              parseError("The function `${elem.symbol.safeName}` is a captured function that has not been transformed:\n${elem.dumpKotlinLike()}", this)
+
             if (this.isBatchParam()) parseError(Messages.UsingBatchParam, expr)
             XR.Ident(sym.sanitizedSymbolName(), TypeParser.of(this), this.locationXR())
           },
@@ -112,8 +120,11 @@ object ParseQuery {
           //      and how to differentitate it from something that we want to capture. Perhaps we would need some kind of "query-method whitelist"
           case(SqlQueryExpr.Uprootable[Is()]).thenThis { uprootable ->
             val sqlQueryIr = this
+            if (sqlQueryIr.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
+              parseError("------------------------------- HERE ------------------------------------\n${sqlQueryIr.dumpKotlinLike().prepareForPrintingAdHoc()}")
+
             // Add all binds from the found SqlQuery instance, this will be truned into something like `currLifts + SqlQuery.lifts` late
-            binds.addAllParams(sqlQueryIr)
+            binds.addInheritedParams(sqlQueryIr)
             // Then unpack and return the XR
             uprootable.unpackOrErrorXR().successOrParseError(sqlQueryIr)
           },

@@ -324,18 +324,31 @@ object Ir {
   }
 
   object GetValue {
-    context (CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
+    context (CX.Scope) operator fun get(value: Pattern0<IrGetValue>) =
       customPattern1("Ir.GetValue", value) { it: IrGetValue ->
-        it.dump()
-        Components1(it.symbol)
+        Components1(it)
       }
+
+    object Symbol {
+      context (CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
+        customPattern1("Ir.GetValue.Symbol", value) { it: IrGetValue ->
+          Components1(it.symbol)
+        }
+    }
   }
 
   object GetField {
-    context (CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
+    context (CX.Scope) operator fun get(value: Pattern0<IrGetField>) =
       customPattern1("Ir.GetField", value) { it: IrGetField ->
-        Components1(it.symbol)
+        Components1(it)
       }
+
+    object Symbol {
+      context (CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
+        customPattern1("Ir.GetField.Symbol", value) { it: IrGetField ->
+          Components1(it.symbol)
+        }
+    }
   }
 
   object GetEnumValue {
