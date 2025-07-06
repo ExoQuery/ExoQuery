@@ -38,7 +38,7 @@ class ExampleBehindClassNested1 {
 }
 
 
-class ReferenceReqBackward: GoldenSpecDynamic(GoldenQueryFile.Empty, Mode.ExoGoldenOverride(), {
+class ReferenceReqBackward: GoldenSpecDynamic(ReferenceReqBackwardGoldenDynamic, Mode.ExoGoldenTest(), {
   "in object" - {
     "using ahead object" {
       val q = capture.select {
