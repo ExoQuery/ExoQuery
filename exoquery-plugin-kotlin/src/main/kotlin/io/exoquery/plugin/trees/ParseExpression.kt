@@ -348,6 +348,15 @@ object ParseExpression {
         XR.MethodCall(parse(head), "contains", listOf(parse(params)), XR.CallType.PureFunction, cid, false, XRType.Value, expr.loc)
       },
 
+      // Unlike a ParseFree, this is just a plain string-interpolation that lives inside the expression block (i.e. it's not preceeded by a "free" block)
+      case(Ir.StringConcatenation[Is()]).then { components ->
+        val componentExprs = components.map { ParseExpression.parse(it) }
+        // Not sure if it's possible for components to be empty but cover that case with an empty string
+        if (componentExprs.size == 0) XR.Const.String("", expr.loc)
+        else if (componentExprs.size == 1) componentExprs.first()
+        else componentExprs.reduce { a, b -> a _StrPlus_ b }
+      },
+
       case(ParseFree.match()).thenThis { (components), _ ->
         ParseFree.parse(expr, components, funName)
       },

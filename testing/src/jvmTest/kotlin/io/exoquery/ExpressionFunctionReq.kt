@@ -64,6 +64,32 @@ class ExpressionFunctionReq : GoldenSpecDynamic(ExpressionFunctionReqGoldenDynam
       shouldBeGolden(q.build<PostgresDialect>())
     }
   }
+  "StringInterpolation" - {
+    "multiple elements" {
+      val q = capture { Table<Person>().map { p -> "${p.name}-${p.age}" } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "single element" {
+      val q = capture { Table<Person>().map { p -> "${p.name}" } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "single constant" {
+      val q = capture { Table<Person>().map { p -> "${"constant"}" } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "many elements" {
+      data class LotsOfFields(
+        val name: String,
+        val age: Int,
+        val address: String,
+        val phone: String
+      )
+      val q = capture { Table<LotsOfFields>().map { l ->
+        "${l.name}-foo-${l.age}-bar-${l.address}-baz-${l.phone}-blin"
+      } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+  }
   "Int" - {
     "toLong" {
       val q = capture { Table<Person>().map { p -> p.age.toLong() } }

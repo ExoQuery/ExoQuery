@@ -512,9 +512,15 @@ interface SqlIdiom : HasPhasePrinting {
           else -> +"${a.token} ${op.token} ${b.token}"
         }
       a is Any && op is Or && b is Any -> +"${a.token} ${op.token} ${b.token}"
+      // If you've got a chain of concats e.g. a||b||c don't need to add parens around the a||b which the scoped tokenizer will do
+      a.isStringConcat() && op is StrPlus ->
+        +"${a.token} ${op.token} ${b.token}"
       else -> +"${scopedTokenizer(a)} ${op.token} ${scopedTokenizer(b)}"
     }
   }
+
+  fun XR.Expression.isStringConcat() =
+    this is XR.BinaryOp && this.op is OP.StrPlus
 
   // In SQL unary operators will always be in prefix position. Also, if it's just a minus
   // it will be part of the int/long/float/double constant and not a separate unary operator
