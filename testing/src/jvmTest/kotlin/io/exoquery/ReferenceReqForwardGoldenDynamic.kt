@@ -34,6 +34,16 @@ object ReferenceReqForwardGoldenDynamic: GoldenQueryFile {
     "in object/using ahead object with nested 2x/Phase" to cr(
       "CompileTime"
     ),
+    "in object/using ahead object with nested 3x/XR" to kt(
+      """select { val p = from(Table(Person).filter { p -> p.name == TagP("0") }); p }"""
+    ),
+    "in object/using ahead object with nested 3x/SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.name = {0:JoeJoe}",
+      "0" to "JoeJoe"
+    ),
+    "in object/using ahead object with nested 3x/Phase" to cr(
+      "CompileTime"
+    ),
     "in class/using ahead class/XR" to kt(
       """select { val p = from(Table(Person).filter { p -> p.name == TagP("0") }); p }"""
     ),
@@ -90,6 +100,16 @@ object ReferenceReqForwardGoldenDynamic: GoldenQueryFile {
       "0" to "JoeJoe"
     ),
     "in object/using ahead object with nested 2x/Phase" to cr(
+      "CompileTime"
+    ),
+    "in object/using ahead object with nested 3x/XR" to kt(
+      """select { val p = from(Table(Person).filter { p -> p.name == TagP("0") }); p }"""
+    ),
+    "in object/using ahead object with nested 3x/SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.name = {0:JoeJoe}",
+      "0" to "JoeJoe"
+    ),
+    "in object/using ahead object with nested 3x/Phase" to cr(
       "CompileTime"
     ),
     "in class/using ahead class/XR" to kt(

@@ -38,6 +38,17 @@ class ReferenceReqForward: GoldenSpecDynamic(ReferenceReqForwardGoldenDynamic, M
       shouldBeGolden(result, "SQL")
       shouldBeGolden(result.debugData.phase.toString(), "Phase")
     }
+
+    "using ahead object with nested 3x" {
+      val q = capture.select {
+        val p = from(ExampleAheadObjectNested3x.people)
+        p
+      }
+      val result = q.build<PostgresDialect>().determinizeDynamics()
+      shouldBeGolden(q.determinizeDynamics().xr, "XR")
+      shouldBeGolden(result, "SQL")
+      shouldBeGolden(result.debugData.phase.toString(), "Phase")
+    }
   }
 
   "in class" - {
@@ -77,6 +88,19 @@ class ReferenceReqForward: GoldenSpecDynamic(ReferenceReqForwardGoldenDynamic, M
   }
 })
 
+object ExampleAheadObjectNested3x {
+  val people = capture {
+    ExampleAheadObjectNested3xForward.people.filter { p -> p.name == param("JoeJoe") }
+  }
+}
+
+object ExampleAheadObjectNested3xForward {
+  val people = capture { ExampleAheadObjectNested3xForwardForward.peopleNested }
+}
+
+object ExampleAheadObjectNested3xForwardForward {
+  val peopleNested = capture { Table<Person>() }
+}
 
 object ExampleAheadObject {
   val people = capture { Table<Person>() }

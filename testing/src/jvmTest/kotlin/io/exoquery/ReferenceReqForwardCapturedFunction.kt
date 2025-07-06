@@ -5,7 +5,7 @@ import io.exoquery.sql.PostgresDialect
 import io.exoquery.testdata.Person
 
 
-class ReferenceReqForwardCapturedFunction: GoldenSpecDynamic(GoldenQueryFile.Empty, Mode.ExoGoldenOverride(), {
+class ReferenceReqForwardCapturedFunction: GoldenSpecDynamic(ReferenceReqForwardCapturedFunctionGoldenDynamic, Mode.ExoGoldenTest(), {
   "in object" - {
     "using ahead object" {
       val q = capture.select {
@@ -32,6 +32,17 @@ class ReferenceReqForwardCapturedFunction: GoldenSpecDynamic(GoldenQueryFile.Emp
     "using ahead object with nested 2x" {
       val q = capture.select {
         val p = from(CaptureAheadObjectNested2x.people("Abe"))
+        p
+      }
+      val result = q.build<PostgresDialect>().determinizeDynamics()
+      shouldBeGolden(q.determinizeDynamics().xr, "XR")
+      shouldBeGolden(result, "SQL")
+      shouldBeGolden(result.debugData.phase.toString(), "Phase")
+    }
+
+    "using ahead object with nested 3x" {
+      val q = capture.select {
+        val p = from(CaptureAheadObjectNested3x.people("JoeJoe"))
         p
       }
       val result = q.build<PostgresDialect>().determinizeDynamics()
@@ -77,6 +88,24 @@ class ReferenceReqForwardCapturedFunction: GoldenSpecDynamic(GoldenQueryFile.Emp
     }
   }
 })
+
+
+object CaptureAheadObjectNested3x {
+  @CapturedFunction
+  fun people(filter: String) = capture {
+    CaptureAheadObjectNested3xForward.peopleNested(filter).filter { p -> p.name == param("JoeJoe") }
+  }
+}
+
+object CaptureAheadObjectNested3xForward {
+  @CapturedFunction
+  fun peopleNested(filter: String) = capture { CaptureAheadObjectNested3xForwardForward.peopleNestedNested(filter) }
+}
+
+object CaptureAheadObjectNested3xForwardForward {
+  @CapturedFunction
+  fun peopleNestedNested(filter: String) = capture { Table<Person>().filter { p -> p.name == filter } }
+}
 
 
 object CaptureAheadObject {

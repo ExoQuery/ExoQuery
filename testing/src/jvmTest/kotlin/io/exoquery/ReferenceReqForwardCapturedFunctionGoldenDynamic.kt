@@ -34,6 +34,16 @@ object ReferenceReqForwardCapturedFunctionGoldenDynamic: GoldenQueryFile {
     "in object/using ahead object with nested 2x/Phase" to cr(
       "CompileTime"
     ),
+    "in object/using ahead object with nested 3x/XR" to kt(
+      """select { val p = from({ filter -> { filter -> { filter -> Table(Person).filter { p -> p.name == filter } }.toQuery.apply(filter) }.toQuery.apply(filter).filter { p -> p.name == TagP("0") } }.toQuery.apply(JoeJoe)); p }"""
+    ),
+    "in object/using ahead object with nested 3x/SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.name = 'JoeJoe' AND p.name = {0:JoeJoe}",
+      "0" to "JoeJoe"
+    ),
+    "in object/using ahead object with nested 3x/Phase" to cr(
+      "CompileTime"
+    ),
     "in class/using ahead class/XR" to kt(
       """select { val p = from({ filter -> Table(Person).filter { p -> p.name == TagP("0") && p.name == filter } }.toQuery.apply(Sam)); p }"""
     ),
@@ -90,6 +100,16 @@ object ReferenceReqForwardCapturedFunctionGoldenDynamic: GoldenQueryFile {
       "0" to "JoeJoe"
     ),
     "in object/using ahead object with nested 2x/Phase" to cr(
+      "CompileTime"
+    ),
+    "in object/using ahead object with nested 3x/XR" to kt(
+      """select { val p = from({ filter -> { filter -> { filter -> Table(Person).filter { p -> p.name == filter } }.toQuery.apply(filter) }.toQuery.apply(filter).filter { p -> p.name == TagP("0") } }.toQuery.apply(JoeJoe)); p }"""
+    ),
+    "in object/using ahead object with nested 3x/SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.name = 'JoeJoe' AND p.name = {0:JoeJoe}",
+      "0" to "JoeJoe"
+    ),
+    "in object/using ahead object with nested 3x/Phase" to cr(
       "CompileTime"
     ),
     "in class/using ahead class/XR" to kt(
