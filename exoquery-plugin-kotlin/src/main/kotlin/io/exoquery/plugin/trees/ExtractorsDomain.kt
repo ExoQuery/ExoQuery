@@ -461,9 +461,9 @@ object ExtractorsDomain {
         }
     }
 
-    object InterpolateInvoke {
+    object FreeInvoke {
       context(CX.Scope) operator fun <BP : Pattern<List<IrExpression>>> get(terpComps: BP) =
-        customPattern1("InterpolateInvoke", terpComps) { call: IrCall ->
+        customPattern1("FreeInvoke", terpComps) { call: IrCall ->
           call.match(
             // I.e. (CapturedBlock).free("foo, bar"):FreeBlock
             // which will be part of something like:

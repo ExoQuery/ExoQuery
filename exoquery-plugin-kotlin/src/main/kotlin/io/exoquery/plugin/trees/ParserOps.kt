@@ -13,9 +13,6 @@ import io.exoquery.terpal.UnzipPartsParams
 import io.exoquery.xr.XR
 import io.exoquery.xr.XRType
 import io.exoquery.xr.of
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
 import org.jetbrains.kotlin.backend.common.serialization.proto.IrGetObject
 import org.jetbrains.kotlin.builtins.PrimitiveType
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
@@ -227,7 +224,7 @@ fun getSerializerForType(type: IrType): ClassId? = run {
 object ParseFree {
   context(CX.Scope, CX.Parsing, CX.Symbology)
   fun match() =
-    Ir.Call.FunctionMem0[ExtractorsDomain.Call.InterpolateInvoke[Is()], Is.of("invoke", "asPure", "asConditon", "asPureConditon")]
+    Ir.Call.FunctionMem0[ExtractorsDomain.Call.FreeInvoke[Is()], Is.of("invoke", "asPure", "asConditon", "asPureConditon")]
 
   context(CX.Scope, CX.Parsing, CX.Symbology)
   fun parse(expr: IrExpression, components: List<IrExpression>, funName: String) = run {

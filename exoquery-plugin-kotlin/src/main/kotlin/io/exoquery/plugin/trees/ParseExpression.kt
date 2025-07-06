@@ -261,10 +261,6 @@ object ParseExpression {
           }
 
         binds.addParam(bid, paramValue, paramBind)
-
-        if (paramValue.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
-          parseError("------------------------------- HERE in ParseExpression ------------------------------------\n${paramValue.dumpKotlinLike().prepareForPrintingAdHoc()}")
-
         XR.TagForParam(bid, paramType, null, this.type.toClassIdXR(), TypeParser.of(this), paramValue.loc)
       },
 
@@ -344,10 +340,6 @@ object ParseExpression {
 
         val bid = BID.Companion.new()
         binds.addParam(bid, paramValue, paramBindType)
-
-        if (paramValue.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
-          parseError("------------------------------- HERE in ParseExpression 2 ------------------------------------\n${paramValue.dumpKotlinLike().prepareForPrintingAdHoc()}")
-
         XR.TagForParam(bid, XR.ParamType.Multi, null, this.type.toClassIdXR(), TypeParser.ofFirstArgOfReturnTypeOf(this), paramValue.loc)
       },
 
@@ -382,10 +374,6 @@ object ParseExpression {
           case(SqlExpressionExpr.Uprootable[Is()]).then { uprootable ->
             // Add all binds from the found SqlExpression instance, this will be truned into something like `currLifts + SqlExpression.lifts` late
             binds.addInheritedParams(sqlExprIr)
-
-            if (sqlExprIr.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
-              parseError("------------------------------- HERE in ParseExpression ------------------------------------\n${sqlExprIr.dumpKotlinLike().prepareForPrintingAdHoc()}")
-
             // Then unpack and return the XR
             uprootable.unpackOrErrorXR().successOrParseError(sqlExprIr)
           },
@@ -566,10 +554,6 @@ object ParseExpression {
         case(SqlExpressionExpr.Uprootable[Is()]).then { uprootable ->
           // Add all binds from the found SqlExpression instance, this will be truned into something like `currLifts + SqlExpression.lifts` late
           binds.addInheritedParams(sqlExprArg)
-
-          if (sqlExprArg.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
-            parseError("------------------------------- HERE in ParseExpression ------------------------------------\n${sqlExprArg.dumpKotlinLike().prepareForPrintingAdHoc()}")
-
           // Then unpack and return the XR
           uprootable.unpackOrErrorXR().successOrParseError(sqlExprArg)
         },

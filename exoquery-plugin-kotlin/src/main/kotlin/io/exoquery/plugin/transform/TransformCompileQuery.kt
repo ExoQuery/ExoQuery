@@ -65,14 +65,14 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
   context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
   override fun transform(expr: IrCall): IrExpression {
 
-    // Interesting IDEA. If the a file has a particular annotaiton, in the visitor before leaving it throw and error with the contents
+    // Interesting IDEA. If the a file has a particular annotation, in the visitor before leaving it throw and error with the contents
     //if (currentFile.fileEntry.name.toString().contains("CapFun")) {
     //  logger.error(
     //    """|--------------------------- Owner Before ---------------------------
-    //           |${currentFile.dumpKotlinLike().prepareForPrintingAdHoc()}
-    //           |--------------------------- Raw Before ---------------------------
-    //           |${currentFile.dumpSimple().prepareForPrintingAdHoc()}
-    //        """.trimMargin()
+    //       |${currentFile.dumpKotlinLike().prepareForPrintingAdHoc()}
+    //       |--------------------------- Raw Before ---------------------------
+    //       |${currentFile.dumpSimple().prepareForPrintingAdHoc()}
+    //    """.trimMargin()
     //  )
     //}
 

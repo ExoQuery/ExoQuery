@@ -33,17 +33,15 @@ class TransformCapturedQuery(val superTransformer: VisitTransformExpressions, va
         SqlQueryExpr.Uprootable.plantNewPluckable(xr, dynamics.makeRuntimes(), paramsExprModel)
       }
 
-    //logger.error("========== Output: ==========\n${newSqlQuery.dumpKotlinLike()}")
-
-//    if (currentFile.fileEntry.name.toString().contains("CapFun")) {
-//      logger.error(
-//        """|--------------------------- TRANSFORM CAPTURE (${calledFrom}) From ---------------------------
-//           |${expression.dumpKotlinLike()}
-//           |------------------------- TRANSFORM CAPTURE (${calledFrom}) To -------------------------
-//           |${newSqlQuery.prepareForPrinting()?.dumpKotlinLike()}
-//        """.trimMargin()
-//      )
-//    }
+    //    if (currentFile.fileEntry.name.toString().contains("CapFun")) {
+    //      logger.error(
+    //        """|--------------------------- TRANSFORM CAPTURE (${calledFrom}) From ---------------------------
+    //           |${expression.dumpKotlinLike()}
+    //           |------------------------- TRANSFORM CAPTURE (${calledFrom}) To -------------------------
+    //           |${newSqlQuery.prepareForPrinting()?.dumpKotlinLike()}
+    //        """.trimMargin()
+    //      )
+    //    }
 
     return newSqlQuery
   }

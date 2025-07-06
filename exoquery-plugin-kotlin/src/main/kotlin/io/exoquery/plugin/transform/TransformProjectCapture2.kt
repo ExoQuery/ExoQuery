@@ -139,20 +139,6 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
 
           val nodeOriginAfter = node.origin.dumpKotlinLike()
 
-//        if (currentFile.fileEntry.name.toString().contains("CapFun")) {
-//          logger.error(
-//            """|--------------------------- <<SOURCED FUNCTION (${node.call.symbol.safeName}) - Transform Project Capture 2>> ---------------------------
-//               |${node.origin.sourceOrDump()}
-//               |------------------------- <<Node Origin Before>> -------------------------
-//               |${nodeOriginBefore}
-//               |------------------------- <<Node Origin After>> -------------------------
-//               |${nodeOriginAfter}
-//               |------------------------- <<Written to Node>> -------------------------
-//               |${uprootableParent.expr.dumpKotlinLike()}
-//            """.trimMargin()
-//          )
-//        }
-
           // 2. Replace the `foo()` invocation with `SqlQuery(..., params=params + foo().params)` projection (i.e. replant the uprootable parent expression)
           // (also does) 3. Return this replaced invocation to the next call up
           uprootableParent.replantUprootableWith(node.call)
@@ -160,26 +146,7 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
         // Follow the same instructions as above, but for a field
         node is OwnerChain.SourcedField -> {
           val uprootableParent = ascendFromRootAndProject(node.parent) ?: return null
-
-          val nodeOriginBefore = node.origin.dumpKotlinLike()
-
           node.origin.replaceInitializerBodyWith(uprootableParent.expr)
-
-          val nodeOriginAfter = node.origin.dumpKotlinLike()
-//        if (currentFile.fileEntry.name.toString().contains("CapFun")) {
-//          logger.error(
-//            """|--------------------------- <<SOURCED FIELD (${node.call.symbol.safeName}) - Transform Project Capture 2>> ---------------------------
-//               |${node.origin.sourceOrDump()}
-//               |------------------------- <<Node Origin Before>> -------------------------
-//               |${nodeOriginBefore}
-//               |------------------------- <<Node Origin After>> -------------------------
-//               |${nodeOriginAfter}
-//               |------------------------- <<Written to Node>> -------------------------
-//               |${uprootableParent.expr.dumpKotlinLike()}
-//            """.trimMargin()
-//          )
-//        }
-
           uprootableParent.replantUprootableWith(node.call)
         }
         // Follow the same instructions as above, but for a variable

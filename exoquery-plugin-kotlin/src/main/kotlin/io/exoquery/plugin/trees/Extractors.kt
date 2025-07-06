@@ -101,10 +101,6 @@ object Ir {
       }
   }
 
-  object Element {
-
-  }
-
   object Expr {
     class ClassOf<R>(val classNameRaw: ClassId?) : Pattern0<IrExpression>(Typed<IrExpression>()) {
       override fun matches(r: ProductClass<IrExpression>): Boolean =

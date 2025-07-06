@@ -69,9 +69,6 @@ object ParseQuery {
                 case(SqlQueryExpr.Uprootable[Is()]).thenThis { uprootable ->
                   val sqlQueryIr = this
                   // Add all binds from the found SqlQuery instance, this will be truned into something like `currLifts + SqlQuery.lifts` late
-                  if (sqlQueryIr.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
-                    parseError("------------------------------- HERE NESTED STRANGE ------------------------------------\n${sqlQueryIr.dumpKotlinLike().prepareForPrintingAdHoc()}")
-
                   binds.addInheritedParams(sqlQueryIr)
                   // Then unpack and return the XR
                   uprootable.unpackOrErrorXR().successOrParseError(sqlQueryArg)
@@ -120,9 +117,6 @@ object ParseQuery {
           //      and how to differentitate it from something that we want to capture. Perhaps we would need some kind of "query-method whitelist"
           case(SqlQueryExpr.Uprootable[Is()]).thenThis { uprootable ->
             val sqlQueryIr = this
-            if (sqlQueryIr.dumpKotlinLike().contains("scaffoldCapFunctionQuery"))
-              parseError("------------------------------- HERE ------------------------------------\n${sqlQueryIr.dumpKotlinLike().prepareForPrintingAdHoc()}")
-
             // Add all binds from the found SqlQuery instance, this will be truned into something like `currLifts + SqlQuery.lifts` late
             binds.addInheritedParams(sqlQueryIr)
             // Then unpack and return the XR
