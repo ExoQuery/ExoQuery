@@ -1,4 +1,7 @@
 # ExoQuery
+[![GitHub Workflow Status][gha_badge]][gha_url]
+[![Plugin Version][plugin_img]][plugin_url]
+[![Runner Version][runner_img]][runner_url]
 
 Language Integrated Query for Kotlin Multiplatform
 
@@ -1589,3 +1592,13 @@ Table(Person).flatMap { p ->
 
 The takeaway here is that the `from()` and `join()` functions are actually customized variations
 of the monadic bind, embedded into a direct-style syntactic sugar.
+
+
+[gha_url]: https://github.com/ExoQuery/ExoQuery/actions/workflows/ci.yaml
+[gha_badge]: https://img.shields.io/github/actions/workflow/status/ExoQuery/ExoQuery/ci.yaml?branch=main&color=green&label=Build&logo=Github-Actions&logoColor=green
+
+[plugin_img]: https://img.shields.io/maven-central/v/io.exoquery.exoquery-plugin/io.exoquery.exoquery-plugin.gradle.plugin?logo=apachemaven&logoColor=7f53ff&color=7f53ff&label=Plugin
+[plugin_url]: https://central.sonatype.com/search?q=io.exoquery.exoquery-plugin&namespace=io.exoquery.exoquery-plugin
+
+[runner_img]: https://img.shields.io/maven-central/v/io.exoquery/exoquery-runner-jdbc?logo=apachemaven&logoColor=cd2237&color=cd2237&label=Runner
+[runner_url]: https://central.sonatype.com/search?q=io.exoquery&namespace=io.exoquery
