@@ -1,6 +1,5 @@
 package io.exoquery.plugin.transform
 
-import io.exoquery.plugin.transform.CX
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression

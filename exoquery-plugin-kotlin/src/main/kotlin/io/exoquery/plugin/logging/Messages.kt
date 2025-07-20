@@ -17,6 +17,12 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 // @formatter:off
 object Messages {
 
+// TODO longer explanation
+val UnexpectedCodegenCall: String =
+"""
+Unexpected Codegen Call. TODO longer explanation.
+""".trimIndent()
+
 context(CX.Parsing)
 fun batchParamError() = batchParamError(batchAlias?.name?.asString() ?: "<???>")
 

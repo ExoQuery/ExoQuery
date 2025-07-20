@@ -152,7 +152,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
 
                     // Can include the sql-formatting library here since the compiler is always on the JVM!
                     val queryString = queryTokenized.renderQueryString(isPretty, xr)
-                    accum.addQuery(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
+                    accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
 
                     val msgAdd = parsedArgs.queryLabel?.let { " ($it)" } ?: ""
 
@@ -192,7 +192,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
                 val actionKind = xr.toActionKind()
                 val actionReturningKind = ActionReturningKind.fromActionXR(xr)
                 val outputTypeXR = sqlQueryExprRaw.type.simpleTypeArgs[1].toClassIdXR() // 2nd arg is the output type of the action. Since the room-queries are only writes this value is not actually used yet
-                accum.addQuery(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
+                accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
 
                 val msgAdd = parsedArgs.queryLabel?.let { " ($it)" } ?: ""
                 if (options?.queryPrintingEnabled ?: false)
@@ -228,7 +228,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
                 val actionKind = xr.action.toActionKind()
                 val actionReturningKind = ActionReturningKind.fromActionXR(xr.action)
                 val outputTypeXR = sqlQueryExprRaw.type.simpleTypeArgs[2].toClassIdXR() // 3rd arg is the output type of the action. Since the room-queries are only writes this value is not actually used yet
-                accum.addQuery(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
+                accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
 
                 val msgAdd = parsedArgs.queryLabel?.let { " ($it)" } ?: ""
 

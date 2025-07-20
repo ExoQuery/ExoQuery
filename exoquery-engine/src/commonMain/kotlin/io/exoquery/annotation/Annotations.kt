@@ -9,8 +9,6 @@ import kotlin.reflect.KClass
  * This annotation means that the construct e.g. the SqlQuery represents a value captured during compile-time by the
  * ExoQuery system (via the parser and transformers). It cannot be specified by the user.
  */
-
-
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class CapturedFunction
@@ -152,6 +150,14 @@ annotation class ExoEntity(val name: String)
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCapture
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.BINARY)
+annotation class ExoCodegen
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.BINARY)
+annotation class ExoCodegenReturn
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.BINARY)

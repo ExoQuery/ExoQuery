@@ -319,6 +319,21 @@ object Ir {
       }
   }
 
+  class GetObjectValue<R>(val classNameRaw: ClassId?) : Pattern0<IrGetObjectValue>(Typed<IrGetObjectValue>()) {
+    override fun matches(r: ProductClass<IrGetObjectValue>): Boolean =
+      classNameRaw?.let { className ->
+        Typed<IrGetObjectValue>().typecheck(r.productClassValueUntyped) &&
+            r.productClassValue.type.let { tpe ->
+              className == tpe.classId() || tpe.superTypes().any { it.classId() == className }
+            }
+      } ?: false
+
+    companion object {
+      inline operator fun <reified T> invoke() =
+        GetObjectValue<T>(T::class.classId())
+    }
+  }
+
   object GetValue {
     context (CX.Scope) operator fun get(value: Pattern0<IrGetValue>) =
       customPattern1("Ir.GetValue", value) { it: IrGetValue ->
@@ -431,9 +446,39 @@ object Ir {
       }
   }
 
+  object ConstructorCall1 {
+    inline fun <reified T> of() =
+      Matcher(T::class.classId())
+
+    class Matcher(val classNameRaw: ClassId?) {
+      context (CX.Scope) operator fun <AP: Pattern<A>, A: IrExpression> get(x: AP): Pattern1<AP, A, IrConstructorCall> =
+        customPattern1("Ir.Call.ConstructorCall1", x) { it: IrConstructorCall ->
+          if (it.regularArgs.size == 1 && it.regularArgs.all { it != null }) {
+            Components1(it.regularArgs.first())
+          } else {
+            null
+          }
+        }
+    }
+  }
+
+  object ConstructorCallNullableN {
+    inline fun <reified T> of() =
+      Matcher(T::class.classId())
+
+    data class Args(val args: List<IrExpression?>) {
+      operator fun get(index: Int): IrExpression? = args[index]
+    }
+
+    class Matcher(val classNameRaw: ClassId?) {
+      context (CX.Scope) operator fun <AP: Pattern<Args>> get(x: AP): Pattern1<AP, Args, IrConstructorCall> =
+        customPattern1("Ir.Call.ConstructorCallNullableN", x) { it: IrConstructorCall ->
+          Components1(Args(it.regularArgs))
+        }
+    }
+  }
 
   object Call {
-
     object NamedExtensionFunctionZeroArg {
       context (CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<E>, E : IrExpression> get(name: AP, reciever: BP): Pattern2<AP, BP, String, E, IrCall> =
         customPattern2("NamedExtensionFunctionZeroArg", name, reciever) { it: IrCall ->

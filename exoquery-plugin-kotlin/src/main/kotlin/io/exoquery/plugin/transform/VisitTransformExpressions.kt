@@ -4,13 +4,10 @@ import io.decomat.Is
 import io.exoquery.ParseError
 import io.exoquery.TransformXrError
 import io.exoquery.config.ExoCompileOptions
+import io.exoquery.generation.Code
 import io.exoquery.plugin.location
 import io.exoquery.plugin.logging.CompileLogger
 import io.exoquery.plugin.trees.ContainerExpr
-import io.exoquery.plugin.trees.SqlActionExpr
-import io.exoquery.plugin.trees.SqlBatchActionExpr
-import io.exoquery.plugin.trees.SqlExpressionExpr
-import io.exoquery.plugin.trees.SqlQueryExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocationWithRange
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
@@ -24,15 +21,17 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 
-data class VisitorContext(val symbolSet: SymbolSet, val queriesAccum: FileQueryAccum) {
-  fun withNewAccum() = VisitorContext(symbolSet, FileQueryAccum.empty())
-  fun withNewFileAccum(accum: FileQueryAccum) = VisitorContext(symbolSet, accum)
+typealias FileQueryAccum = FileAccum<PrintableQuery>
+typealias FileCodegenAccum = FileAccum<Code.DataClasses>
+
+data class VisitorContext(val symbolSet: SymbolSet, val queriesAccum: FileQueryAccum, val codegenAccum: FileCodegenAccum = FileCodegenAccum.empty()) {
+  fun withNewAccum() = VisitorContext(symbolSet, FileQueryAccum.empty(), FileCodegenAccum.empty())
+  fun withNewFileAccum(queryAccum: FileQueryAccum, codegenAccum: FileCodegenAccum) = VisitorContext(symbolSet, queryAccum, codegenAccum)
 
   companion object {
-    fun empty() = VisitorContext(SymbolSet.empty, FileQueryAccum.empty())
+    fun empty() = VisitorContext(SymbolSet.empty, FileAccum.empty())
   }
 }
 
@@ -127,8 +126,9 @@ class VisitTransformExpressions(
     }
 
 
-    val queryAccum = FileQueryAccum(QueryAccumState.RealFile(file))
-    val ret = super.visitFileNew(file, data.withNewFileAccum(queryAccum))
+    val queryAccum = FileQueryAccum(AccumState.RealFile(file))
+    val codegenAccum = FileCodegenAccum(AccumState.RealFile(file))
+    val ret = super.visitFileNew(file, data.withNewFileAccum(queryAccum, codegenAccum))
 
     if (sanityCheck && queryAccum.hasQueries() && exoOptions != null) {
       //BuildQueryFile(file, fileScope, config, exoOptions, currentFile).buildRegular()
@@ -238,6 +238,8 @@ class VisitTransformExpressions(
     // or the .build call should have recursed down into it (because it calls the superTransformer on the reciever of the .build call)
     val transformCompileQuery = TransformCompileQuery(this)
     val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this, "[ExoQuery: VisitTransformExpressions-VisitCall]")
+    val transformReadCodegen = TransformReadCodegen(data.codegenAccum)
+
     val runner = ScopedRunner(scopeCtx, builderContext, data)
 
     // Can possibly call the TransformProjectCapture2 here
@@ -265,6 +267,7 @@ class VisitTransformExpressions(
         transformCaptureBatchAction.matches(expression) -> transformCaptureBatchAction.transform(expression)
         // Is this an sqlQuery.build(PostgresDialect) call? if yes see if the it is a compile-time query and transform it
         transformCompileQuery.matches(expression) -> transformCompileQuery.transform(expression)
+        transformReadCodegen.matches(expression) -> transformReadCodegen.transform(expression)
 
 
         //showAnnotations.matches(expression) -> showAnnotations.transform(expression)

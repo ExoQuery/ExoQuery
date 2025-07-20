@@ -9,6 +9,8 @@ import io.exoquery.annotation.ExoCapture
 import io.exoquery.annotation.ExoCaptureBatch
 import io.exoquery.annotation.ExoCaptureExpression
 import io.exoquery.annotation.ExoCaptureSelect
+import io.exoquery.annotation.ExoCodegen
+import io.exoquery.annotation.ExoCodegenReturn
 import io.exoquery.annotation.ExoDelete
 import io.exoquery.annotation.ExoInsert
 import io.exoquery.annotation.ExoUpdate
@@ -21,6 +23,7 @@ import io.exoquery.annotation.ParamCustom
 import io.exoquery.annotation.ParamCustomValue
 import io.exoquery.annotation.ParamPrimitive
 import io.exoquery.annotation.ParamStatic
+import io.exoquery.generation.Code
 import io.exoquery.innerdsl.SqlActionFilterable
 import io.exoquery.innerdsl.set
 import io.exoquery.innerdsl.setParams
@@ -34,6 +37,9 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.decodeFromHexString
 import org.intellij.lang.annotations.Language
 import kotlin.reflect.KClass
+
+fun unpackCodeDataClasses(expr: String): Code.DataClasses =
+  EncodingXR.protoBuf.decodeFromHexString<Code.DataClasses>(expr)
 
 fun unpackExpr(expr: String): XR.Expression =
   EncodingXR.protoBuf.decodeFromHexString<XR.Expression>(expr)
@@ -160,6 +166,14 @@ object capture {
     block: SelectClauseCapturedBlock.(BatchInput) -> SqlAction<Input, Output>
   ): @Captured SqlBatchAction<BatchInput, Input, Output> =
     errorCap("The `batch` expression of the Query was not inlined")
+
+  @ExoCodegen
+  fun generate(code: Code.DataClasses): Unit =
+    errorCap("The `generate` function was not inlined")
+
+  @ExoCodegenReturn
+  fun generateAndReturn(code: Code.DataClasses): Code.DataClasses =
+    errorCap("The `generate` function was not inlined")
 }
 
 //fun <T> capture(block: CapturedBlock.() -> SqlQuery<T>): @Captured SqlQuery<T> = errorCap("Compile time plugin did not transform the tree")

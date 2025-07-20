@@ -83,7 +83,7 @@ class QueryFile(
     val srcFile = Path.of(dirOfFile.toString(), srcFileName)
 
     val collectedQueries = codeFileAccum.currentQueries()
-    val dumpedQueryText = QueryFileTextMaker(collectedQueries, QueryAccumState.PathBehavior.IncludePaths, QueryAccumState.LabelBehavior.IncludeAll)
+    val dumpedQueryText = QueryFileTextMaker(collectedQueries, AccumState.PathBehavior.IncludePaths, AccumState.LabelBehavior.IncludeAll)
     writeToFileIfExists(dumpedQueryText, srcFile, "(to override set the annotation to ExoGoldenOverride)")
   }
 

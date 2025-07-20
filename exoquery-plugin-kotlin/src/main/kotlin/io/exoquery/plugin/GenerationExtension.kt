@@ -1,7 +1,7 @@
 package io.exoquery.plugin
 
 import io.exoquery.config.ExoCompileOptions
-import io.exoquery.plugin.transform.FileQueryAccum
+import io.exoquery.plugin.transform.FileAccum
 import io.exoquery.plugin.transform.SymbolSet
 import io.exoquery.plugin.transform.VisitTransformExpressions
 import io.exoquery.plugin.transform.VisitorContext
@@ -20,7 +20,7 @@ class GenerationExtension(
     moduleFragment
       .transform(
         VisitTransformExpressions(pluginContext, config, exoOptions),
-        VisitorContext(SymbolSet(listOf(), listOf()), FileQueryAccum.empty())
+        VisitorContext(SymbolSet(listOf(), listOf()), FileAccum.empty())
       )
   }
 }

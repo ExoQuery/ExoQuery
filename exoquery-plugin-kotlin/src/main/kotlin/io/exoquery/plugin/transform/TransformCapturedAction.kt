@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 class TransformCapturedAction(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
   context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expression: IrCall): Boolean =
-    ExtractorsDomain.Call.CaptureAction[Is.Companion()].matchesAny(expression)
+    ExtractorsDomain.Call.CaptureAction[Is()].matchesAny(expression)
 
   context(CX.Scope, CX.Builder, CX.Symbology)
   override fun transform(expression: IrCall): IrExpression {

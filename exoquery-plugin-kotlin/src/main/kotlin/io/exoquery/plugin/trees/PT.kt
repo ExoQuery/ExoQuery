@@ -10,6 +10,8 @@ object PT {
   val io_exoquery_unpackQuery = "io.exoquery.unpackQuery"
   val io_exoquery_unpackQueryLazy = "io.exoquery.unpackQueryLazy"
 
+  val io_exoquery_unpackCodeDataClasses = "io.exoquery.unpackCodeDataClasses"
+
   val io_exoquery_unpackAction = "io.exoquery.unpackAction"
   val io_exoquery_unpackActionLazy = "io.exoquery.unpackActionLazy"
 

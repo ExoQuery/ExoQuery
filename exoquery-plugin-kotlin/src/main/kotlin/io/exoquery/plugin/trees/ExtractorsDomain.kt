@@ -3,6 +3,7 @@ package io.exoquery.plugin.trees
 import io.decomat.*
 import io.exoquery.*
 import io.exoquery.annotation.*
+import io.exoquery.generation.Code
 import io.exoquery.plugin.*
 import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.transform.BinaryOperators
@@ -333,6 +334,26 @@ object ExtractorsDomain {
           if (it.ownerHasAnnotation<ExoCaptureSelect>() && it.type.isClass<SqlQuery<*>>()) {
             Components1(it)
           } else {
+            null
+          }
+        }
+    }
+
+    object CaptureGenerate {
+      sealed interface CallType {
+        data object Gen: CallType
+        data object GenAndReturn: CallType
+      }
+
+      context(CX.Scope) operator fun <AP : Pattern<IrCall>, BP: Pattern<CallType>> get(call: AP, callType: BP) =
+        customPattern2("Call.CaptureGenerate", call, callType) { it: IrCall ->
+          if (it.ownerHasAnnotation<ExoCodegen>() && it.type.isUnit()) {
+            Components2(it, CallType.Gen)
+          }
+          else if (it.ownerHasAnnotation<ExoCodegenReturn>() && it.type.isClass<Code.DataClasses>()) {
+            Components2(it, CallType.GenAndReturn)
+          }
+          else {
             null
           }
         }
