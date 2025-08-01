@@ -12,11 +12,11 @@ class CodegenSpec : FreeSpec({
 
   val codegen = JdbcGenerator(
     LowLevelCodeGeneratorConfig(BasicPath.WorkingDir() + "gen", BasicPath.DotPath("io.exoquery")),
-    ctx.database
+    { ctx.database.connection }
   )
 
   "should generate files" {
-    val deliverable = codegen.run()
+    val deliverable = codegen.compute()
     deliverable.files.forEach { file ->
       println("Writing file: ${file.fullPath()}")
       file.write()
