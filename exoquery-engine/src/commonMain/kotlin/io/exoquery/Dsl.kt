@@ -453,7 +453,7 @@ interface CapturedBlock {
   fun <T : Comparable<T>> SqlQuery<T>.sum(): T = errorCap("The `min` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.QueryAggregator::class)
-  fun <T> SqlQuery<T>.count(): T = errorCap("The `min` expression of the Query was not inlined")
+  fun <T> SqlQuery<T>.count(): Int = errorCap("The `min` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.QueryAggregator::class)
   @DslBooleanExpression
