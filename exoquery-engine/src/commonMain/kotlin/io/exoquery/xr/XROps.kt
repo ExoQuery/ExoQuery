@@ -13,7 +13,11 @@ infix fun XR.Expression._NotEq_(other: XR.Expression): XR.BinaryOp = XR.BinaryOp
 infix fun XR.Expression._StrPlus_(other: XR.Expression): XR.BinaryOp = XR.BinaryOp(this, OP.StrPlus, other, this.loc)
 infix fun XR.Expression._Plus_(other: XR.Expression): XR.BinaryOp = XR.BinaryOp(this, OP.Plus, other, this.loc)
 
-inline fun <reified R> Is.Companion.of(vararg possibilities: R): Is<R> = Is.PredicateAs(io.decomat.Typed<R>(), { possibilities.contains(it) })
+
+// Causes errors e.g. ROps.kt:147:56 Type argument for reified type parameter 'R' was inferred to the intersection of ['BinaryOperator' & 'EqualityOperator' & 'YieldsBool' & 'SerializerFactory'].
+// Reification of an intersection type results in the common supertype being used. This may lead to subtle issues and an explicit type argument is encouraged. This will become an error in a future release.
+// Therefore we need to not use inline and just check the list of possibilities against the type
+fun <R> Is.Companion.of(vararg possibilities: R): Is<R> = Is.PredicateAs(io.decomat.Typed<Any>(), { (possibilities as Array<Any>).contains(it) }) as Is<R>
 
 
 fun isOperatorOnExpressions(op: BinaryOperator) =
