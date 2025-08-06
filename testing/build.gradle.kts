@@ -47,6 +47,7 @@ kotlin {
         implementation("org.jetbrains.exposed:exposed-dao:0.60.0")
         implementation("org.jetbrains.exposed:exposed-jdbc:0.60.0")
 
+        implementation("org.postgresql:postgresql:42.7.3")
         implementation("io.zonky.test:embedded-postgres:2.0.7")
         implementation("io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64:16.2.0")
       }
@@ -88,10 +89,11 @@ repositories {
   mavenLocal()
 }
 
-//exoQuery {
+exoQuery {
 //  // CANNOT HAVE LINEBREAKS, will throw `Wrong plugin option format: null, should be plugin:<pluginId>:<optionName>=<value>`
 //  outputString.set("%{br}==== Compiled %{kind} in %{total}ms: ====%{br}%{sql}")
-//}
+  codegenDrivers.add("org.postgresql:postgresql:42.7.3")
+}
 
 
 dependencies {

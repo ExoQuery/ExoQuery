@@ -37,20 +37,6 @@ enum class ExoCliOption(
     false
   ),
 
-  KOTLIN_OUTPUT_DIR_OPTION(
-    "kotlinOutputDir",
-    "<kotlinOutputDir>",
-    "Dir of generated Kotlin sources",
-    false
-  ),
-
-  RESOURCE_OUTPUT_DIR_OPTION(
-    "resourceOutputDir",
-    "<resourceOutputDir>",
-    "Dir of generated resources",
-    false
-  ),
-
   PROJECT_BASE_DIR_OPTION(
     "projectBaseDir",
     "<projectBaseDir>",

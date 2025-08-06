@@ -37,6 +37,8 @@ val thisVersion = version
 dependencies {
   api("io.exoquery:exoquery-engine:${runtimeVersion}")
 
+  //api("org.postgresql:postgresql:42.7.3")
+
   compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable")
 
   kapt("com.google.auto.service:auto-service:1.0.1")

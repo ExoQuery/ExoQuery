@@ -18,6 +18,7 @@ version = extra["pluginProjectVersion"].toString()
 
 dependencies {
   add("kspCommonMainMetadata", "io.exoquery:decomat-ksp:1.0.0")
+  //add("kspJvm", "io.exoquery:decomat-ksp:1.0.0")
   commonMainApi("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 }
 
@@ -87,6 +88,11 @@ tasks.withType<KotlinCompilationTask<*>>().configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
   }
 }
+
+// Add explicit dependency for KSP JVM tasks if they exist
+//tasks.matching { task -> task.name.startsWith("ksp") && task.name.contains("Jvm") }.configureEach {
+//  dependsOn("kspCommonMainKotlinMetadata")
+//}
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
   compilerOptions {

@@ -16,8 +16,6 @@ class ExoCompileOptions(
   val sourceSetName: String,
   val targetName: String,
   val projectBaseDir: String,
-  val kotlinOutputDir: String,
-  val resourceOutputDir: String,
   val projectDir: String,
   val outputString: String = DefaultOutputString,
   val queryFilesEnabled: Boolean = DefaultQueryFilesEnabled,
@@ -30,6 +28,7 @@ class ExoCompileOptions(
     val DefaultOutputString = "Compiled %{kind} in %{total}ms: %{sql}"
     val DefaultQueryFilesEnabled = true
     val DefaultQueryPrintingEnabled = true
+    val DefaultJdbcDrivers = emptyList<String>()
   }
 
   val outputStringMaker: OutputStringMaker = OutputStringMaker(outputString)

@@ -31,10 +31,33 @@ object Unlifter {
       ?: orFail(expr)
 
   context (CX.Scope)
+  fun unliftStringIfNotNull(expr: IrExpression?) : String? =
+    expr?.let { unliftString(it) }
+
+  context (CX.Scope)
   fun DatabaseDriver.Companion.unlift(expr: IrExpression): DatabaseDriver =
     on(expr).match(
-      case(Ir.GetObjectValue<DatabaseDriver.Postgres>()).then { DatabaseDriver.Postgres },
-      case(Ir.ConstructorCall1.of<DatabaseDriver.Custom>()[Is()]).then { DatabaseDriver.Custom(unliftString(it)) }
+      case(Ir.ConstructorCallNullableN.of<DatabaseDriver.Postgres>()[Is()]).then { args ->
+        DatabaseDriver.Postgres(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.Postgres.DefaultUrl)
+      },
+      case(Ir.ConstructorCallNullableN.of<DatabaseDriver.MySQL>()[Is()]).then { args ->
+        DatabaseDriver.MySQL(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.MySQL.DefaultUrl)
+      },
+      case(Ir.ConstructorCallNullableN.of<DatabaseDriver.SQLite>()[Is()]).then { args ->
+        DatabaseDriver.SQLite(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.SQLite.DefaultUrl)
+      },
+      case(Ir.ConstructorCallNullableN.of<DatabaseDriver.H2>()[Is()]).then { args ->
+        DatabaseDriver.H2(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.H2.DefaultUrl)
+      },
+      case(Ir.ConstructorCallNullableN.of<DatabaseDriver.Oracle>()[Is()]).then { args ->
+        DatabaseDriver.Oracle(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.Oracle.DefaultUrl)
+      },
+      case(Ir.ConstructorCallNullableN.of<DatabaseDriver.SqlServer>()[Is()]).then { args ->
+        DatabaseDriver.SqlServer(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.SqlServer.DefaultUrl)
+      },
+      case(Ir.ConstructorCall2.of<DatabaseDriver.Custom>()[Is(), Is()]).then { a, b ->
+        DatabaseDriver.Custom(unliftString(a), unliftString(b))
+      }
     ) ?: orFail(expr)
 
   context (CX.Scope)

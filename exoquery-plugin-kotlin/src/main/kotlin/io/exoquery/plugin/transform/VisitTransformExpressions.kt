@@ -136,6 +136,10 @@ class VisitTransformExpressions(
       with(scope) { QueryFileBuilder.invoke(queryFile) }
     }
 
+    if (sanityCheck && codegenAccum.hasQueries() && exoOptions != null) {
+      with(scope) { CodegenFileBuilder(exoOptions).invoke(codegenAccum.currentQueries(), file) }
+    }
+
     return ret
   }
 

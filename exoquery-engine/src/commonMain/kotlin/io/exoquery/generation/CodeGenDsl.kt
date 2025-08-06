@@ -73,22 +73,52 @@ sealed interface DatabaseDriver {
   }
 
   val driverClass: String
-  @Ser data object Postgres: DatabaseDriver {
+  val jdbcUrl: String
+
+  @Ser data class Postgres(override val jdbcUrl: String = Postgres.DefaultUrl): DatabaseDriver {
     override val driverClass: String = "org.postgresql.Driver"
+    companion object {
+      val DefaultUrl = "jdbc:postgresql://localhost:5432"
+    }
   }
-  @Ser data object MySQL: DatabaseDriver {
+  @Ser data class MySQL(override val jdbcUrl: String = MySQL.DefaultUrl): DatabaseDriver {
     override val driverClass: String = "com.mysql.cj.jdbc.Driver"
+    companion object {
+      val DefaultUrl = "jdbc:mysql://localhost:3306"
+    }
   }
-  @Ser data object SQLite: DatabaseDriver {
+  @Ser data class SQLite(override val jdbcUrl: String = SQLite.DefaultUrl): DatabaseDriver {
     override val driverClass: String = "org.sqlite.JDBC"
+    companion object {
+      val DefaultUrl = "jdbc:sqlite::memory:"
+    }
   }
-  @Ser data object Oracle: DatabaseDriver {
+  @Ser data class H2(override val jdbcUrl: String = H2.DefaultUrl): DatabaseDriver {
+    override val driverClass: String = "org.h2.Driver"
+    companion object {
+      val DefaultUrl = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"
+    }
+  }
+  @Ser data class Oracle(override val jdbcUrl: String = Oracle.DefaultUrl): DatabaseDriver {
     override val driverClass: String = "oracle.jdbc.OracleDriver"
+    companion object {
+      val DefaultUrl = "jdbc:oracle:thin:@localhost:1521:xe"
+    }
   }
-  @Ser data object SQLServer: DatabaseDriver {
+  @Ser data class SqlServer(override val jdbcUrl: String = SqlServer.DefaultUrl): DatabaseDriver {
     override val driverClass: String = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    companion object {
+      val DefaultUrl = "jdbc:sqlserver://localhost:1433;databaseName=master"
+    }
   }
-  @Ser data class Custom(override val driverClass: String): DatabaseDriver
+  @Ser data class Custom(
+    override val driverClass: String,
+    override val jdbcUrl: String
+  ): DatabaseDriver {
+    companion object {
+      fun from(driverClass: String, jdbcUrl: String): Custom = Custom(driverClass, jdbcUrl)
+    }
+  }
 }
 
 @Ser sealed interface PropertiesFile {

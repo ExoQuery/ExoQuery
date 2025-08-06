@@ -18,8 +18,9 @@ fun main() {
   val cc = capture.generateAndReturn(
     Code.DataClasses(
       "1.1",
-      DatabaseDriver.Postgres,
-      propertiesFile = PropertiesFile.Custom("foobar")
+      DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
+      username = "postgres",
+      password = "postgres"
     )
   )
 

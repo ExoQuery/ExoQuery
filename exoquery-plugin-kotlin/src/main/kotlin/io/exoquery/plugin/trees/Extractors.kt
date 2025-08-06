@@ -462,6 +462,22 @@ object Ir {
     }
   }
 
+  object ConstructorCall2 {
+    inline fun <reified T> of() =
+      Matcher(T::class.classId())
+
+    class Matcher(val classNameRaw: ClassId?) {
+      context (CX.Scope) operator fun <AP: Pattern<A>, BP: Pattern<B>, A: IrExpression, B: IrExpression> get(x: AP, y: BP): Pattern2<AP, BP, A, B, IrConstructorCall> =
+        customPattern2("Ir.Call.ConstructorCall2", x, y) { it: IrConstructorCall ->
+          if (it.regularArgs.size == 2 && it.regularArgs.all { it != null }) {
+            Components2(it.regularArgs[0], it.regularArgs[1])
+          } else {
+            null
+          }
+        }
+    }
+  }
+
   object ConstructorCallNullableN {
     inline fun <reified T> of() =
       Matcher(T::class.classId())

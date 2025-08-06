@@ -121,4 +121,7 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
           .map { TableGroup(it.namespace, listOf(it)) }
       }
     }
+
+  companion object {
+  }
 }

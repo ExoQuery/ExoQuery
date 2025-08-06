@@ -3,10 +3,14 @@ package io.exoquery
 import io.exoquery.config.ExoCompileOptions
 import io.exoquery.exoquery_plugin_gradle.BuildConfig
 import org.gradle.api.Project
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.*
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 import java.io.File
+
 
 interface ExoQueryGradlePluginExtension {
     /** Override the string printed when a static query is executed use %total and %sql switches to specify */
@@ -15,6 +19,8 @@ interface ExoQueryGradlePluginExtension {
     val queryFilesEnabled: Property<Boolean>
     /** Whether to print queries at compile-time or not (per the outputString syntax) */
     val queryPrintingEnabled: Property<Boolean>
+
+    val codegenDrivers: ListProperty<String>
 }
 
 
@@ -36,11 +42,13 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     //    target.dependencies.add("implementation", "io.exoquery:exoquery-engine:${BuildConfig.VERSION}")
     //}
 
-    target.extensions.create("exoQuery", ExoQueryGradlePluginExtension::class.java).apply {
-      outputString.convention(ExoCompileOptions.DefaultOutputString)
-      queryFilesEnabled.convention(ExoCompileOptions.DefaultQueryFilesEnabled)
-      queryPrintingEnabled.convention(ExoCompileOptions.DefaultQueryPrintingEnabled)
-    }
+    val pluginExtConfig =
+      target.extensions.create("exoQuery", ExoQueryGradlePluginExtension::class.java).apply {
+        outputString.convention(ExoCompileOptions.DefaultOutputString)
+        queryFilesEnabled.convention(ExoCompileOptions.DefaultQueryFilesEnabled)
+        queryPrintingEnabled.convention(ExoCompileOptions.DefaultQueryPrintingEnabled)
+        codegenDrivers.convention(ExoCompileOptions.DefaultJdbcDrivers)
+      }
 
     val isMultiplatform = target.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
     val sourceSetName = if (isMultiplatform) "commonMain" else "main"
@@ -54,26 +62,116 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     // Needed for the plugin classpath
     // Note that these do not bring in transitive dependencies so every transitive needs to be explicitly specified!
     target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "com.github.vertical-blank:sql-formatter:2.0.4")
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "io.exoquery:terpal-runtime:2.2.0-2.0.0.PL")
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "io.exoquery:pprint-kotlin-core-jvm:3.0.0")
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "io.exoquery:pprint-kotlin-kmp-jvm:3.0.0")
+      println("----------- START Adding dependencies kotlinNativeCompilerPluginClasspath: ${target.name} -----------")
+
+      target.addCompilerDependency("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+      target.addCompilerDependency("com.github.vertical-blank:sql-formatter:2.0.4")
+      target.addCompilerDependency("io.exoquery:terpal-runtime:2.2.0-2.0.0.PL")
+      target.addCompilerDependency("io.exoquery:pprint-kotlin-core-jvm:3.0.0")
+      target.addCompilerDependency("io.exoquery:pprint-kotlin-kmp-jvm:3.0.0")
       // Fansi and core pprint ADT come from here
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "io.exoquery:pprint-kotlin:3.0.0")
+      target.addCompilerDependency("io.exoquery:pprint-kotlin:3.0.0")
       // in some places the compiler needs to print things, so the compiled plugin needs pprint
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "io.exoquery:exoquery-engine:${BuildConfig.VERSION}")
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "org.jetbrains.kotlinx:kotlinx-serialization-core:${BuildConfig.SERIALIZATION_VERSION}")
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${BuildConfig.SERIALIZATION_VERSION}")
+      target.addCompilerDependency("io.exoquery:exoquery-engine:${BuildConfig.VERSION}")
+      target.addCompilerDependency("org.jetbrains.kotlinx:kotlinx-serialization-core:${BuildConfig.SERIALIZATION_VERSION}")
+      target.addCompilerDependency("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${BuildConfig.SERIALIZATION_VERSION}")
       // Since this is compiler-plugin it works in the compiler which is written in Java so we use JVM dependencies
-      target.dependencies.add("kotlinNativeCompilerPluginClasspath", "io.exoquery:decomat-core-jvm:${BuildConfig.DECOMAT_VERSION}")
+      target.addCompilerDependency("io.exoquery:decomat-core-jvm:${BuildConfig.DECOMAT_VERSION}")
+
+      //target.addCompilerDependency("org.postgresql:postgresql:42.7.3")
+
+      // The property pluginExtConfig.codegenDrivers is not initialized yet, so we cannot use it here
+      //pluginExtConfig.codegenDrivers.get().forEach {
+      //  println("----------- ADD codegen driver dependency: $it ------------------")
+      //  target.addCompilerDependency(it)
+      //}
+
+      println("----------- DONE Adding dependencies kotlinNativeCompilerPluginClasspath: ${target.name} -----------")
+    }
+
+    target.afterEvaluate { project ->
+      val kotlinExtension = target.extensions.findByType(KotlinProjectExtension::class.java)
+      kotlinExtension?.let { decorateKotlinProject(it, project) }
     }
   }
 
+  fun Project.addCompilerDependency(dependency: String) =
+    dependencies.add("kotlinNativeCompilerPluginClasspath", dependency)
+
+  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project) {
+    when (kotlin) {
+      is KotlinSingleTargetExtension<*> -> {
+        val targetsAndSourceSets =
+          kotlin.target.compilations.map { compilation ->
+            kotlin.target to compilation.defaultSourceSet
+          }
+        generatateDirs(project, targetsAndSourceSets)
+      }
+      is KotlinMultiplatformExtension -> {
+        val targetsAndSourceSets =
+          kotlin.targets.flatMap { target ->
+            target.compilations.map { compilation ->
+              target to compilation.defaultSourceSet
+            }
+          }
+        generatateDirs(project, targetsAndSourceSets)
+      }
+    }
+  }
+
+  private fun generatateDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>) =
+    targetsAndSourceSets.forEach { (target, sourceSet) ->
+      val targetName = target.name
+      val sourceSetName = sourceSet.name
+
+      println("=========== Decorating [${project.name}] target:$targetName->sourceSet:$sourceSetName ===========")
+
+      // Add the generated directory to kotlin source directories
+      val generatedDir = project.generatedEntitiesKotlin(sourceSetName, targetName).get().asFile
+      sourceSet.kotlin.srcDir(generatedDir)
+
+      // Ensure the directory exists
+      generatedDir.mkdirs()
+    }
+
+
   override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
     val project = kotlinCompilation.target.project
-
     val ext = project.extensions.getByType(ExoQueryGradlePluginExtension::class.java)
+
+    //ext.codegenDrivers.get().forEach {
+    //  println("----------- POST-ADD codegen driver dependency: $it ------------------")
+    //  kotlinCompilation.target.project.addCompilerDependency(it)
+    //}
+
+    //val myDependency = project.configurations.detachedConfiguration(
+    //  project.dependencies.create("org.postgresql:postgresql:42.7.3")
+    //)
+    //kotlinCompilation.compileDependencyFiles += myDependency
+
+    //project.dependencies.add(
+    //  kotlinCompilation.implementationConfigurationName,
+    //  "org.postgresql:postgresql:42.7.3"
+    //)
+
+    val configurationName = when (kotlinCompilation.target.platformType) {
+      KotlinPlatformType.jvm -> "kotlinCompilerPluginClasspath"
+      //KotlinPlatformType.js -> "kotlinJsCompilerPluginClasspath"
+      KotlinPlatformType.native -> "kotlinNativeCompilerPluginClasspath"
+      //KotlinPlatformType.common -> "kotlinMetadataCompilerPluginClasspath" // doesn't exist
+      else -> null
+    }
+
+    configurationName?.let {
+      project.dependencies.add(it, "org.postgresql:postgresql:42.7.3")
+    }
+
+
+    project.dependencies.add(
+      kotlinCompilation.compileOnlyConfigurationName,
+      "org.postgresql:postgresql:42.7.3"
+    )
+
 
 
     // ALSO needed for the plugin classpath
@@ -92,32 +190,16 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     return project.provider {
       listOf(
-        SubpluginOption("generationDir", project.layout.buildDirectory.file("generated/exo/").get().asFile.absolutePath),
+        SubpluginOption("generationDir", project.generatedRootDir.get().asFile.absolutePath),
         SubpluginOption("projectSrcDir", project.projectDir.toPath().resolve("src").toAbsolutePath().toString()),
         SubpluginOption("sourceSetName", sourceSetName),
         SubpluginOption("targetName", target),
         SubpluginOption("projectDir", project.projectDir.path),
         SubpluginOption("projectBaseDir", project.project.projectDir.canonicalPath),
-        SubpluginOption("kotlinOutputDir", getKspKotlinOutputDir(project, sourceSetName, target).path),
-        SubpluginOption("resourceOutputDir", getKspResourceOutputDir(project, sourceSetName, target).path),
         SubpluginOption("outputString", outputStringValue),
         SubpluginOption("queryFilesEnabled", queryFilesEnabled.toString()),
         SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString())
       )
     }
-  }
-
-  companion object {
-    @JvmStatic
-    fun getKspKotlinOutputDir(project: Project, sourceSetName: String, target: String) =
-      File(getExoOutputDir(project, sourceSetName, target), "kotlin")
-
-    @JvmStatic
-    fun getKspResourceOutputDir(project: Project, sourceSetName: String, target: String) =
-      File(getExoOutputDir(project, sourceSetName, target), "resources")
-
-    @JvmStatic
-    fun getExoOutputDir(project: Project, sourceSetName: String, target: String) =
-      project.layout.buildDirectory.file("generated/exo/$target/$sourceSetName").get().asFile
   }
 }

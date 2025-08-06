@@ -1,3 +1,5 @@
 package io.exoquery.generation
 
-expect fun Code.DataClasses.generate(absoluteRootPath: String): Unit
+import io.exoquery.codegen.model.GeneratorBase
+
+expect fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase<*, *, *>

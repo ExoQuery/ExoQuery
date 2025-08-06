@@ -21,7 +21,7 @@ import io.exoquery.plugin.trees.PT
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irUnit
 
-class TransformReadCodegen(val codegenAction: FileCodegenAccum) : Transformer<IrCall>() {
+class TransformReadCodegen(val codegenAccum: FileCodegenAccum) : Transformer<IrCall>() {
 
   context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expression: IrCall): Boolean =
@@ -40,6 +40,7 @@ class TransformReadCodegen(val codegenAction: FileCodegenAccum) : Transformer<Ir
         expression
       )
 
+    codegenAccum.addItem(caseClassCodegen)
 
     return when (callType) {
       CallType.Gen -> {

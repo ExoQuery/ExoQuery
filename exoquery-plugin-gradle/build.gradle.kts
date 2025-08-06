@@ -30,6 +30,10 @@ dependencies {
   api("io.exoquery:exoquery-engine:${runtimeVersion}")
 
   implementation(kotlin("gradle-plugin-api"))
+  implementation(kotlin("gradle-plugin"))
+  implementation(kotlin("compiler-embeddable"))
+
+  compileOnly(gradleApi())
 }
 
 gradlePlugin {
