@@ -19,6 +19,7 @@ fun main() {
     Code.DataClasses(
       "1.1",
       DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
+      packagePrefix = "io.exoquery",
       username = "postgres",
       password = "postgres"
     )

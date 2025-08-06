@@ -14,7 +14,7 @@ class CodegenFileBuilder(val options: ExoCompileOptions) {
   operator fun invoke(dcs: List<Code.DataClasses>, thisFile: IrFile) {
     dcs.forEach { dc ->
       try {
-        val rootPath = "${options.generationDir}/exoquery/entities/${options.targetName}/${options.sourceSetName}/kotlin"
+        val rootPath = "${options.entitiesBaseDir}/${options.targetName}/${options.sourceSetName}/kotlin"
         val gen = dc.toGenerator(rootPath)
         logger.warn("Generating Code for ${thisFile.name} in: ${rootPath}")
         gen.run()

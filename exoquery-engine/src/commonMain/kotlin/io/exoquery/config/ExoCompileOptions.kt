@@ -11,11 +11,12 @@ fun unpackOptions(str: String) =
 
 @Serializable
 class ExoCompileOptions(
+  val entitiesBaseDir: String,
   val generationDir: String,
   val projectSrcDir: String,
   val sourceSetName: String,
   val targetName: String,
-  val projectBaseDir: String,
+  val queriesBaseDir: String,
   val projectDir: String,
   val outputString: String = DefaultOutputString,
   val queryFilesEnabled: Boolean = DefaultQueryFilesEnabled,

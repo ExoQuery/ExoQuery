@@ -62,8 +62,6 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     // Needed for the plugin classpath
     // Note that these do not bring in transitive dependencies so every transitive needs to be explicitly specified!
     target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
-      println("----------- START Adding dependencies kotlinNativeCompilerPluginClasspath: ${target.name} -----------")
-
       target.addCompilerDependency("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
       target.addCompilerDependency("com.github.vertical-blank:sql-formatter:2.0.4")
       target.addCompilerDependency("io.exoquery:terpal-runtime:2.2.0-2.0.0.PL")
@@ -77,16 +75,6 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       target.addCompilerDependency("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${BuildConfig.SERIALIZATION_VERSION}")
       // Since this is compiler-plugin it works in the compiler which is written in Java so we use JVM dependencies
       target.addCompilerDependency("io.exoquery:decomat-core-jvm:${BuildConfig.DECOMAT_VERSION}")
-
-      //target.addCompilerDependency("org.postgresql:postgresql:42.7.3")
-
-      // The property pluginExtConfig.codegenDrivers is not initialized yet, so we cannot use it here
-      //pluginExtConfig.codegenDrivers.get().forEach {
-      //  println("----------- ADD codegen driver dependency: $it ------------------")
-      //  target.addCompilerDependency(it)
-      //}
-
-      println("----------- DONE Adding dependencies kotlinNativeCompilerPluginClasspath: ${target.name} -----------")
     }
 
     target.afterEvaluate { project ->
@@ -139,40 +127,20 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     val project = kotlinCompilation.target.project
     val ext = project.extensions.getByType(ExoQueryGradlePluginExtension::class.java)
 
-    //ext.codegenDrivers.get().forEach {
-    //  println("----------- POST-ADD codegen driver dependency: $it ------------------")
-    //  kotlinCompilation.target.project.addCompilerDependency(it)
-    //}
-
-    //val myDependency = project.configurations.detachedConfiguration(
-    //  project.dependencies.create("org.postgresql:postgresql:42.7.3")
-    //)
-    //kotlinCompilation.compileDependencyFiles += myDependency
-
-    //project.dependencies.add(
-    //  kotlinCompilation.implementationConfigurationName,
-    //  "org.postgresql:postgresql:42.7.3"
-    //)
-
     val configurationName = when (kotlinCompilation.target.platformType) {
       KotlinPlatformType.jvm -> "kotlinCompilerPluginClasspath"
-      //KotlinPlatformType.js -> "kotlinJsCompilerPluginClasspath"
+      KotlinPlatformType.js -> "kotlinJsCompilerPluginClasspath"
       KotlinPlatformType.native -> "kotlinNativeCompilerPluginClasspath"
-      //KotlinPlatformType.common -> "kotlinMetadataCompilerPluginClasspath" // doesn't exist
-      else -> null
+      KotlinPlatformType.common -> "kotlinCompilerPluginClasspath" // Common/metadata uses the same as JVM!
+      else -> "kotlinCompilerPluginClasspath" // Fallback
     }
 
-    configurationName?.let {
-      project.dependencies.add(it, "org.postgresql:postgresql:42.7.3")
+    ext.codegenDrivers.get().forEach { dependency ->
+      println("[ExoQuery] adding driver dependency: $dependency")
+      configurationName.let {
+        project.dependencies.add(it, dependency)
+      }
     }
-
-
-    project.dependencies.add(
-      kotlinCompilation.compileOnlyConfigurationName,
-      "org.postgresql:postgresql:42.7.3"
-    )
-
-
 
     // ALSO needed for the plugin classpath
     kotlinCompilation.dependencies {
@@ -188,14 +156,17 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     val queryFilesEnabled = ext.queryFilesEnabled.convention(ExoCompileOptions.DefaultQueryFilesEnabled).get()
     val queryPrintingEnabled = ext.queryPrintingEnabled.convention(ExoCompileOptions.DefaultQueryPrintingEnabled).get()
 
+    val queriesBaseDir = project.generatedRootDir.get().dir("queries").asFile.absolutePath
+
     return project.provider {
       listOf(
+        SubpluginOption("entitiesBaseDir", project.generatedEntitiesDir.get().asFile.absolutePath),
         SubpluginOption("generationDir", project.generatedRootDir.get().asFile.absolutePath),
         SubpluginOption("projectSrcDir", project.projectDir.toPath().resolve("src").toAbsolutePath().toString()),
         SubpluginOption("sourceSetName", sourceSetName),
         SubpluginOption("targetName", target),
         SubpluginOption("projectDir", project.projectDir.path),
-        SubpluginOption("projectBaseDir", project.project.projectDir.canonicalPath),
+        SubpluginOption("queriesBaseDir", queriesBaseDir),
         SubpluginOption("outputString", outputStringValue),
         SubpluginOption("queryFilesEnabled", queryFilesEnabled.toString()),
         SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString())

@@ -20,7 +20,7 @@ class QueryFile(
   val codeFile: IrFile,
   val codeFileAccum: FileQueryAccum,
   val compilerConfig: CompilerConfiguration,
-  val config: ExoCompileOptions
+  val exoOptions: ExoCompileOptions
 ) {
   private val fs by lazy { FileSystems.getDefault() }
   private val logger by lazy { CompileLogger(compilerConfig, codeFile, codeFile) }
@@ -31,7 +31,7 @@ class QueryFile(
     val codeFileParent = Path.of(codeFile.fileEntry.name).parent
     // projectSrcPath: /home/me/project/src/
     // exoRoomPath: /home/me/project/src/exoroom/kotlin (TODO this should be configureable in the gradle plugin and should automatically be added as a source directory if possible)
-    val exoRoomPath = Path.of(config.projectSrcDir, "exoroom", "kotlin")
+    val exoRoomPath = Path.of(exoOptions.projectSrcDir, "exoroom", "kotlin")
     val packageSubpath = codeFile.packageFqName.pathSegments().joinToString(fs.separator)
     val fileNameWithoutExtension = Path.of(codeFile.fileEntry.name).nameWithoutExtension
     val srcFileName = fileNameWithoutExtension + "RoomQueries"
@@ -54,7 +54,7 @@ class QueryFile(
     // e.g: /home/me/project/src/commonMain/com/someplace/Code.kt -> /home/me/project/src/commonMain/kotlin/com/someplace/
     val codeFileParent = Path.of(codeFile.fileEntry.name).parent
     // projectDir: /home/me/project/
-    val projectDirPath = Path.of(config.projectDir)
+    val projectDirPath = Path.of(exoOptions.projectDir)
     val (pathOfFile, regularProcess) =
       if (codeFileParent.startsWith(projectDirPath)) {
         val trimmedPath =
@@ -62,16 +62,16 @@ class QueryFile(
             // we expect it to start with src so remove that
             .let { if (it.startsWith("src")) Path.of("src").relativize(it) else it } // now should be: commonMain/kotlin/com/someplace/
         // fileGenerationPath: /home/me/project/build/generated/exo
-        val fileGenerationPath = Path.of(config.generationDir)
+        val fileGenerationPath = Path.of(exoOptions.queriesBaseDir)
         // outputPath: /home/me/project/build/generated/exo/ + src/commonMain/kotlin/com/someplace/
         val outputPath = fileGenerationPath.resolve(trimmedPath)
         outputPath to true
       } else {
         val packageName = codeFile.packageFqName.asString().replace(".", fs.separator)
         // fileGenerationPath: /home/me/project/build/generated/exo
-        val fileGenerationPath = Path.of(config.generationDir)
+        val fileGenerationPath = Path.of(exoOptions.queriesBaseDir)
         // fileGenerationPath: /home/me/project/build/generated/exo/linuxX64/linuxX64Main/com/someplace/
-        val outputPath = fileGenerationPath.resolve(config.targetName).resolve(config.sourceSetName).resolve(Path.of(packageName))
+        val outputPath = fileGenerationPath.resolve(exoOptions.targetName).resolve(exoOptions.sourceSetName).resolve(Path.of(packageName))
         outputPath to false
       }
     val dirOfFile = pathOfFile.toFile()

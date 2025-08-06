@@ -21,11 +21,5 @@ val Project.generatedEntitiesDir get() =
 fun Project.generatedEntitiesSubdir(sourceSetName: String, target: String) =
   generatedEntitiesDir.map { it.dir("$target/$sourceSetName") }
 
-fun Project.generatedEntitiesClasses(sourceSetName: String, target: String) =
-  generatedEntitiesSubdir(sourceSetName, target).map { it.dir("classes") }
-
 fun Project.generatedEntitiesKotlin(sourceSetName: String, target: String) =
   generatedEntitiesSubdir(sourceSetName, target).map { it.dir("kotlin") }
-
-fun Project.generatedEntitiesResources(sourceSetName: String, target: String) =
-  generatedEntitiesSubdir(sourceSetName, target).map { it.dir("resources") }
