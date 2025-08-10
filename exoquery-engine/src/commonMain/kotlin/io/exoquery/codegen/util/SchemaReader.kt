@@ -2,7 +2,7 @@ package io.exoquery.codegen.util
 
 import io.exoquery.codegen.model.ColumnMeta
 import io.exoquery.codegen.model.DatabaseTypes
-import io.exoquery.codegen.model.RawMeta
+import io.exoquery.codegen.model.RawTableMeta
 import io.exoquery.codegen.model.TableMeta
 
 abstract class SchemaReader<Conn: AutoCloseable, Results> {
@@ -64,7 +64,7 @@ abstract class SchemaReader<Conn: AutoCloseable, Results> {
 
 
 
-  operator fun invoke(connectionMaker: () -> Conn): Pair<List<RawMeta>, DatabaseTypes.DatabaseType> {
+  operator fun invoke(connectionMaker: () -> Conn): Pair<List<RawTableMeta>, DatabaseTypes.DatabaseType> {
     val (tables, columns, databaseType) = connectionMaker().use { conn ->
       extractTablesAndColumns(conn)
     }
@@ -73,7 +73,7 @@ abstract class SchemaReader<Conn: AutoCloseable, Results> {
       columns
       .groupBy { Triple(it.tableCat, it.tableSchema, it.tableName) }
       .mapNotNull { (key, cols) ->
-        tableMap[key]?.let { table -> RawMeta(table, cols) }
+        tableMap[key]?.let { table -> RawTableMeta(table, cols) }
       }
     return columnMap to databaseType
   }

@@ -1,5 +1,6 @@
 package io.exoquery.generation
 
+import io.exoquery.codegen.model.NameParser
 import io.exoquery.xr.EncodingXR.protoBuf
 import kotlinx.serialization.encodeToHexString
 import kotlinx.serialization.Serializable as Ser
@@ -39,7 +40,9 @@ object Code {
     /**
      * A file that contains the database connection properties.
      */
-    val propertiesFile: PropertiesFile? = null,
+    val propertiesFile: String = DefaultPropertiesFile,
+
+    val nameParser: NameParser = DefaultNameParser,
 
     val tableGrouping: TableGrouping = DefaultTableGrouping,
 
@@ -49,7 +52,9 @@ object Code {
       // Use the pattern of specifying the default fetch policy here so it can be used in the compiler plugin unlifter
       val DefaultFetchPolicy = FetchPolicy.OnVersionChange
       val DefaultTableGrouping = TableGrouping.SchemaPerPackage
+      val DefaultPropertiesFile = ".codegen.properties"
       val DefaultDryRun = false
+      val DefaultNameParser = NameParser.LiteralNames
     }
   }
 }
@@ -118,17 +123,6 @@ sealed interface DatabaseDriver {
     companion object {
       fun from(driverClass: String, jdbcUrl: String): Custom = Custom(driverClass, jdbcUrl)
     }
-  }
-}
-
-@Ser sealed interface PropertiesFile {
-  val fileName: String
-  @Ser data object Default: PropertiesFile {
-    override val fileName: String = ".exoquery.properties"
-  }
-  @Ser data class Custom(override val fileName: String): PropertiesFile
-
-  companion object {
   }
 }
 

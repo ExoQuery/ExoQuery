@@ -8,8 +8,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.*
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
-import java.io.File
 
 
 interface ExoQueryGradlePluginExtension {
@@ -21,6 +19,27 @@ interface ExoQueryGradlePluginExtension {
     val queryPrintingEnabled: Property<Boolean>
 
     val codegenDrivers: ListProperty<String>
+    val enableCodegenNamingAI: Property<Boolean>
+
+    /**
+     * Move the location of generated entities from `MyProject/build/generated/entities` to `MyProject/src/main/entities`
+     * (whatever directory it is, it will be added to the source set). Alternatively, if you want to specify a custom path
+     * you can use `codegenCustomPath` property (a relative path will be based on the JVM working directory of the compilation.
+     *
+     * Due to the non-deterministic nature of the LLMs, the generated code may change
+     * between builds. This means that when using an AI for table/column naming you will want to
+     * generate into a directory that is checked into version control as opposed to a location
+     * that is cleaned up between builds (which is the default i.e. MyProject/build/generated/entities).
+     * When this option is enabled, the generated code will be placed in MyProject/src/main/entities
+     * instead and the `entities` directory will be added to the source set.
+     * Note that if you turn on `enableCodegenNamingAI` then this option is automatically enabled.
+     */
+    val codegenIntoPermanentLocation: Property<Boolean>
+
+    val codegenCustomPath: Property<String>
+
+    val koogLibrary: Property<String>
+
 }
 
 
@@ -137,8 +156,15 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     ext.codegenDrivers.get().forEach { dependency ->
       println("[ExoQuery] adding driver dependency: $dependency")
-      configurationName.let {
-        project.dependencies.add(it, dependency)
+      configurationName.let { project.dependencies.add(it, dependency) }
+
+      if (ext.enableCodegenNamingAI.convention(false).get()) {
+        println("[ExoQuery] LLM naming is enabled! Adding Koog dependency for LLM naming: ${ext.koogLibrary.get()}")
+        // If LLM naming is enabled, we need to add the Koog dependency
+        val koogLibrary = ext.koogLibrary.convention(BuildConfig.KOOG_LIBRARY).get()
+        configurationName.let {
+          project.dependencies.add(it, koogLibrary)
+        }
       }
     }
 

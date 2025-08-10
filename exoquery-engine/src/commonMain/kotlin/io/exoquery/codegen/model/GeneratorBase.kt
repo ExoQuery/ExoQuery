@@ -30,10 +30,10 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
   protected abstract val schemaReader: SchemaReader<Conn, Results>
   protected abstract fun isNotNullable(cm: ColumnMeta): Boolean
 
-  protected fun readMetas(): Pair<List<RawMeta>, DatabaseTypes.DatabaseType> =
+  protected fun readMetas(): Pair<List<RawTableMeta>, DatabaseTypes.DatabaseType> =
     schemaReader.invoke { makeConnection() }
 
-  protected fun filter(tc: RawMeta): Boolean = true
+  protected fun filter(tc: RawTableMeta): Boolean = true
 
   data class TableGroup(val namespace: String?, val tables: List<TablePrepared>)
 
@@ -50,7 +50,7 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
   fun compute(): GeneratorDeliverable<F> {
     val (metasAll, databaseType) = readMetas()
     val metas = metasAll.filter { filter(it) }
-    val processedTables =
+    val rawTables =
       metas.map { meta ->
         val namespace = config.tableNamespacer(meta.table)
         val columns =
@@ -69,7 +69,7 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
             }
             .map { (cm, columnType) ->
               ColumnPrepared(
-                nameParser.parseColumn(cm),
+                cm.columnName,
                 columnType,
                 isNotNullable(cm),
                 cm
@@ -78,12 +78,13 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
 
         TablePrepared(
           namespace,
-          nameParser.parseTable(meta.table),
+          meta.table.tableName,
           columns,
           meta.table
         )
       }
 
+    val processedTables = nameParser.parseTables(rawTables)
     val grouped = groupByNamespace(processedTables)
     val deliverables = packageIntoDeliverables(grouped)
     val writableFiles = deliverables.map { buildFile(it, CodeEmitter(it).code, config.rootPath) }

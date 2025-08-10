@@ -5,15 +5,10 @@ import io.decomat.case
 import io.decomat.on
 import io.exoquery.generation.encode
 import io.exoquery.parseError
-import io.exoquery.plugin.loc
 import io.exoquery.plugin.logging.Messages
 import io.exoquery.plugin.regularArgs
 import io.exoquery.plugin.trees.ExtractorsDomain
-import io.exoquery.plugin.trees.Parser
-import io.exoquery.plugin.trees.SqlActionExpr
-import io.exoquery.plugin.trees.SqlBatchActionExpr
 import io.exoquery.plugin.trees.Unlifter
-import io.exoquery.xr.XR
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import io.exoquery.plugin.trees.ExtractorsDomain.Call.CaptureGenerate.CallType
@@ -21,7 +16,7 @@ import io.exoquery.plugin.trees.PT
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irUnit
 
-class TransformReadCodegen(val codegenAccum: FileCodegenAccum) : Transformer<IrCall>() {
+class TransformCaptureCodegenRead(val codegenAccum: FileCodegenAccum) : Transformer<IrCall>() {
 
   context(CX.Scope, CX.Builder, CX.Symbology)
   override fun matches(expression: IrCall): Boolean =
@@ -40,14 +35,15 @@ class TransformReadCodegen(val codegenAccum: FileCodegenAccum) : Transformer<IrC
         expression
       )
 
-    codegenAccum.addItem(caseClassCodegen)
+    if (callType != CallType.JustReturn)
+      codegenAccum.addItem(caseClassCodegen)
 
     return when (callType) {
       CallType.Gen -> {
         // If it's just a generation call we don't return anything (it's generated at compile time so just as a side effect) so just return Unit
         builder.irUnit()
       }
-      CallType.GenAndReturn -> {
+      CallType.GenAndReturn, CallType.JustReturn -> {
         // if it's a generateAndReturn call, we need to return the generated code. Pack it up and prep it for unpacking on the client side
         val packedCodeDataClasses = caseClassCodegen.encode()
         call(PT.io_exoquery_unpackCodeDataClasses)(builder.irString(packedCodeDataClasses))

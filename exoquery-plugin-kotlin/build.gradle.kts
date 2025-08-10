@@ -41,6 +41,9 @@ dependencies {
 
   kapt("com.google.auto.service:auto-service:1.0.1")
   compileOnly("com.google.auto.service:auto-service-annotations:1.0.1")
+
+  compileOnly(libs.koog.agents)
+
   //implementation("com.facebook:ktfmt:0.43") <-- requires kotlin-test:1.6.10 so need to add to the GradlePlugin libs if we want to use this
 
   // Actually this is going to be 0.0.5 - using an unpublished one now

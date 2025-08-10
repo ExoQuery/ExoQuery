@@ -242,7 +242,7 @@ class VisitTransformExpressions(
     // or the .build call should have recursed down into it (because it calls the superTransformer on the reciever of the .build call)
     val transformCompileQuery = TransformCompileQuery(this)
     val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this, "[ExoQuery: VisitTransformExpressions-VisitCall]")
-    val transformReadCodegen = TransformReadCodegen(data.codegenAccum)
+    val transformReadCodegen = TransformCaptureCodegenRead(data.codegenAccum)
 
     val runner = ScopedRunner(scopeCtx, builderContext, data)
 

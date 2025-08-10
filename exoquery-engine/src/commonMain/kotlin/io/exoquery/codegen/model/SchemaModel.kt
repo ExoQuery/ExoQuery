@@ -2,7 +2,7 @@ package io.exoquery.codegen.model
 
 
 
-data class RawMeta(
+data class RawTableMeta(
   val table: TableMeta,
   val columns: List<ColumnMeta>
 )
@@ -70,4 +70,3 @@ data class ColumnMeta(
 //    )
 //}
 //
-

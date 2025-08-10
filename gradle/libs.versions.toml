@@ -3,6 +3,7 @@ kotlin = "2.2.0"
 serialization = "1.7.3"
 controller = "3.2.3"
 kotest = "6.0.0.M1"
+koog = "0.3.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -14,7 +15,7 @@ controller-jdbc = { module = "io.exoquery:controller-jdbc", version.ref = "contr
 controller-native = { module = "io.exoquery:controller-native", version.ref = "controller" }
 kotest-framework = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
-
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
 
 [plugins]
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

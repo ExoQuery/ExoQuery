@@ -159,6 +159,10 @@ annotation class ExoCodegen
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCodegenReturn
 
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.BINARY)
+annotation class ExoCodegenJustReturn
+
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoBuildFunctionLabel

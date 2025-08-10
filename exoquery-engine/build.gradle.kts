@@ -70,6 +70,7 @@ kotlin {
     val jvmMain by getting {
       dependencies {
         api("com.github.vertical-blank:sql-formatter:2.0.4")
+        compileOnly(libs.koog.agents)
       }
     }
 

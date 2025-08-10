@@ -10,40 +10,79 @@ import io.exoquery.codegen.model.NamingAnnotationType
 import io.exoquery.codegen.model.NumericPreference
 import java.sql.Driver
 import java.sql.DriverManager
+import java.util.Properties
 
 actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase<*, *, *> {
   val rootPathReal = BasicPath.SlashPath(absoluteRootPath)
 
   val jdbcUrl = this.driver.jdbcUrl
 
+  fun Properties.setUser(user: String): Unit { this.setProperty("user", user) }
+  fun Properties.setPassword(password: String): Unit { this.setProperty("password", password) }
+  fun Properties.setApiKey(apiKey: String): Unit { this.setProperty("api-key", apiKey) }
+  fun Properties.getUser() = this.get("user")?.let { it.toString() }
+  fun Properties.getPassword() = this.get("password")?.let { it.toString() }
+  fun Properties.getApiKey() = this.get("api-key")?.let { it.toString() }
+
   val props = run {
-    val workingProps = this.propertiesFile?.let {
+    val workingProps = this.propertiesFile.let {
       val props = java.util.Properties()
-      try {
-        props.load(java.io.File(it.fileName).inputStream())
-      } catch (e: Exception) {
-        throw IllegalArgumentException("Code Generation Failed. Failed to load properties file: ${it.fileName}", e)
+      val propsFile = java.io.File(it)
+      if (propsFile.exists()) {
+        try {
+          props.load(java.io.File(it).inputStream())
+        } catch (e: Exception) {
+          throw IllegalArgumentException("Code Generation Failed. Failed to load properties file: ${it}", e)
+        }
       }
       props
-    } ?: java.util.Properties()
+    }
     if (this.usernameEnvVar != null) {
       val user = System.getenv(this.usernameEnvVar)
       if (user == null) {
         throw IllegalArgumentException("Code Generation Failed. Environment variable for username is not set: ${this.usernameEnvVar}")
       }
-      workingProps.setProperty("user", user)
+      workingProps.setUser(user)
     }
     if (this.passwordEnvVar != null) {
       val pass = System.getenv(this.passwordEnvVar)
       if (pass == null) {
         throw IllegalArgumentException("Code Generation Failed. Environment variable for password is not set: ${this.passwordEnvVar}")
       }
-      workingProps.setProperty("password", pass)
+      workingProps.setPassword(pass)
     }
-    if (this.username != null) workingProps.setProperty("user", this.username)
-    if (this.password != null) workingProps.setProperty("password", this.password)
+    if (this.nameParser is NameParser.UsingLLM && this.nameParser.type is NameParser.TypeOfLLM.OpenAI) {
+      val openAiParser = this.nameParser.type
+      val actualApiKey =
+        openAiParser.apiKey
+          ?: run { if (openAiParser.apiKeyEnvVar != null) System.getenv(openAiParser.apiKeyEnvVar) else null }
+          ?: workingProps.getApiKey()?.let { it.toString() }
+          ?: throw IllegalArgumentException(
+            "Code Generation Failed. The user specified that OpenAPI should be used for table name parsing but the OpenAI API key was not set. " +
+              "Set it in the code generation properties file (.codegen.properties by default), as an environment variable (i.e. TypeOfLLM.OpenApi.apiKeyEnvVar). " +
+              "You can also set it directly in the TypeOfLLM.OpenApi.apiKey field in the code generation DSL, but this is NOT RECOMMENDED FOR PRODUCTION CODE."
+          )
+      workingProps.setApiKey(actualApiKey)
+    }
+    if (this.username != null) workingProps.setUser(this.username)
+    if (this.password != null) workingProps.setPassword(this.password)
     workingProps
   }
+
+  // copy the finalized values of various things into the data classes from the properties file
+  val finalizedCodeDataClasses =
+    this.copy(
+      nameParser =
+        if (this.nameParser is NameParser.UsingLLM && this.nameParser.type is NameParser.TypeOfLLM.OpenAI && props.getApiKey() != null) {
+          this.nameParser.copy(
+            type = this.nameParser.type.copy(apiKey = props.getApiKey())
+          )
+        } else {
+          this.nameParser
+        },
+      username = props.getUser(),
+      password = props.getPassword(),
+    )
 
   // TODO create a cache of this operation
   val connectionMaker = {
@@ -65,7 +104,8 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase
     LowLevelCodeGeneratorConfig(
       rootPath = rootPathReal,
       packagePrefix = this.packagePrefix?.let { BasicPath.DotPath(it) } ?: BasicPath.Empty,
-      nameParser = NameParser.LiteralNames,
+      // TODO get the unlifted name parser and run the AI retrieveal if needed
+      nameParser = finalizedCodeDataClasses.nameParser, // If an API key is needed, it will be set in the nameParser by the procedure above
       //tableNamespacer = TODO(),
       //unrecognizedTypeStrategy = TODO(),
       namingAnnotation = NamingAnnotationType.SerialName,

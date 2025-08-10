@@ -1,10 +1,11 @@
 package io.exoquery.plugin.trees
 
 import io.decomat.*
+import io.exoquery.codegen.model.NameParser
+import io.exoquery.codegen.model.NameProcessorLLM
 import io.exoquery.generation.Code
 import io.exoquery.generation.DatabaseDriver
 import io.exoquery.generation.FetchPolicy
-import io.exoquery.generation.PropertiesFile
 import io.exoquery.generation.TableGrouping
 import io.exoquery.parseError
 import io.exoquery.plugin.transform.CX
@@ -19,7 +20,7 @@ object Unlifter {
 
   context (CX.Scope)
   private fun orFail(expr: IrExpression): Nothing =
-    parseError("Failed to unlift the construct", expr)
+    parseError("Failed to unlift the construct", expr) // TODO need a MUCH BETTER error here
 
   context (CX.Scope)
   fun unliftString(expr: IrExpression): String =
@@ -75,10 +76,45 @@ object Unlifter {
     ) ?: orFail(expr)
 
   context (CX.Scope)
-  fun PropertiesFile.Companion.unlift(expr: IrExpression): PropertiesFile =
+  fun NameParser.TypeOfLLM.Companion.unlift(expr: IrExpression): NameParser.TypeOfLLM =
     on(expr).match(
-      case(Ir.GetObjectValue<PropertiesFile.Default>()).then { PropertiesFile.Default },
-      case(Ir.ConstructorCall1.of<PropertiesFile.Custom>()[Is()]).then { PropertiesFile.Custom(unliftString(it)) }
+      case(Ir.ConstructorCallNullableN.of<NameParser.TypeOfLLM.Ollama>()[Is()]).then { args ->
+        NameParser.TypeOfLLM.Ollama(
+          model = unliftStringIfNotNull(args[0]) ?: NameParser.TypeOfLLM.Ollama.DefaultModel,
+          url = unliftStringIfNotNull(args[1]) ?: NameParser.TypeOfLLM.Ollama.DefaultUrl
+        )
+      },
+      case(Ir.ConstructorCallNullableN.of<NameParser.TypeOfLLM.OpenAI>()[Is()]).then { args ->
+        NameParser.TypeOfLLM.OpenAI(
+          model = unliftStringIfNotNull(args[0]) ?: NameParser.TypeOfLLM.OpenAI.DefaultModel
+        )
+      }
+    ) ?: orFail(expr)
+
+  context (CX.Scope)
+  fun NameParser.UsingLLM.Companion.unlift(expr: IrExpression): NameParser.UsingLLM =
+    on(expr).match(
+      case(Ir.ConstructorCallNullableN.of<NameParser.UsingLLM>()[Is()]).then { args ->
+        NameParser.UsingLLM(
+          type = NameParser.TypeOfLLM.unlift(args[0] ?: parseError("TypeOfLLM needs to be specified.", expr)),
+          maxTablesPerCall = args[1]?.let { unliftString(it).toInt() } ?: NameParser.UsingLLM.DefaultMaxTablesPerCall,
+          maxColumnsPerCall = args[2]?.let { unliftString(it).toInt() } ?: NameParser.UsingLLM.DefaultMaxColumnsPerCall,
+          systemPrompt = unliftStringIfNotNull(args[3]) ?: NameParser.UsingLLM.DefaultSystemPrompt,
+          processor =
+            if (args[4] == null)
+              NameProcessorLLM.CompileTimeProvided
+            else
+              parseError("The NameProcessorLLM is a construct that is supplied by the compiler plugin. Most of the time it should be left to the default value.", expr)
+        )
+      }
+    ) ?: orFail(expr)
+
+  context (CX.Scope)
+  fun NameParser.Companion.unlift(expr: IrExpression): NameParser =
+    on(expr).match(
+      case(Ir.Expr.ClassOf<NameParser.UsingLLM>()).then { _ -> NameParser.UsingLLM.unlift(expr) },
+      case(Ir.Expr.ClassOf<NameParser.LiteralNames>()).then { _ -> NameParser.LiteralNames },
+      case(Ir.Expr.ClassOf<NameParser.SnakeCaseNames>()).then { _ -> NameParser.SnakeCaseNames },
     ) ?: orFail(expr)
 
   context (CX.Scope)
@@ -94,8 +130,9 @@ object Unlifter {
           password = args[5]?.let { unliftString(it) },
           usernameEnvVar = args[6]?.let { unliftString(it) },
           passwordEnvVar = args[7]?.let { unliftString(it) },
-          propertiesFile = args[8]?.let { PropertiesFile.unlift(it) },
+          propertiesFile = args[8]?.let { unliftString(it) } ?: Code.DataClasses.DefaultPropertiesFile,
           tableGrouping = args[9]?.let { TableGrouping.unlift(it) } ?: Code.DataClasses.DefaultTableGrouping,
+          nameParser = args[10]?.let { NameParser.unlift(it) } ?: Code.DataClasses.DefaultNameParser,
         )
       }
     ) ?: orFail(expr)

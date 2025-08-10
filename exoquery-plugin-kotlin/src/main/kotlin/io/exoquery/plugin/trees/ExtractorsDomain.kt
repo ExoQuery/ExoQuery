@@ -343,6 +343,7 @@ object ExtractorsDomain {
       sealed interface CallType {
         data object Gen: CallType
         data object GenAndReturn: CallType
+        data object JustReturn: CallType
       }
 
       context(CX.Scope) operator fun <AP : Pattern<IrCall>, BP: Pattern<CallType>> get(call: AP, callType: BP) =
@@ -352,6 +353,9 @@ object ExtractorsDomain {
           }
           else if (it.ownerHasAnnotation<ExoCodegenReturn>() && it.type.isClass<Code.DataClasses>()) {
             Components2(it, CallType.GenAndReturn)
+          }
+          else if (it.ownerHasAnnotation<ExoCodegenJustReturn>() && it.type.isClass<Code.DataClasses>()) {
+            Components2(it, CallType.JustReturn)
           }
           else {
             null
