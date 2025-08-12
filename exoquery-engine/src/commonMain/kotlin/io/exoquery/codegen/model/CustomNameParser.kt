@@ -1,76 +1,55 @@
 package io.exoquery.codegen.model
 
+import io.exoquery.annotation.ExoInternal
 import io.exoquery.codegen.util.*
 import kotlinx.serialization.Serializable as Ser
 
 
 interface NameProcessorLLM {
-  fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, rootLevelApiKey: String?): List<TablePrepared>
+  fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, ctx: ProcessingContext): List<TablePrepared>
 
   data class ModelInput(val originalTables: List<String>, val modelInput: String)
 
   @Ser
   object CompileTimeProvided: NameProcessorLLM {
-    override fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, rootLevelApiKey: String?): List<TablePrepared> =
-      throw IllegalArgumentException("This is a placeholder that tells ExoQuery to use the compile-time-provided name processor. Leave the default in this field.")
+    override fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, ctx: ProcessingContext): List<TablePrepared> =
+      throw IllegalArgumentException(
+        """
+          This is a placeholder that tells ExoQuery to use the compile-time-provided name processor. Normally it can be left blank.
+          If you are getting this error at compile-time there is a bug in ExoQuery, please report it. If you getting this error at runtime
+          then you have not called the .preparedForRuntime() function on your NameParser in your code-generation configuration.
+        """.trimIndent()
+      )
   }
+  @ExoInternal
   companion object {
   }
 }
 
+data class ProcessingContext(val logDetails: Boolean, val rootLevelOpenApiKey: String?)
+
 @Ser
 sealed interface NameParser {
-  data class Config(val rootLevelOpenApiKey: String?)
 
-  fun parseTables(tables: List<TablePrepared>, config: Config): List<TablePrepared>
+  fun parseTables(tables: List<TablePrepared>, processingContext: ProcessingContext): List<TablePrepared>
   fun containsOpenAI(): Boolean =
     when (this) {
-      is UsingLLM -> type is TypeOfLLM.OpenAI
+      is UsingLLM -> type is LLM.OpenAI
       is Composite -> parsers.any { it.containsOpenAI() }
       else -> false
     }
 
-  sealed interface TypeOfLLM {
-    data class Ollama(
-      val model: String = DefaultModel,
-      val url: String = DefaultUrl
-    ) : TypeOfLLM {
-      companion object {
-        val DefaultModel = "qwen2.5-coder:0.5b"
-        val DefaultUrl = "http://localhost:11434"
-      }
-    }
-    data class OpenAI(
-      val model: String = DefaultModel,
-      /**
-       * The API key to use for OpenAI requests.
-       * DO NOT USE THIS IN PRODUCTION. Instead use `apiKeyEnvVar` to set the API key as an environment variable
-       * or use the add `api-key` to your codge-generation properties file (.codegen.properties by default).
-       */
-      val apiKey: String? = null,
-      val apiKeyEnvVar: String? = null,
-    ): TypeOfLLM {
-      fun withApiKey(apiKey: String): OpenAI =
-        this.copy(apiKey = apiKey)
-
-      companion object {
-        val DefaultModel = "gpt-4o-mini"
-      }
-    }
-    companion object {
-    }
-  }
   @Ser
   data class UsingLLM(
-    val type: TypeOfLLM,
+    val type: LLM,
     val maxTablesPerCall: Int = DefaultMaxTablesPerCall,
     val maxColumnsPerCall: Int = DefaultMaxColumnsPerCall,
     val systemPromptTables: String = DefaultSystemPromptTables,
     val systemPromptColumns: String = DefaultSystemPromptColumns,
     val processor: NameProcessorLLM = NameProcessorLLM.CompileTimeProvided
   ): NameParser {
-    override fun parseTables(tables: List<TablePrepared>, config: Config): List<TablePrepared> =
-      processor.processTables(this, tables, config.rootLevelOpenApiKey)
+    override fun parseTables(tables: List<TablePrepared>, ctx: ProcessingContext): List<TablePrepared> =
+      processor.processTables(this, tables, ctx)
 
     companion object {
       val DefaultMaxTablesPerCall = 20
@@ -127,19 +106,19 @@ sealed interface NameParser {
     }
   }
 
-  @Ser data class Composite private constructor (val parsers: List<NameParser>): NameParser {
-    override fun parseTables(tables: List<TablePrepared>, config: Config): List<TablePrepared> =
-      parsers.fold(tables) { acc, parser -> parser.parseTables(acc, config) }
+  @Ser data class Composite @ExoInternal constructor (val parsers: List<NameParser>): NameParser {
+    override fun parseTables(tables: List<TablePrepared>, processingContext: ProcessingContext): List<TablePrepared> =
+      parsers.fold(tables) { acc, parser -> parser.parseTables(acc, processingContext) }
 
     companion object {
-      operator fun invoke(nameParser: NameParser, vararg others: NameParser): Composite {
-        return Composite(listOf(nameParser) + others.toList())
-      }
+      @OptIn(ExoInternal::class)
+      operator fun invoke(nameParser: NameParser, vararg others: NameParser): Composite =
+        Composite(listOf(nameParser) + others.toList())
     }
   }
 
   @Ser sealed interface SimpleNameParser : NameParser {
-    override fun parseTables(tables: List<TablePrepared>, config: Config): List<TablePrepared> =
+    override fun parseTables(tables: List<TablePrepared>, processingContext: ProcessingContext): List<TablePrepared> =
       tables.map { t ->
         t.copy(
           name = parseTable(t),
@@ -158,23 +137,24 @@ sealed interface NameParser {
     data object Column : Target
     data object Both : Target
 
+    @ExoInternal
     companion object {
     }
   }
 
-  data object CapitalizeColumns : SimpleNameParser {
+  @Ser data object CapitalizeColumns : SimpleNameParser {
     override fun parseColumn(cm: ColumnPrepared): String = cm.name.capitalizeIt()
     override fun parseTable(tm: TablePrepared): String = tm.name
   }
-  data object UncapitalizeColumns : SimpleNameParser {
+  @Ser data object UncapitalizeColumns : SimpleNameParser {
     override fun parseColumn(cm: ColumnPrepared): String = cm.name.uncapitalize()
     override fun parseTable(tm: TablePrepared): String = tm.name
   }
-  data object CapitalizeTables : SimpleNameParser {
+  @Ser data object CapitalizeTables : SimpleNameParser {
     override fun parseColumn(cm: ColumnPrepared): String = cm.name
     override fun parseTable(tm: TablePrepared): String = tm.name.capitalizeIt()
   }
-  data object UncapitalizeTables : SimpleNameParser {
+  @Ser data object UncapitalizeTables : SimpleNameParser {
     override fun parseColumn(cm: ColumnPrepared): String = cm.name
     override fun parseTable(tm: TablePrepared): String = tm.name.uncapitalize()
   }
@@ -210,6 +190,7 @@ sealed interface NameParser {
     override fun parseTable(tm: TablePrepared): String = tm.name.snakeToUpperCamel()
   }
 
+  @ExoInternal
   companion object {
   }
 }

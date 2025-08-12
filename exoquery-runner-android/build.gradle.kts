@@ -88,7 +88,7 @@ kotlin {
 
         api(libs.kotlinx.serialization.core)
         api(libs.kotlinx.serialization.protobuf)
-        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+        api(libs.kotlinx.coroutines.core)
         implementation("androidx.sqlite:sqlite-framework:2.4.0")
 
         val roomVersion = "2.7.1"

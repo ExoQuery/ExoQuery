@@ -39,43 +39,6 @@ import kotlinx.serialization.decodeFromHexString
 import org.intellij.lang.annotations.Language
 import kotlin.reflect.KClass
 
-fun unpackCodeDataClasses(expr: String): Code.DataClasses =
-  EncodingXR.protoBuf.decodeFromHexString<Code.DataClasses>(expr)
-
-fun unpackExpr(expr: String): XR.Expression =
-  EncodingXR.protoBuf.decodeFromHexString<XR.Expression>(expr)
-
-fun unpackQueryModel(query: String): SqlQueryModel =
-  EncodingXR.protoBuf.decodeFromHexString<SqlQueryModel>(query)
-
-fun unpackQueryModelLazy(query: String): () -> SqlQueryModel =
-  { unpackQueryModel(query) }
-
-fun unpackQuery(query: String): XR.Query =
-  EncodingXR.protoBuf.decodeFromHexString<XR.Query>(query)
-
-fun unpackQueryLazy(query: String): () -> XR.Query =
-  { unpackQuery(query) }
-
-fun unpackAction(action: String): XR.Action =
-  EncodingXR.protoBuf.decodeFromHexString<XR.Action>(action)
-
-fun unpackActionLazy(action: String): () -> XR.Action =
-  { unpackAction(action) }
-
-fun unpackBatchAction(batchAction: String): XR.Batching =
-  EncodingXR.protoBuf.decodeFromHexString<XR.Batching>(batchAction)
-
-fun unpackBatchActionLazy(batchAction: String): () -> XR.Batching =
-  { unpackBatchAction(batchAction) }
-
-// data class Person(val name: String, val age: Int)
-// fun example() {
-//   val v = capture {
-//     Table<Person>().map { p -> p.age }
-//   }
-// }
-
 class MissingCaptureError(val msg: String) : IllegalStateException(msg)
 
 fun errorCap(message: Any): Nothing = throw MissingCaptureError(message.toString())
@@ -89,8 +52,8 @@ object capture {
     errorCap("Compile time plugin did not transform the tree")
 
   // Very interesting thing happen to the annotation if we do this. I.e. when something like a conditional
-// happens e.g. `if (foo) capture { query } else throw ...` then instead of being @Captured SqlQuery it will be just SqlQuery which
-// is actually the behavior that we wanted since the start.
+  // happens e.g. `if (foo) capture { query } else throw ...` then instead of being @Captured SqlQuery it will be just SqlQuery which
+  // is actually the behavior that we wanted since the start.
   @ExoCapture
   operator fun <SqlContainer : ContainerOfXR> invoke(block: CapturedBlock.() -> SqlContainer): @Captured SqlContainer =
     errorCap("Compile time plugin did not transform the tree")

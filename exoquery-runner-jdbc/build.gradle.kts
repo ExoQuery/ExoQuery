@@ -69,7 +69,7 @@ kotlin {
 
         api(libs.kotlinx.serialization.core)
         api(libs.kotlinx.serialization.protobuf)
-        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+        api(libs.kotlinx.coroutines.core)
 
         // Hikari should be optional on a user-level. The contexts only need a DataSource instance.
         implementation("com.zaxxer:HikariCP:5.0.1")

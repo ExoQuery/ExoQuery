@@ -98,6 +98,7 @@ tasks.withType<KotlinCompilationTask<*>>().configureEach {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
   compilerOptions {
     freeCompilerArgs.add("-Xwhen-guards")
+    freeCompilerArgs.add("-opt-in=io.exoquery.annotation.ExoInternal")
 
     // DOesn't work in KMP
     //freeCompilerArgs.add("-Xcontext-receivers")

@@ -219,3 +219,10 @@ annotation class ExoUpdate
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoDelete
+
+@RequiresOptIn(
+  level = RequiresOptIn.Level.ERROR,
+  message = "This API is internal to ExoQuery."
+)
+@Retention(AnnotationRetention.BINARY)
+annotation class ExoInternal

@@ -96,54 +96,15 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       target.addCompilerDependency("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${BuildConfig.SERIALIZATION_VERSION}")
       // Since this is compiler-plugin it works in the compiler which is written in Java so we use JVM dependencies
       target.addCompilerDependency("io.exoquery:decomat-core-jvm:${BuildConfig.DECOMAT_VERSION}")
+
+      //target.addCompilerDependency(BuildConfig.COROUTINES_LIBRARY)
     }
 
     val conventions = GeneratedEntitiesDirConventions(pluginExtConfig, target)
-
-    target.afterEvaluate { project ->
-      val kotlinExtension = target.extensions.findByType(KotlinProjectExtension::class.java)
-      kotlinExtension?.let { decorateKotlinProject(it, project, conventions) }
-    }
   }
 
   fun Project.addCompilerDependency(dependency: String) =
     dependencies.add("kotlinNativeCompilerPluginClasspath", dependency)
-
-  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project, conventions: GeneratedEntitiesDirConventions) {
-    when (kotlin) {
-      is KotlinSingleTargetExtension<*> -> {
-        val targetsAndSourceSets =
-          kotlin.target.compilations.map { compilation ->
-            kotlin.target to compilation.defaultSourceSet
-          }
-        generatateDirs(project, targetsAndSourceSets, conventions)
-      }
-      is KotlinMultiplatformExtension -> {
-        val targetsAndSourceSets =
-          kotlin.targets.flatMap { target ->
-            target.compilations.map { compilation ->
-              target to compilation.defaultSourceSet
-            }
-          }
-        generatateDirs(project, targetsAndSourceSets, conventions)
-      }
-    }
-  }
-
-  private fun generatateDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>, conventions: GeneratedEntitiesDirConventions) =
-    targetsAndSourceSets.forEach { (target, sourceSet) ->
-      val targetName = target.name
-      val sourceSetName = sourceSet.name
-
-      println("=========== Decorating [${project.name}] target:$targetName->sourceSet:$sourceSetName ===========")
-
-      // Add the generated directory to kotlin source directories
-      val generatedDir =  conventions.generatedEntitiesKotlin(project, sourceSetName, targetName).get().asFile
-      sourceSet.kotlin.srcDir(generatedDir)
-
-      // Ensure the directory exists
-      generatedDir.mkdirs()
-    }
 
 
   override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
@@ -161,14 +122,17 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     ext.codegenDrivers.get().forEach { dependency ->
       println("[ExoQuery] adding driver dependency: $dependency")
       configurationName.let { project.dependencies.add(it, dependency) }
+    }
 
-      if (ext.enableCodegenAI.convention(false).get()) {
-        val koogLibrary = ext.koogLibrary.convention(BuildConfig.KOOG_LIBRARY).get()
-        println("[ExoQuery] LLM naming is enabled in ${kotlinCompilation.project.name}:${kotlinCompilation.name}! Adding Koog dependency for LLM naming: ${koogLibrary}")
-        // If LLM naming is enabled, we need to add the Koog dependency
-        configurationName.let {
-          project.dependencies.add(it, koogLibrary)
-        }
+    if (ext.enableCodegenAI.convention(false).get()) {
+      val koogLibrary = ext.koogLibrary.convention(BuildConfig.KOOG_LIBRARY).get()
+      val coroutinesLibrary = BuildConfig.COROUTINES_LIBRARY
+
+      println("[ExoQuery] LLM naming is enabled in ${kotlinCompilation.project.name}:${kotlinCompilation.name}! Adding Koog dependency for LLM naming: ${koogLibrary} (and also ${coroutinesLibrary})")
+      // If LLM naming is enabled, we need to add the Koog dependency
+      configurationName.let { configName ->
+        project.dependencies.add(configName, koogLibrary)
+        project.dependencies.add(configName, coroutinesLibrary)
       }
     }
 
@@ -190,6 +154,13 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     val queriesBaseDir = project.generatedRootDir.get().dir("queries").asFile.absolutePath
 
+    // Need to do this here and not in apply() because the kotlinExtension is not available yet there
+    // and we need it to know where the generated directories are (i.e. it changes based on whether an LLM is used for codegen or not)
+    project.afterEvaluate { project ->
+      val kotlinExtension = project.extensions.findByType(KotlinProjectExtension::class.java)
+      kotlinExtension?.let { decorateKotlinProject(it, project, conventions) }
+    }
+
     return project.provider {
       listOf(
         SubpluginOption("entitiesBaseDir", conventions.generatedEntitiesDir(project).get().asFile.absolutePath),
@@ -205,4 +176,39 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       )
     }
   }
+
+  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project, conventions: GeneratedEntitiesDirConventions) {
+    when (kotlin) {
+      is KotlinSingleTargetExtension<*> -> {
+        val targetsAndSourceSets =
+          kotlin.target.compilations.map { compilation ->
+            kotlin.target to compilation.defaultSourceSet
+          }
+        generateEntitiesDirs(project, targetsAndSourceSets, conventions)
+      }
+      is KotlinMultiplatformExtension -> {
+        val targetsAndSourceSets =
+          kotlin.targets.flatMap { target ->
+            target.compilations.map { compilation ->
+              target to compilation.defaultSourceSet
+            }
+          }
+        generateEntitiesDirs(project, targetsAndSourceSets, conventions)
+      }
+    }
+  }
+
+  private fun generateEntitiesDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>, conventions: GeneratedEntitiesDirConventions) =
+    targetsAndSourceSets.forEach { (target, sourceSet) ->
+      val targetName = target.name
+      val sourceSetName = sourceSet.name
+
+      // Add the generated directory to kotlin source directories
+      val generatedDir =  conventions.generatedEntitiesKotlin(project, sourceSetName, targetName).get().asFile
+
+      println("[ExoQuery] Adding sources to [${project.name}] $targetName->$sourceSetName (${generatedDir})")
+      sourceSet.kotlin.srcDir(generatedDir)
+      // Ensure the directory exists
+      generatedDir.mkdirs()
+    }
 }

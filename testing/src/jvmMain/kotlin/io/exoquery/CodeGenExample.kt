@@ -1,5 +1,7 @@
 package io.exoquery
 
+import io.exoquery.codegen.model.LLM
+import io.exoquery.codegen.model.NameParser
 import io.exoquery.generation.Code
 import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.DatabaseDriver
@@ -17,11 +19,19 @@ fun main() {
 
   val cc = capture.generateAndReturn(
     Code.DataClasses(
-      CodeVersion.Fixed("1.1"),
+      CodeVersion.Fixed("1.5"),
       DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
       packagePrefix = "io.exoquery",
       username = "postgres",
-      password = "postgres"
+      password = "postgres",
+      nameParser =
+        NameParser.Composite(
+          NameParser.UsingLLM(
+            LLM.OpenAI()
+          ),
+          NameParser.UncapitalizeColumns
+        ),
+      detailedLogs = true
     )
   )
 

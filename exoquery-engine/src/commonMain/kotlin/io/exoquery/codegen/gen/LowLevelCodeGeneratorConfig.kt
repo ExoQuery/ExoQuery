@@ -58,5 +58,6 @@ data class LowLevelCodeGeneratorConfig(
   val tableFilter: String? = null,
   val defaultExcludedSchemas: Set<String> = setOf("information_schema", "performance_schema", "sys", "mysql"),
   val rootLevelOpenApiKey: String? = null,
-  val dryRun: Boolean = false
+  val dryRun: Boolean = false,
+  val detailedLogs: Boolean = false
 )

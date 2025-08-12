@@ -97,7 +97,7 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
         )
       }
 
-    val processedTables = nameParser.parseTables(rawTables, NameParser.Config(config.rootLevelOpenApiKey))
+    val processedTables = nameParser.parseTables(rawTables, ProcessingContext(config.detailedLogs, config.rootLevelOpenApiKey))
     val grouped = groupByNamespace(processedTables)
     val deliverables = packageIntoDeliverables(grouped)
     val writableFiles = deliverables.map { buildFile(it, CodeEmitter(it).code, config.rootPath) }

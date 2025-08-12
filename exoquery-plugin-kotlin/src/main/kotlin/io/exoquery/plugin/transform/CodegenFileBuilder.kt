@@ -1,5 +1,6 @@
 package io.exoquery.plugin.transform
 
+import io.exoquery.codegen.ai.preparedForRuntime
 import io.exoquery.codegen.gen.BasicPath
 import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
 import io.exoquery.codegen.model.GeneratorBase
@@ -15,7 +16,9 @@ class CodegenFileBuilder(val options: ExoCompileOptions) {
     dcs.forEach { dc ->
       try {
         val rootPath = "${options.entitiesBaseDir}/${options.targetName}/${options.sourceSetName}/kotlin"
-        val gen = dc.toGenerator(rootPath, options.projectDir)
+        val gen = dc.toGenerator(rootPath, options.projectDir).preparedForRuntime(
+          {msg -> logger.warn(msg)}
+        )
         logger.warn("Generating Code for ${thisFile.name} in: ${rootPath}")
         gen.run()
       } catch (t: Throwable) {

@@ -1,21 +1,31 @@
 package io.exoquery.codegen.ai
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
+import ai.koog.prompt.message.Message
 import io.exoquery.codegen.ai.KoogBasedNameProcessor.KoogCodegenError
+import io.exoquery.codegen.model.GeneratorBase
+import io.exoquery.codegen.model.JdbcGenerator
+import io.exoquery.codegen.model.LLM
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.NameProcessorLLM
 import io.exoquery.codegen.model.NameProcessorLLM.ModelInput
+import io.exoquery.codegen.model.ProcessingContext
 import io.exoquery.codegen.model.TablePrepared
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import java.util.UUID
+import kotlin.math.log
 
 /**
  * IMPORTANT! This module should NOT be directly referenced anywhere
@@ -34,19 +44,19 @@ import kotlinx.coroutines.runBlocking
 class KoogBasedNameProcessor(val log: (String) -> Unit = {}, val agentCaller: AgentCallerService): NameProcessorLLM {
   class KoogCodegenError(message: String): Exception(message)
 
-  override fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, rootLevelApiKey: String?): List<TablePrepared> =
+  override fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, ctx: ProcessingContext): List<TablePrepared> =
     runBlocking {
-      processTablesBlocking(usingLLM, tables, rootLevelApiKey)
+      processTablesBlocking(usingLLM, tables, ctx)
     }
 
-  private suspend fun processTablesBlocking(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, rootLevelApiKey: String?): List<TablePrepared> {
+  private suspend fun processTablesBlocking(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, ctx: ProcessingContext): List<TablePrepared> {
     val (columnLabels, tableLabels) = columnAndTableLists(tables)
 
-    val agentMakerTables = AgentMaker(usingLLM.type, usingLLM.systemPromptTables, rootLevelApiKey)
-    val agentMakerColumns = AgentMaker(usingLLM.type, usingLLM.systemPromptColumns, rootLevelApiKey)
+    val requestTables = RequesterFactory(usingLLM.type, usingLLM.systemPromptTables, ctx.rootLevelOpenApiKey)
+    val requestColumns = RequesterFactory(usingLLM.type, usingLLM.systemPromptColumns, ctx.rootLevelOpenApiKey)
 
-    val mappingsTables = executeAgentAndParse(agentMakerTables, tableLabels, usingLLM.maxTablesPerCall, 5, "tables")
-    val mappingsColumns = executeAgentAndParse(agentMakerColumns, columnLabels, usingLLM.maxColumnsPerCall, 5, "columns")
+    val mappingsTables = executeAgentAndParse(requestTables, tableLabels, usingLLM.maxTablesPerCall, 5, ctx.logDetails, "tables")
+    val mappingsColumns = executeAgentAndParse(requestColumns, columnLabels, usingLLM.maxColumnsPerCall, 5, ctx.logDetails, "columns")
 
     val renamedTables =
       tables.map { table ->
@@ -137,7 +147,7 @@ class KoogBasedNameProcessor(val log: (String) -> Unit = {}, val agentCaller: Ag
     val pairs = lines.map { (index, keyName, valueName) ->
       val originalName = originalLabels[index - 1]
       if (keyName != originalName) {
-        log("[ExoQuery] WARNING: Old name '$keyName' does not match the original label '${originalName}' at index $index. Using ${originalName} instead.")
+        log("[ExoQuery] WARNING: Old name '$valueName' does not match the original label ${originalName} (in $keyName:$originalName) at index $index. Using ${originalName} instead.")
       }
       originalName to valueName
     }
@@ -153,19 +163,19 @@ class KoogBasedNameProcessor(val log: (String) -> Unit = {}, val agentCaller: Ag
    *   }
    * ```
    */
-  private suspend fun executeAgentAndParse(agentMaker: AgentMaker, tableOrColumnNames: List<String>, maxNamesPerCall: Int, numParallel: Int, label: String): Map<String, String> = coroutineScope {
+  private suspend fun executeAgentAndParse(requesterFactory: RequesterFactory, tableOrColumnNames: List<String>, maxNamesPerCall: Int, numParallel: Int, logDetails: Boolean, label: String): Map<String, String> = coroutineScope {
     val modelInputs = produceInputs(tableOrColumnNames, maxNamesPerCall)
     val chunkedInputs = modelInputs.chunked(numParallel)
-    val modelName = agentMaker.statedModelId
+    val modelName = requesterFactory.statedModelId
     val output =
       chunkedInputs.withIndex().flatMap { (i, batch) ->
         log("[ExoQuery] Processing batch ${i+1}/${chunkedInputs.size} with model ${modelName}")
         val batchOutputs = batch.withIndex().map { (j, request) ->
           async {
-            val agent = agentMaker.makeAgent()
-            println("[ExoQuery] =============== Agent Input ${i+1}-${j+1} (${label}): ===============\n$request")
+            val agent = requesterFactory.make()
+            if (logDetails) log("[ExoQuery] =============== Agent Input ${i+1}-${j+1} (${label}): ===============\n${request.modelInput}")
             val output = agentCaller.call(agent, request)
-            println("[ExoQuery] =============== Agent Output ${i+1}-${j+1} (${label}): ===============\n$output")
+            if (logDetails) log("[ExoQuery] =============== Agent Output ${i+1}-${j+1} (${label}): ===============\n${output}")
             request to output
           }
         }.awaitAll()
@@ -178,53 +188,67 @@ class KoogBasedNameProcessor(val log: (String) -> Unit = {}, val agentCaller: Ag
 }
 
 interface AgentCallerService {
-  suspend fun call(agent: AIAgent<String, String>, input: ModelInput): String
+  suspend fun call(requester: Requester, input: ModelInput): String
 
   data object Live : AgentCallerService {
-    override suspend fun call(agent: AIAgent<String, String>, input: ModelInput): String =
-      agent.run(input.modelInput)
+    override suspend fun call(requester: Requester, input: ModelInput): String =
+      requester.execute(input.modelInput)
   }
   data class Test(val makeOutput: (String) -> String) : AgentCallerService {
-    override suspend fun call(agent: AIAgent<String, String>, input: ModelInput): String =
+    override suspend fun call(requester: Requester, input: ModelInput): String =
       makeOutput(input.modelInput)
   }
 }
 
-class AgentMaker(val type: NameParser.TypeOfLLM, val systemPrompt: String, val rootLevelApiKey: String?) {
+
+data class Requester(val request: suspend (String) -> List<Message.Response>) {
+  suspend fun execute(userPrompt: String): String {
+    val responses = request(userPrompt)
+    return responses.map { it.content }.joinToString("\n")
+  }
+}
+
+class RequesterFactory(val type: LLM, val systemPrompt: String, val rootLevelApiKey: String?) {
 
   public val statedModelId get() =
     when(type) {
-      is NameParser.TypeOfLLM.Ollama -> type.model
-      is NameParser.TypeOfLLM.OpenAI -> type.model
+      is LLM.Ollama -> type.model
+      is LLM.OpenAI -> type.model
     }
 
-  fun makeAgent(): AIAgent<String, String> = run {
+  fun make(): Requester = run {
     when(type) {
-      is NameParser.TypeOfLLM.Ollama -> {
-        val model = makeOllamaModel(type)
-        AIAgent(
-          executor = simpleOllamaAIExecutor(type.url),
-          systemPrompt = systemPrompt,
-          llmModel = model,
-          temperature = 0.0
-        )
+      is LLM.Ollama -> {
+        val clientModel = makeOllamaModel(type)
+        Requester { userPrompt ->
+          OllamaClient(type.url).execute(
+            prompt = prompt(UUID.randomUUID().toString()) {
+              system(systemPrompt)
+              user(userPrompt)
+            },
+            model = clientModel
+          )
+        }
       }
-      is NameParser.TypeOfLLM.OpenAI -> {
+      is LLM.OpenAI -> {
         val model = makeOpenAIModel(type)
         val apiKey = type.apiKey ?: rootLevelApiKey ?: throw KoogCodegenError(
           "OpenAI API key is not provided. Please specify it using TypeOfLLM.OpenAI.apiKey, TypeOfLLM.OpenAI.apiKeyEnvVar or the `api-key` field of your codegen config (.codegen.properties by default)."
-        )
-        AIAgent(
-          executor = simpleOpenAIExecutor(apiKey),
-          systemPrompt = systemPrompt,
-          llmModel = model,
-          temperature = 0.0
-        )
+        );
+        Requester { userPrompt ->
+          OpenAILLMClient(apiKey).execute(
+            prompt = prompt(UUID.randomUUID().toString()) {
+              system(systemPrompt)
+              user(userPrompt)
+            },
+            model = model
+          )
+        }
       }
     }
   }
 
-  private fun makeOllamaModel(ollamaType: NameParser.TypeOfLLM.Ollama) = run {
+  private fun makeOllamaModel(ollamaType: LLM.Ollama) = run {
     val model = LLModel(
       provider = LLMProvider.Ollama,
       id = ollamaType.model,
@@ -246,10 +270,38 @@ class AgentMaker(val type: NameParser.TypeOfLLM, val systemPrompt: String, val r
       OpenAIModels.CostOptimized.GPT4_1Nano
     )
 
-  private fun makeOpenAIModel(openAiType: NameParser.TypeOfLLM.OpenAI) = run {
+  private fun makeOpenAIModel(openAiType: LLM.OpenAI) = run {
     val model =
       supportedOpenAiModels.find { it.id == openAiType.model }
         ?: throw KoogCodegenError("Unsupported OpenAI model: ${openAiType.model}. Supported models are: ${supportedOpenAiModels.joinToString(", ") { it.id }}")
     model
   }
 }
+
+fun NameParser.preparedForRuntime(
+  log: (String) -> Unit = {},
+  agentCaller: AgentCallerService = AgentCallerService.Live
+): NameParser {
+  val koogProcessor = KoogBasedNameProcessor(log, agentCaller)
+
+  fun prepareRecurse(nameParser: NameParser): NameParser =
+    when (nameParser) {
+      is NameParser.UsingLLM -> nameParser.copy(processor = koogProcessor)
+      is NameParser.Composite -> nameParser.copy(parsers = nameParser.parsers.map { prepareRecurse(it) })
+      else -> nameParser // No need to change other parsers
+    }
+
+  return prepareRecurse(this)
+}
+
+fun GeneratorBase<*, *, *>.preparedForRuntime(
+  log: (String) -> Unit = {},
+  agentCaller: AgentCallerService = AgentCallerService.Live
+): JdbcGenerator =
+  when (this) {
+    is JdbcGenerator -> {
+      val nameParser = this.config.nameParser.preparedForRuntime(log, agentCaller)
+      this.withConfig(config = this.config.copy(nameParser = nameParser))
+    }
+    else -> throw IllegalArgumentException("GeneratorBase should be of type JdbcGenerator to prepare for runtime. Got: ${this::class.simpleName}")
+  }

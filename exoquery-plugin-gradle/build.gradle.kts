@@ -21,12 +21,14 @@ val decomatVersion = extra["decomatVersion"]
 val serializationVersion = libs.versions.serialization.get()
 
 val koogLibrary = project.dependencies.create(libs.koog.agents.get()).toString()
+val coroutinesLibrary = project.dependencies.create(libs.kotlinx.coroutines.core.get()).toString()
 
 buildConfig {
   buildConfigField("String", "VERSION", "\"${project.version}\"")
   buildConfigField("String", "DECOMAT_VERSION", "\"${decomatVersion}\"")
   buildConfigField("String", "SERIALIZATION_VERSION", "\"${serializationVersion}\"")
   buildConfigField("String", "KOOG_LIBRARY", "\"${koogLibrary}\"")
+  buildConfigField("String", "COROUTINES_LIBRARY", "\"${coroutinesLibrary}\"")
 }
 
 dependencies {

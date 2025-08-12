@@ -82,7 +82,11 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir
       codeVersion = this.codeVersion,
       rootPath = rootPathReal,
       packagePrefix = this.packagePrefix?.let { BasicPath.DotPath(it) } ?: BasicPath.Empty,
-      // TODO get the unlifted name parser and run the AI retrieveal if needed
+      // NOTE: NameParser.preparedForRuntime SHOULD  NOT be used here because it requires Koog to be present at the compile-time code
+      //       we do NOT want to assume that the client always has classpath, only when instruct the codegen at compile-time using
+      //       exoQuery { enableCodegenAI = true } (for compile-time code generation) or when they explicit import the Koog library
+      //       via a dependency e.g. `implementation("io.exoquery:koog-runtime:___")` can we assume that the client has Koog. None
+      //       of which we actually know are the case here.
       nameParser = finalizedCodeDataClasses.nameParser, // If an API key is needed, it will be set in the nameParser by the procedure above
       //tableNamespacer = TODO(),
       //unrecognizedTypeStrategy = TODO(),
@@ -96,7 +100,8 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir
       defaultNamespace = "schema",
       rootLevelOpenApiKey = props.getApiKey(),
       //defaultExcludedSchemas = TODO()
-      dryRun = dryRun
+      dryRun = dryRun,
+      detailedLogs = detailedLogs
     ),
     connectionMaker = connectionMaker,
     allowUnknownDatabase = true

@@ -59,6 +59,7 @@ object Code {
     val tableFilter: String? = null,
 
     val dryRun: Boolean = DefaultDryRun,
+    val detailedLogs: Boolean = DefaultDetailedLogs
   ) {
     companion object {
       // Use the pattern of specifying the default fetch policy here so it can be used in the compiler plugin unlifter
@@ -67,6 +68,7 @@ object Code {
       val DefaultPropertiesFile = ".codegen.properties"
       val DefaultDryRun = false
       val DefaultNameParser = NameParser.Literal
+      val DefaultDetailedLogs = false
     }
   }
 }
@@ -79,6 +81,7 @@ fun Code.DataClasses.encode(): String {
 sealed interface FetchPolicy {
   @Ser data object OnVersionChange: FetchPolicy
   @Ser data object Always: FetchPolicy
+
 
   companion object {
   }

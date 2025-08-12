@@ -1,6 +1,8 @@
 package io.exoquery.plugin.trees
 
 import io.decomat.*
+import io.exoquery.annotation.ExoInternal
+import io.exoquery.codegen.model.LLM
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.NameProcessorLLM
 import io.exoquery.generation.Code
@@ -9,7 +11,6 @@ import io.exoquery.generation.DatabaseDriver
 import io.exoquery.generation.FetchPolicy
 import io.exoquery.generation.TableGrouping
 import io.exoquery.parseError
-import io.exoquery.plugin.isClass
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.varargValues
 import org.jetbrains.kotlin.ir.expressions.IrConst
@@ -17,6 +18,7 @@ import org.jetbrains.kotlin.ir.expressions.IrConstKind
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 
+@OptIn(ExoInternal::class)
 object Unlifter {
 
   context (CX.Scope)
@@ -85,18 +87,19 @@ object Unlifter {
       case(Ir.GetObjectValue<FetchPolicy.Always>()).then { FetchPolicy.Always }
     ) ?: orFail(expr)
 
+  @OptIn(ExoInternal::class)
   context (CX.Scope)
-  fun NameParser.TypeOfLLM.Companion.unlift(expr: IrExpression): NameParser.TypeOfLLM =
+  fun LLM.Companion.unlift(expr: IrExpression): LLM =
     on(expr).match(
-      case(Ir.ConstructorCallNullableN.of<NameParser.TypeOfLLM.Ollama>()[Is()]).then { args ->
-        NameParser.TypeOfLLM.Ollama(
-          model = unliftStringIfNotNull(args[0]) ?: NameParser.TypeOfLLM.Ollama.DefaultModel,
-          url = unliftStringIfNotNull(args[1]) ?: NameParser.TypeOfLLM.Ollama.DefaultUrl
+      case(Ir.ConstructorCallNullableN.of<LLM.Ollama>()[Is()]).then { args ->
+        LLM.Ollama(
+          model = unliftStringIfNotNull(args[0]) ?: LLM.Ollama.DefaultModel,
+          url = unliftStringIfNotNull(args[1]) ?: LLM.Ollama.DefaultUrl
         )
       },
-      case(Ir.ConstructorCallNullableN.of<NameParser.TypeOfLLM.OpenAI>()[Is()]).then { args ->
-        NameParser.TypeOfLLM.OpenAI(
-          model = unliftStringIfNotNull(args[0]) ?: NameParser.TypeOfLLM.OpenAI.DefaultModel
+      case(Ir.ConstructorCallNullableN.of<LLM.OpenAI>()[Is()]).then { args ->
+        LLM.OpenAI(
+          model = unliftStringIfNotNull(args[0]) ?: LLM.OpenAI.DefaultModel
         )
       }
     ) ?: orFail(expr)
@@ -106,7 +109,7 @@ object Unlifter {
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<NameParser.UsingLLM>()[Is()]).then { args ->
         NameParser.UsingLLM(
-          type = NameParser.TypeOfLLM.unlift(args[0] ?: parseError("TypeOfLLM needs to be specified.", expr)),
+          type = LLM.unlift(args[0] ?: parseError("TypeOfLLM needs to be specified.", expr)),
           maxTablesPerCall = args[1]?.let { unliftString(it).toInt() } ?: NameParser.UsingLLM.DefaultMaxTablesPerCall,
           maxColumnsPerCall = args[2]?.let { unliftString(it).toInt() } ?: NameParser.UsingLLM.DefaultMaxColumnsPerCall,
           systemPromptTables = unliftStringIfNotNull(args[3]) ?: NameParser.UsingLLM.DefaultSystemPromptTables,
@@ -189,7 +192,8 @@ object Unlifter {
           args[10]?.let { TableGrouping.unlift(it) } ?: Code.DataClasses.DefaultTableGrouping,
           args[11]?.let { unliftString(it) },
           args[12]?.let { unliftString(it) },
-          args[13]?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDryRun
+          args[13]?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDryRun,
+          args[14]?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDetailedLogs
         )
       }
     ) ?: orFail(expr)

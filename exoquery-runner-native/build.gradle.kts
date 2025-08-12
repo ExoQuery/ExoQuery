@@ -34,7 +34,7 @@ kotlin {
 
         api(libs.kotlinx.serialization.core)
         api(libs.kotlinx.serialization.json)
-        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+        api(libs.kotlinx.coroutines.core)
         //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
         implementation("app.cash.sqldelight:native-driver:2.0.2")
       }

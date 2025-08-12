@@ -2,11 +2,8 @@ package io.exoquery
 
 import io.exoquery.codegen.ai.AgentCallerService
 import io.exoquery.codegen.ai.KoogBasedNameProcessor
-import io.exoquery.codegen.gen.BasicPath
-import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
-import io.exoquery.codegen.model.JdbcGenerator
+import io.exoquery.codegen.model.LLM
 import io.exoquery.codegen.model.NameParser
-import io.exoquery.codegen.model.WorkingDir
 import io.exoquery.generation.Code
 import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.toGenerator
@@ -65,7 +62,7 @@ fun main() {
       nameParser = NameParser.Composite(
         NameParser.UsingLLM(
           //NameParser.TypeOfLLM.Ollama(),
-          NameParser.TypeOfLLM.OpenAI(),
+          LLM.OpenAI(),
           processor = KoogBasedNameProcessor({ println(it) }, AgentCallerService.Live)
         ),
         //NameParser.UncapitalizeColumns
