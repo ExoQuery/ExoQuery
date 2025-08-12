@@ -15,11 +15,20 @@ val Project.generatedRootDir get() =
 val Project.generatedSqlDir get() =
   generatedRootDir.map { it.dir("sql") }
 
-val Project.generatedEntitiesDir get() =
-  generatedRootDir.map { it.dir("entities") }
+class GeneratedEntitiesDirConventions(val ext: ExoQueryGradlePluginExtension, val project: Project) {
+  val codegenIntoPermanentLocation: Boolean =
+    ext.enableCodegenAI.convention(false).get() || ext.codegenIntoPermanentLocation.convention(false).get()
 
-fun Project.generatedEntitiesSubdir(sourceSetName: String, target: String) =
-  generatedEntitiesDir.map { it.dir("$target/$sourceSetName") }
+  fun generatedEntitiesDir(project: Project) =
+    if (codegenIntoPermanentLocation)
+      // create a static Provider<Directory> from project.projectDir
+      project.layout.dir(project.provider<File> { project.projectDir })
+    else
+      project.generatedRootDir.map { it.dir("entities") }
 
-fun Project.generatedEntitiesKotlin(sourceSetName: String, target: String) =
-  generatedEntitiesSubdir(sourceSetName, target).map { it.dir("kotlin") }
+  fun generatedEntitiesSubdir(project: Project, sourceSetName: String, target: String) =
+    generatedEntitiesDir(project).map { it.dir("$target/$sourceSetName") }
+
+  fun generatedEntitiesKotlin(project: Project, sourceSetName: String, target: String) =
+    generatedEntitiesSubdir(project, sourceSetName, target).map { it.dir("kotlin") }
+}

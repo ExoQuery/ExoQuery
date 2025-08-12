@@ -12,7 +12,7 @@ import java.sql.Driver
 import java.sql.DriverManager
 import java.util.Properties
 
-actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase<*, *, *> {
+actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String?): GeneratorBase<*, *, *> {
   val rootPathReal = BasicPath.SlashPath(absoluteRootPath)
 
   val jdbcUrl = this.driver.jdbcUrl
@@ -27,13 +27,16 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase
   val props = run {
     val workingProps = this.propertiesFile.let {
       val props = java.util.Properties()
-      val propsFile = java.io.File(it)
+      val propsFile = projectBaseDir?.let { baseDirValue -> java.io.File(baseDirValue, it) } ?: java.io.File(it)
       if (propsFile.exists()) {
+        println("[ExoQuery] Detected properties file for code generation: ${propsFile.absolutePath}")
         try {
-          props.load(java.io.File(it).inputStream())
+          props.load(propsFile.inputStream())
         } catch (e: Exception) {
           throw IllegalArgumentException("Code Generation Failed. Failed to load properties file: ${it}", e)
         }
+      } else {
+        println("[ExoQuery] No properties file found for code generation at: ${propsFile.absolutePath}. Using defaults.")
       }
       props
     }
@@ -51,19 +54,6 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase
       }
       workingProps.setPassword(pass)
     }
-    if (this.nameParser is NameParser.UsingLLM && this.nameParser.type is NameParser.TypeOfLLM.OpenAI) {
-      val openAiParser = this.nameParser.type
-      val actualApiKey =
-        openAiParser.apiKey
-          ?: run { if (openAiParser.apiKeyEnvVar != null) System.getenv(openAiParser.apiKeyEnvVar) else null }
-          ?: workingProps.getApiKey()?.let { it.toString() }
-          ?: throw IllegalArgumentException(
-            "Code Generation Failed. The user specified that OpenAPI should be used for table name parsing but the OpenAI API key was not set. " +
-              "Set it in the code generation properties file (.codegen.properties by default), as an environment variable (i.e. TypeOfLLM.OpenApi.apiKeyEnvVar). " +
-              "You can also set it directly in the TypeOfLLM.OpenApi.apiKey field in the code generation DSL, but this is NOT RECOMMENDED FOR PRODUCTION CODE."
-          )
-      workingProps.setApiKey(actualApiKey)
-    }
     if (this.username != null) workingProps.setUser(this.username)
     if (this.password != null) workingProps.setPassword(this.password)
     workingProps
@@ -71,18 +61,7 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase
 
   // copy the finalized values of various things into the data classes from the properties file
   val finalizedCodeDataClasses =
-    this.copy(
-      nameParser =
-        if (this.nameParser is NameParser.UsingLLM && this.nameParser.type is NameParser.TypeOfLLM.OpenAI && props.getApiKey() != null) {
-          this.nameParser.copy(
-            type = this.nameParser.type.copy(apiKey = props.getApiKey())
-          )
-        } else {
-          this.nameParser
-        },
-      username = props.getUser(),
-      password = props.getPassword(),
-    )
+    this.copy(username = props.getUser(), password = props.getPassword())
 
   // TODO create a cache of this operation
   val connectionMaker = {
@@ -116,6 +95,7 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase
         },
       numericPreference = NumericPreference.UseDefaults,
       defaultNamespace = "schema",
+      rootLevelOpenApiKey = props.getApiKey(),
       //defaultExcludedSchemas = TODO()
       dryRun = dryRun
     ),

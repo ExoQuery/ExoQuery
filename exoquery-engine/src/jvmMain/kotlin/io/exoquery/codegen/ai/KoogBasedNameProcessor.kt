@@ -34,16 +34,16 @@ import kotlinx.coroutines.runBlocking
 class KoogBasedNameProcessor(val log: (String) -> Unit = {}, val agentCaller: AgentCallerService): NameProcessorLLM {
   class KoogCodegenError(message: String): Exception(message)
 
-  override fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>): List<TablePrepared> =
+  override fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, rootLevelApiKey: String?): List<TablePrepared> =
     runBlocking {
-      processTablesBlocking(usingLLM, tables)
+      processTablesBlocking(usingLLM, tables, rootLevelApiKey)
     }
 
-  private suspend fun processTablesBlocking(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>): List<TablePrepared> {
+  private suspend fun processTablesBlocking(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, rootLevelApiKey: String?): List<TablePrepared> {
     val (columnLabels, tableLabels) = columnAndTableLists(tables)
 
-    val agentMakerTables = AgentMaker(usingLLM.type, usingLLM.systemPromptTables)
-    val agentMakerColumns = AgentMaker(usingLLM.type, usingLLM.systemPromptColumns)
+    val agentMakerTables = AgentMaker(usingLLM.type, usingLLM.systemPromptTables, rootLevelApiKey)
+    val agentMakerColumns = AgentMaker(usingLLM.type, usingLLM.systemPromptColumns, rootLevelApiKey)
 
     val mappingsTables = executeAgentAndParse(agentMakerTables, tableLabels, usingLLM.maxTablesPerCall, 5, "tables")
     val mappingsColumns = executeAgentAndParse(agentMakerColumns, columnLabels, usingLLM.maxColumnsPerCall, 5, "columns")
@@ -190,7 +190,7 @@ interface AgentCallerService {
   }
 }
 
-class AgentMaker(val type: NameParser.TypeOfLLM, val systemPrompt: String) {
+class AgentMaker(val type: NameParser.TypeOfLLM, val systemPrompt: String, val rootLevelApiKey: String?) {
 
   public val statedModelId get() =
     when(type) {
@@ -211,7 +211,7 @@ class AgentMaker(val type: NameParser.TypeOfLLM, val systemPrompt: String) {
       }
       is NameParser.TypeOfLLM.OpenAI -> {
         val model = makeOpenAIModel(type)
-        val apiKey = type.apiKey ?: throw KoogCodegenError(
+        val apiKey = type.apiKey ?: rootLevelApiKey ?: throw KoogCodegenError(
           "OpenAI API key is not provided. Please specify it using TypeOfLLM.OpenAI.apiKey, TypeOfLLM.OpenAI.apiKeyEnvVar or the `api-key` field of your codegen config (.codegen.properties by default)."
         )
         AIAgent(

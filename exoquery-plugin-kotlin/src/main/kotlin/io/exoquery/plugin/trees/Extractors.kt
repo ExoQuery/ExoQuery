@@ -509,11 +509,7 @@ object Ir {
 
     context (CX.Scope) operator fun <AP : Pattern<IrCall>> get(x: AP): Pattern1<AP, IrCall, IrCall> =
       customPattern1("Ir.Call", x) { it: IrCall ->
-        if (it.regularArgs.all { it != null }) {
-          Components1(it)
-        } else {
-          null
-        }
+        Components1(it)
       }
 
     // TODO get rid of this in favor of FunctionMem

@@ -15,7 +15,7 @@ class CodegenFileBuilder(val options: ExoCompileOptions) {
     dcs.forEach { dc ->
       try {
         val rootPath = "${options.entitiesBaseDir}/${options.targetName}/${options.sourceSetName}/kotlin"
-        val gen = dc.toGenerator(rootPath)
+        val gen = dc.toGenerator(rootPath, options.projectDir)
         logger.warn("Generating Code for ${thisFile.name} in: ${rootPath}")
         gen.run()
       } catch (t: Throwable) {

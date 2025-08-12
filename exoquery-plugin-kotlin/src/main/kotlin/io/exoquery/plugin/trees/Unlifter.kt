@@ -8,13 +8,13 @@ import io.exoquery.generation.DatabaseDriver
 import io.exoquery.generation.FetchPolicy
 import io.exoquery.generation.TableGrouping
 import io.exoquery.parseError
+import io.exoquery.plugin.isClass
 import io.exoquery.plugin.transform.CX
-import org.jetbrains.kotlin.ir.expressions.IrCall
+import io.exoquery.plugin.varargValues
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstKind
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
+import org.jetbrains.kotlin.ir.expressions.IrVararg
 
 object Unlifter {
 
@@ -120,11 +120,47 @@ object Unlifter {
     ) ?: orFail(expr)
 
   context (CX.Scope)
+  fun NameParser.Target.Companion.unlift(expr: IrExpression): NameParser.Target =
+    on(expr).match(
+      case(Ir.GetObjectValue<NameParser.Target.Table>()).then { NameParser.Target.Table },
+      case(Ir.GetObjectValue<NameParser.Target.Column>()).then { NameParser.Target.Column },
+      case(Ir.GetObjectValue<NameParser.Target.Both>()).then { NameParser.Target.Both }
+    ) ?: orFail(expr)
+
+  context (CX.Scope)
+  fun NameParser.UsingRegex.Companion.unlift(expr: IrExpression): NameParser.UsingRegex =
+    on(expr).match(
+      case(Ir.ConstructorCallNullableN.of<NameParser.UsingRegex>()[Is()]).then { args ->
+        NameParser.UsingRegex(
+          regex = args[0]?.let { unliftString(it) },
+          replace = args[1]?.let { unliftString(it) },
+          target = args[2]?.let { NameParser.Target.unlift(it) } ?: NameParser.UsingRegex.DefaultTarget,
+        )
+      }
+    ) ?: orFail(expr)
+
+  context (CX.Scope)
+  fun NameParser.Composite.Companion.unlift(expr: IrExpression): NameParser.Composite =
+    on(expr).match(
+      case(Ir.Call.FunctionMem2[Ir.GetObjectValue<NameParser.Composite.Companion>(), Is("invoke"), Is()]).then { _, (nameParser, otherNameParsers) ->
+        val parser = NameParser.unlift(nameParser)
+        val otherParsers = ((otherNameParsers as? IrVararg)?.let{ it.varargValues().map { NameParser.unlift(it) } } ?: emptyList())
+        NameParser.Composite(parser, *otherParsers.toTypedArray())
+      }
+    ) ?: orFail(expr)
+
+  context (CX.Scope)
   fun NameParser.Companion.unlift(expr: IrExpression): NameParser =
     on(expr).match(
       case(Ir.Expr.ClassOf<NameParser.UsingLLM>()).then { _ -> NameParser.UsingLLM.unlift(expr) },
-      case(Ir.Expr.ClassOf<NameParser.LiteralNames>()).then { _ -> NameParser.LiteralNames },
-      case(Ir.Expr.ClassOf<NameParser.SnakeCaseNames>()).then { _ -> NameParser.SnakeCaseNames },
+      case(Ir.Expr.ClassOf<NameParser.Literal>()).then { _ -> NameParser.Literal },
+      case(Ir.Expr.ClassOf<NameParser.SnakeCase>()).then { _ -> NameParser.SnakeCase },
+      case(Ir.Expr.ClassOf<NameParser.UsingRegex>()).then { _ -> NameParser.UsingRegex.unlift(expr) },
+      case(Ir.Expr.ClassOf<NameParser.Composite>()).then { _ -> NameParser.Composite.unlift(expr) },
+      case(Ir.Expr.ClassOf<NameParser.CapitalizeColumns>()).then { _ -> NameParser.CapitalizeColumns },
+      case(Ir.Expr.ClassOf<NameParser.UncapitalizeColumns>()).then { _ -> NameParser.UncapitalizeColumns },
+      case(Ir.Expr.ClassOf<NameParser.CapitalizeTables>()).then { _ -> NameParser.CapitalizeTables },
+      case(Ir.Expr.ClassOf<NameParser.UncapitalizeTables>()).then { _ -> NameParser.UncapitalizeTables }
     ) ?: orFail(expr)
 
   context (CX.Scope)

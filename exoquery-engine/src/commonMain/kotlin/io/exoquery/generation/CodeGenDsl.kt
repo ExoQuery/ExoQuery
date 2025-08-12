@@ -57,7 +57,7 @@ object Code {
       val DefaultTableGrouping = TableGrouping.SchemaPerPackage
       val DefaultPropertiesFile = ".codegen.properties"
       val DefaultDryRun = false
-      val DefaultNameParser = NameParser.LiteralNames
+      val DefaultNameParser = NameParser.Literal
     }
   }
 }

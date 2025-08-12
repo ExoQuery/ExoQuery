@@ -7,6 +7,8 @@ import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
 import io.exoquery.codegen.model.JdbcGenerator
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.WorkingDir
+import io.exoquery.generation.Code
+import io.exoquery.generation.toGenerator
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import javax.sql.DataSource
 import kotlin.use
@@ -36,19 +38,40 @@ object PostgresTestDB {
 fun main() {
 
 
-  val gen = JdbcGenerator.Live(
-    LowLevelCodeGeneratorConfig(
-      BasicPath.WorkingDir() + "test_gen",
-      BasicPath.DotPath("io.exoquery"),
-      NameParser.UsingLLM(
-        NameParser.TypeOfLLM.Ollama(),
-        processor = KoogBasedNameProcessor({println(it)}, AgentCallerService.Live)
+  //val gen = JdbcGenerator.Live(
+  //  LowLevelCodeGeneratorConfig(
+  //    BasicPath.WorkingDir() + "test_gen",
+  //    BasicPath.DotPath("io.exoquery"),
+  //    NameParser.Composite(
+  //      NameParser.UsingLLM(
+  //        //NameParser.TypeOfLLM.Ollama(),
+  //        NameParser.TypeOfLLM.OpenAI(),
+  //        processor = KoogBasedNameProcessor({println(it)}, AgentCallerService.Live)
+  //      ),
+  //      NameParser.UncapitalizeColumns
+  //    )
+  //  ),
+  //  { PostgresTestDB.embeddedPostgres.getPostgresDatabase().connection }
+  //)
+
+  val gen =
+    Code.DataClasses(
+      "1.1",
+      io.exoquery.generation.DatabaseDriver.Postgres(
+        PostgresTestDB.embeddedPostgres.getJdbcUrl("postgres", "")
+      ),
+      packagePrefix = "io.exoquery",
+      nameParser = NameParser.Composite(
+        NameParser.UsingLLM(
+          //NameParser.TypeOfLLM.Ollama(),
+          NameParser.TypeOfLLM.OpenAI(),
+          processor = KoogBasedNameProcessor({ println(it) }, AgentCallerService.Live)
+        ),
+        //NameParser.UncapitalizeColumns
       )
-    ),
-    { PostgresTestDB.embeddedPostgres.getPostgresDatabase().connection }
-  )
+    ).toGenerator(
+      java.io.File("test_gen").absolutePath
+    )
 
   gen.run()
-
-
 }

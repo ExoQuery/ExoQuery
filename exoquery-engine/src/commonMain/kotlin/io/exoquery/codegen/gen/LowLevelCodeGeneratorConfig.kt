@@ -44,7 +44,7 @@ data class BasicPath(val path: List<String>) {
 data class LowLevelCodeGeneratorConfig(
   val rootPath: BasicPath,
   val packagePrefix: BasicPath = BasicPath(listOf()),
-  val nameParser: NameParser = NameParser.LiteralNames,
+  val nameParser: NameParser = NameParser.Literal,
   val defaultNamespace: String = "schema",
   val tableNamespacer: Namespacer = { it.tableSchema ?: defaultNamespace },
   val unrecognizedTypeStrategy: UnrecognizedTypeStrategy = UnrecognizedTypeStrategy.SkipColumn,
@@ -55,5 +55,6 @@ data class LowLevelCodeGeneratorConfig(
   val schemaFilter: String? = null,
   val tableFilter: String? = null,
   val defaultExcludedSchemas: Set<String> = setOf("information_schema", "performance_schema", "sys", "mysql"),
+  val rootLevelOpenApiKey: String? = null,
   val dryRun: Boolean = false
 )

@@ -33,6 +33,8 @@ interface ExoQueryGradlePluginExtension {
      * When this option is enabled, the generated code will be placed in MyProject/src/main/entities
      * instead and the `entities` directory will be added to the source set.
      * Note that if you turn on `enableCodegenNamingAI` then this option is automatically enabled.
+     *
+     * @see GeneratedEntitiesDirConventions for more detail.
      */
     val codegenIntoPermanentLocation: Property<Boolean>
 
@@ -96,23 +98,25 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       target.addCompilerDependency("io.exoquery:decomat-core-jvm:${BuildConfig.DECOMAT_VERSION}")
     }
 
+    val conventions = GeneratedEntitiesDirConventions(pluginExtConfig, target)
+
     target.afterEvaluate { project ->
       val kotlinExtension = target.extensions.findByType(KotlinProjectExtension::class.java)
-      kotlinExtension?.let { decorateKotlinProject(it, project) }
+      kotlinExtension?.let { decorateKotlinProject(it, project, conventions) }
     }
   }
 
   fun Project.addCompilerDependency(dependency: String) =
     dependencies.add("kotlinNativeCompilerPluginClasspath", dependency)
 
-  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project) {
+  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project, conventions: GeneratedEntitiesDirConventions) {
     when (kotlin) {
       is KotlinSingleTargetExtension<*> -> {
         val targetsAndSourceSets =
           kotlin.target.compilations.map { compilation ->
             kotlin.target to compilation.defaultSourceSet
           }
-        generatateDirs(project, targetsAndSourceSets)
+        generatateDirs(project, targetsAndSourceSets, conventions)
       }
       is KotlinMultiplatformExtension -> {
         val targetsAndSourceSets =
@@ -121,12 +125,12 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
               target to compilation.defaultSourceSet
             }
           }
-        generatateDirs(project, targetsAndSourceSets)
+        generatateDirs(project, targetsAndSourceSets, conventions)
       }
     }
   }
 
-  private fun generatateDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>) =
+  private fun generatateDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>, conventions: GeneratedEntitiesDirConventions) =
     targetsAndSourceSets.forEach { (target, sourceSet) ->
       val targetName = target.name
       val sourceSetName = sourceSet.name
@@ -134,7 +138,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       println("=========== Decorating [${project.name}] target:$targetName->sourceSet:$sourceSetName ===========")
 
       // Add the generated directory to kotlin source directories
-      val generatedDir = project.generatedEntitiesKotlin(sourceSetName, targetName).get().asFile
+      val generatedDir =  conventions.generatedEntitiesKotlin(project, sourceSetName, targetName).get().asFile
       sourceSet.kotlin.srcDir(generatedDir)
 
       // Ensure the directory exists
@@ -160,7 +164,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
       if (ext.enableCodegenAI.convention(false).get()) {
         val koogLibrary = ext.koogLibrary.convention(BuildConfig.KOOG_LIBRARY).get()
-        println("[ExoQuery] LLM naming is enabled! Adding Koog dependency for LLM naming: ${koogLibrary}")
+        println("[ExoQuery] LLM naming is enabled in ${kotlinCompilation.project.name}:${kotlinCompilation.name}! Adding Koog dependency for LLM naming: ${koogLibrary}")
         // If LLM naming is enabled, we need to add the Koog dependency
         configurationName.let {
           project.dependencies.add(it, koogLibrary)
@@ -172,6 +176,8 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     kotlinCompilation.dependencies {
       api("io.exoquery:exoquery-engine:${BuildConfig.VERSION}")
     }
+
+    val conventions = GeneratedEntitiesDirConventions(ext, project)
 
     val target = kotlinCompilation.target.name
     // This will always be the platform name e.g. jvm/linuxX64 etc... even if the files are in commonMain
@@ -186,7 +192,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     return project.provider {
       listOf(
-        SubpluginOption("entitiesBaseDir", project.generatedEntitiesDir.get().asFile.absolutePath),
+        SubpluginOption("entitiesBaseDir", conventions.generatedEntitiesDir(project).get().asFile.absolutePath),
         SubpluginOption("generationDir", project.generatedRootDir.get().asFile.absolutePath),
         SubpluginOption("projectSrcDir", project.projectDir.toPath().resolve("src").toAbsolutePath().toString()),
         SubpluginOption("sourceSetName", sourceSetName),
