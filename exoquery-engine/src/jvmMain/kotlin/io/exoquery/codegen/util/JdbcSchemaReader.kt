@@ -8,26 +8,41 @@ import io.exoquery.codegen.model.TableMeta
 import java.sql.Connection
 import java.sql.ResultSet
 
-data class JdbcSchemaReader(val allowUnknownDatabase: Boolean): SchemaReader<Connection, ResultSet>() {
-  override fun ResultSet.next(): Boolean = this.next()
-  override fun ResultSet.makeTableMeta(): TableMeta = JdbcMetaMakers.makeTableMeta(this)
-  override fun ResultSet.makeColumnMeta(): ColumnMeta = JdbcMetaMakers.makeColumnMeta(this)
+data class JdbcSchemaReader(val connectionMaker: () -> SchemaReader.Conn, override val allowUnknownDatabase: Boolean): SchemaReader() {
+  @JvmInline
+  value class ResultsTableMeta(val rs: ResultSet): SchemaReader.ResultsTableMeta {
+    override fun next(): Boolean = rs.next()
+    override fun makeTableMeta(): TableMeta = JdbcMetaMakers.makeTableMeta(rs)
+  }
+  @JvmInline
+  value class ResultsColumnMeta(val rs: ResultSet): SchemaReader.ResultsColumnMeta {
+    override fun next(): Boolean = rs.next()
+    override fun makeColumnMeta(): ColumnMeta = JdbcMetaMakers.makeColumnMeta(rs)
+  }
 
-  override fun Connection.getTableData(schemaPattern: String?): ResultSet =
-    this.metaData.getTables(null, schemaPattern, null, null)
+  @JvmInline
+  value class Conn(val connection: Connection): SchemaReader.Conn {
+    override fun getTableData(schemaPattern: String?): SchemaReader.ResultsTableMeta =
+      ResultsTableMeta(connection.metaData.getTables(null, schemaPattern, null, null))
 
-  override fun Connection.getColumnData(schemaPattern: String?): ResultSet =
-    this.metaData.getColumns(null, schemaPattern, null, null)
+    override fun getColumnData(schemaPattern: String?): SchemaReader.ResultsColumnMeta =
+      ResultsColumnMeta(connection.metaData.getColumns(null, schemaPattern, null, null))
 
-  override fun getDatabaseType(conn: Connection): DatabaseTypes.DatabaseType =
+    override fun close() = connection.close()
+
+    override fun getDatabaseType(): DatabaseTypes.DatabaseType =
+      try {
+        DatabaseTypes.fromProductName(connection.metaData.databaseProductName)
+      } catch (e: Exception) {
+        DatabaseTypes.Unknown(connection.metaData.databaseProductName)
+      }
+  }
+
+
+  override fun makeConnection(): SchemaReader.Conn =
     try {
-      DatabaseTypes.fromProductName(conn.metaData.databaseProductName)
+      connectionMaker()
     } catch (e: Exception) {
-      if (allowUnknownDatabase) {
-        DatabaseTypes.Unknown(conn.metaData.databaseProductName)
-      } else throw IllegalStateException(
-        "Failed to determine database type from product name: ${conn.metaData.databaseProductName}",
-        e
-      )
+      throw IllegalStateException("Code Generation Failed. JdbcGenerator Failed to make a connection using the provided connection maker: ${e.message}", e)
     }
 }

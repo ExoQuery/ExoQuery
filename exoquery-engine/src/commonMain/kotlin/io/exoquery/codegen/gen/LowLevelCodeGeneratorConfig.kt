@@ -52,6 +52,8 @@ data class LowLevelCodeGeneratorConfig(
   val assemblingStrategy: AssemblingStrategy = AssemblingStrategy.SchemaPerPackage,
   val numericPreference: NumericPreference = NumericPreference.UseDefaults,
   // The default-name of the package or schema if one is not available from the database
+  val schemaFilter: String? = null,
+  val tableFilter: String? = null,
   val defaultExcludedSchemas: Set<String> = setOf("information_schema", "performance_schema", "sys", "mysql"),
   val dryRun: Boolean = false
 )

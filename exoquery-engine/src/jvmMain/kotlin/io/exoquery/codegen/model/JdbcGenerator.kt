@@ -96,18 +96,9 @@ fun BasicPath.Companion.WorkingDir(): BasicPath {
   return BasicPath.SlashPath(workingDir)
 }
 
-class JdbcGenerator(override val config: LowLevelCodeGeneratorConfig, val connectionMaker: () -> Connection, val allowUnknownDatabase: Boolean = false): GeneratorBase<Connection, ResultSet, JdbcWriteableFile>() {
+abstract class JdbcGenerator(override val config: LowLevelCodeGeneratorConfig, val allowUnknownDatabase: Boolean): GeneratorBase<Connection, ResultSet, JdbcWriteableFile>() {
   override fun kotlinTypeOf(cm: ColumnMeta): KClass<*>? =
     DefaultJdbcTyper(config.numericPreference).invoke(JdbcTypeInfo.fromColumnMeta(cm))
-
-  override fun makeConnection(): Connection =
-    try {
-      connectionMaker()
-    } catch (e: Exception) {
-      throw IllegalStateException("Code Generation Failed. JdbcGenerator Failed to make a connection using the provided connection maker: ${e.message}", e)
-    }
-
-  override val schemaReader: SchemaReader<Connection, ResultSet> = JdbcSchemaReader(allowUnknownDatabase)
 
   override fun isNotNullable(cm: ColumnMeta): Boolean = cm.nullable == DatabaseMetaData.columnNullable
 
@@ -118,4 +109,7 @@ class JdbcGenerator(override val config: LowLevelCodeGeneratorConfig, val connec
   ): JdbcWriteableFile =
     JdbcWriteableFile(deliverable, code, basePath)
 
+  class Live(override val config: LowLevelCodeGeneratorConfig, connectionMaker: () -> Connection, allowUnknownDatabase: Boolean = false): JdbcGenerator(config, allowUnknownDatabase) {
+    override val schemaReader = JdbcSchemaReader({ JdbcSchemaReader.Conn(connectionMaker()) }, allowUnknownDatabase)
+  }
 }

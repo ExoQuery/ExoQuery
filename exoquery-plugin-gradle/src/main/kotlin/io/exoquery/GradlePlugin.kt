@@ -19,7 +19,7 @@ interface ExoQueryGradlePluginExtension {
     val queryPrintingEnabled: Property<Boolean>
 
     val codegenDrivers: ListProperty<String>
-    val enableCodegenNamingAI: Property<Boolean>
+    val enableCodegenAI: Property<Boolean>
 
     /**
      * Move the location of generated entities from `MyProject/build/generated/entities` to `MyProject/src/main/entities`
@@ -158,10 +158,10 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       println("[ExoQuery] adding driver dependency: $dependency")
       configurationName.let { project.dependencies.add(it, dependency) }
 
-      if (ext.enableCodegenNamingAI.convention(false).get()) {
-        println("[ExoQuery] LLM naming is enabled! Adding Koog dependency for LLM naming: ${ext.koogLibrary.get()}")
-        // If LLM naming is enabled, we need to add the Koog dependency
+      if (ext.enableCodegenAI.convention(false).get()) {
         val koogLibrary = ext.koogLibrary.convention(BuildConfig.KOOG_LIBRARY).get()
+        println("[ExoQuery] LLM naming is enabled! Adding Koog dependency for LLM naming: ${koogLibrary}")
+        // If LLM naming is enabled, we need to add the Koog dependency
         configurationName.let {
           project.dependencies.add(it, koogLibrary)
         }

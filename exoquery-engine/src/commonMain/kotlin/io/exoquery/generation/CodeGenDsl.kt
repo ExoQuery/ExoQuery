@@ -46,6 +46,9 @@ object Code {
 
     val tableGrouping: TableGrouping = DefaultTableGrouping,
 
+    val schemaFilter: String? = null,
+    val tableFilter: String? = null,
+
     val dryRun: Boolean = DefaultDryRun,
   ) {
     companion object {

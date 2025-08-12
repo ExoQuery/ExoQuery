@@ -1,5 +1,6 @@
 package io.exoquery.xr
 
+import io.exoquery.codegen.model.NameProcessorLLM
 import io.exoquery.sql.SqlQueryModel
 import io.exoquery.xr.EncodingXR.protoBuf
 import kotlinx.serialization.decodeFromHexString
@@ -13,6 +14,9 @@ object EncodingXR {
   val module = SerializersModule {
     polymorphic(XR.CustomQuery::class) {
       subclass(SelectClause::class, SelectClause.serializer())
+    }
+    polymorphic(NameProcessorLLM::class) {
+      subclass(NameProcessorLLM.CompileTimeProvided::class, NameProcessorLLM.CompileTimeProvided.serializer())
     }
   }
   val protoBuf = ProtoBuf { serializersModule = module }

@@ -2,7 +2,6 @@ package io.exoquery
 
 import io.exoquery.generation.Code
 import io.exoquery.generation.DatabaseDriver
-import io.exoquery.generation.PropertiesFile
 import io.exoquery.kmp.pprint
 
 fun main() {

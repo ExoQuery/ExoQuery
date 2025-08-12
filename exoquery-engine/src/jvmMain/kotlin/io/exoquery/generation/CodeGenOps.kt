@@ -100,7 +100,7 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String): GeneratorBase
     driver.connect(jdbcUrl, props)
   }
 
-  val gen = JdbcGenerator(
+  val gen = JdbcGenerator.Live(
     LowLevelCodeGeneratorConfig(
       rootPath = rootPathReal,
       packagePrefix = this.packagePrefix?.let { BasicPath.DotPath(it) } ?: BasicPath.Empty,

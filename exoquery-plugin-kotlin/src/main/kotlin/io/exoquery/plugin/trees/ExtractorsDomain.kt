@@ -348,13 +348,13 @@ object ExtractorsDomain {
 
       context(CX.Scope) operator fun <AP : Pattern<IrCall>, BP: Pattern<CallType>> get(call: AP, callType: BP) =
         customPattern2("Call.CaptureGenerate", call, callType) { it: IrCall ->
-          if (it.ownerHasAnnotation<ExoCodegen>() && it.type.isUnit()) {
+          if (it.ownerHasAnnotation<ExoCodegenFunction>() && it.type.isUnit()) {
             Components2(it, CallType.Gen)
           }
-          else if (it.ownerHasAnnotation<ExoCodegenReturn>() && it.type.isClass<Code.DataClasses>()) {
+          else if (it.ownerHasAnnotation<ExoCodegenReturnFunction>() && it.type.isClass<Code.DataClasses>()) {
             Components2(it, CallType.GenAndReturn)
           }
-          else if (it.ownerHasAnnotation<ExoCodegenJustReturn>() && it.type.isClass<Code.DataClasses>()) {
+          else if (it.ownerHasAnnotation<ExoCodegenJustReturnFunction>() && it.type.isClass<Code.DataClasses>()) {
             Components2(it, CallType.JustReturn)
           }
           else {

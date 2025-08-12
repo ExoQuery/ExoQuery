@@ -32,6 +32,15 @@ object Unlifter {
       ?: orFail(expr)
 
   context (CX.Scope)
+  fun unliftBoolean(expr: IrExpression): Boolean =
+    (expr as? IrConst)
+      ?.let {
+        (it.kind as? IrConstKind.Boolean) ?: parseError("Expected a constant boolean", expr)
+        it.value as? Boolean ?: parseError("Constant value was not a boolean", expr)
+      }
+      ?: orFail(expr)
+
+  context (CX.Scope)
   fun unliftStringIfNotNull(expr: IrExpression?) : String? =
     expr?.let { unliftString(it) }
 
@@ -99,9 +108,10 @@ object Unlifter {
           type = NameParser.TypeOfLLM.unlift(args[0] ?: parseError("TypeOfLLM needs to be specified.", expr)),
           maxTablesPerCall = args[1]?.let { unliftString(it).toInt() } ?: NameParser.UsingLLM.DefaultMaxTablesPerCall,
           maxColumnsPerCall = args[2]?.let { unliftString(it).toInt() } ?: NameParser.UsingLLM.DefaultMaxColumnsPerCall,
-          systemPrompt = unliftStringIfNotNull(args[3]) ?: NameParser.UsingLLM.DefaultSystemPrompt,
+          systemPromptTables = unliftStringIfNotNull(args[3]) ?: NameParser.UsingLLM.DefaultSystemPromptTables,
+          systemPromptColumns = unliftStringIfNotNull(args[4]) ?: NameParser.UsingLLM.DefaultSystemPromptColumns,
           processor =
-            if (args[4] == null)
+            if (args[5] == null)
               NameProcessorLLM.CompileTimeProvided
             else
               parseError("The NameProcessorLLM is a construct that is supplied by the compiler plugin. Most of the time it should be left to the default value.", expr)
@@ -122,17 +132,20 @@ object Unlifter {
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<Code.DataClasses>()[Is()]).then { args ->
         Code.DataClasses(
-          codeVersion = args[0]?.let { unliftString(it) } ?: parseError("Expected a non-null string for codeVersion", expr),
-          driver = args[1]?.let { DatabaseDriver.unlift(it) } ?: parseError("Expected a non-null DatabaseDriver", expr),
-          fetchPolicy = args[2]?.let { FetchPolicy.unlift(it) } ?: Code.DataClasses.DefaultFetchPolicy,
-          packagePrefix = args[3]?.let { unliftString(it) },
-          username = args[4]?.let { unliftString(it) },
-          password = args[5]?.let { unliftString(it) },
-          usernameEnvVar = args[6]?.let { unliftString(it) },
-          passwordEnvVar = args[7]?.let { unliftString(it) },
-          propertiesFile = args[8]?.let { unliftString(it) } ?: Code.DataClasses.DefaultPropertiesFile,
-          tableGrouping = args[9]?.let { TableGrouping.unlift(it) } ?: Code.DataClasses.DefaultTableGrouping,
-          nameParser = args[10]?.let { NameParser.unlift(it) } ?: Code.DataClasses.DefaultNameParser,
+          args[0]?.let { unliftString(it) } ?: parseError("Expected a non-null string for codeVersion", expr),
+          args[1]?.let { DatabaseDriver.unlift(it) } ?: parseError("Expected a non-null DatabaseDriver", expr),
+          args[2]?.let { FetchPolicy.unlift(it) } ?: Code.DataClasses.DefaultFetchPolicy,
+          args[3]?.let { unliftString(it) },
+          args[4]?.let { unliftString(it) },
+          args[5]?.let { unliftString(it) },
+          args[6]?.let { unliftString(it) },
+          args[7]?.let { unliftString(it) },
+          args[8]?.let { unliftString(it) } ?: Code.DataClasses.DefaultPropertiesFile,
+          args[9]?.let { NameParser.unlift(it) } ?: Code.DataClasses.DefaultNameParser,
+          args[10]?.let { TableGrouping.unlift(it) } ?: Code.DataClasses.DefaultTableGrouping,
+          args[11]?.let { unliftString(it) },
+          args[12]?.let { unliftString(it) },
+          args[13]?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDryRun
         )
       }
     ) ?: orFail(expr)

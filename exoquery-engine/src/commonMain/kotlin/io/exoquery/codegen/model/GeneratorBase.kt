@@ -26,12 +26,24 @@ data class GeneratorDeliverable<F: WriteableFile>(
 abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
   abstract val config: LowLevelCodeGeneratorConfig
   protected abstract fun kotlinTypeOf(cm: ColumnMeta): KClass<*>?
-  protected abstract fun makeConnection(): Conn
-  protected abstract val schemaReader: SchemaReader<Conn, Results>
+  protected abstract val schemaReader: SchemaReader
   protected abstract fun isNotNullable(cm: ColumnMeta): Boolean
 
-  protected fun readMetas(): Pair<List<RawTableMeta>, DatabaseTypes.DatabaseType> =
-    schemaReader.invoke { makeConnection() }
+  protected fun readMetas(): Pair<List<RawTableMeta>, DatabaseTypes.DatabaseType> = run {
+    val (tableMetas, databaseType) = schemaReader.readSchemas()
+    val schemaFilterRegex = config.schemaFilter?.toRegex()
+    val tableFilterRegex = config.tableFilter?.toRegex()
+    val schemaFilter = { str: String -> schemaFilterRegex?.matches(str) ?: true }
+    val tableFilter = { str: String -> tableFilterRegex?.matches(str) ?: true }
+
+    val filteredMetas =
+      tableMetas.filter {
+        it.table.tableCat?.let { schemaFilter(it) } ?: true && tableFilter(it.table.tableName)
+      }
+
+    filteredMetas to databaseType
+  }
+
 
   protected fun filter(tc: RawTableMeta): Boolean = true
 

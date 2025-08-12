@@ -43,6 +43,8 @@ kotlin {
         // Want to have the full pprint in the JVM to do reflective deep-object diffs
         implementation("io.exoquery:pprint-kotlin:3.0.0")
 
+        implementation("ai.koog:koog-agents:0.3.0")
+
         implementation("org.jetbrains.exposed:exposed-core:0.60.0")
         implementation("org.jetbrains.exposed:exposed-dao:0.60.0")
         implementation("org.jetbrains.exposed:exposed-jdbc:0.60.0")
@@ -93,6 +95,7 @@ exoQuery {
 //  // CANNOT HAVE LINEBREAKS, will throw `Wrong plugin option format: null, should be plugin:<pluginId>:<optionName>=<value>`
 //  outputString.set("%{br}==== Compiled %{kind} in %{total}ms: ====%{br}%{sql}")
   codegenDrivers.add("org.postgresql:postgresql:42.7.3")
+  this.enableCodegenAI = true
 }
 
 

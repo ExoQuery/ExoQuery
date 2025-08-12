@@ -9,9 +9,9 @@ import io.exoquery.annotation.ExoCapture
 import io.exoquery.annotation.ExoCaptureBatch
 import io.exoquery.annotation.ExoCaptureExpression
 import io.exoquery.annotation.ExoCaptureSelect
-import io.exoquery.annotation.ExoCodegen
-import io.exoquery.annotation.ExoCodegenJustReturn
-import io.exoquery.annotation.ExoCodegenReturn
+import io.exoquery.annotation.ExoCodegenFunction
+import io.exoquery.annotation.ExoCodegenJustReturnFunction
+import io.exoquery.annotation.ExoCodegenReturnFunction
 import io.exoquery.annotation.ExoDelete
 import io.exoquery.annotation.ExoInsert
 import io.exoquery.annotation.ExoUpdate
@@ -168,15 +168,15 @@ object capture {
   ): @Captured SqlBatchAction<BatchInput, Input, Output> =
     errorCap("The `batch` expression of the Query was not inlined")
 
-  @ExoCodegen
+  @ExoCodegenFunction
   fun generate(code: Code.DataClasses): Unit =
     errorCap("The `generate` function was not inlined")
 
-  @ExoCodegenReturn
+  @ExoCodegenReturnFunction
   fun generateAndReturn(code: Code.DataClasses): Code.DataClasses =
     errorCap("The `generate` function was not inlined")
 
-  @ExoCodegenJustReturn
+  @ExoCodegenJustReturnFunction
   fun generateJustReturn(code: Code.DataClasses): Code.DataClasses =
     errorCap("The `generate` function was not inlined")
 }

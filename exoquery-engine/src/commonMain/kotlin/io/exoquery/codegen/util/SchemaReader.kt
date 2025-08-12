@@ -5,17 +5,50 @@ import io.exoquery.codegen.model.DatabaseTypes
 import io.exoquery.codegen.model.RawTableMeta
 import io.exoquery.codegen.model.TableMeta
 
-abstract class SchemaReader<Conn: AutoCloseable, Results> {
+abstract class SchemaReader {
+  interface ResultsTableMeta {
+    fun next(): Boolean
+    fun makeTableMeta(): TableMeta
+  }
+  interface ResultsColumnMeta {
+    fun next(): Boolean
+    fun makeColumnMeta(): ColumnMeta
+  }
+  interface Conn: AutoCloseable {
+    fun getTableData(schemaPattern: String?): ResultsTableMeta
+    fun getColumnData(schemaPattern: String?): ResultsColumnMeta
+    fun getSchema(): String? = null // Only really need this for Oracle because very slow without specifying a schema
+    fun getDatabaseType(): DatabaseTypes.DatabaseType
+  }
 
-  protected abstract fun Results.next(): Boolean
-  protected abstract fun Results.makeTableMeta(): TableMeta
-  protected abstract fun Results.makeColumnMeta(): ColumnMeta
-  protected abstract fun Conn.getTableData(schemaPattern: String?): Results
-  protected abstract fun Conn.getColumnData(schemaPattern: String?): Results
-  protected fun Conn.getSchema(): String? = null // Only really need this for Oracle because very slow without specifying a schema
-  abstract fun getDatabaseType(conn: Conn): DatabaseTypes.DatabaseType
+  abstract val allowUnknownDatabase: Boolean
+  abstract fun makeConnection(): Conn
 
-  protected fun <T> resultSetExtractor(rs: Results, extractor: (Results) -> T): List<T> {
+  fun readSchemas(): Pair<List<RawTableMeta>, DatabaseTypes.DatabaseType> {
+    val (tables, columns, databaseType) = makeConnection().use { conn ->
+      extractTablesAndColumns(conn)
+    }
+    val tableMap = tables.associateBy { Triple(it.tableCat, it.tableSchema, it.tableName) }
+    val columnMap =
+      columns
+        .groupBy { Triple(it.tableCat, it.tableSchema, it.tableName) }
+        .mapNotNull { (key, cols) ->
+          tableMap[key]?.let { table -> RawTableMeta(table, cols) }
+        }
+    return columnMap to databaseType
+  }
+
+  // Since I decided to have two different types for results in order to not to confuse results that return table metas
+  // with those that return column metas this needs to be duplicated. Could unify with a parent ResultSet class but not worth
+  // the additional semantic complexity for now.
+  protected fun <T> resultSetExtractor(rs: ResultsTableMeta, extractor: (ResultsTableMeta) -> T): List<T> {
+    val results = mutableListOf<T>()
+    while (rs.next()) {
+      results.add(extractor(rs))
+    }
+    return results
+  }
+  protected fun <T> resultSetExtractor(rs: ResultsColumnMeta, extractor: (ResultsColumnMeta) -> T): List<T> {
     val results = mutableListOf<T>()
     while (rs.next()) {
       results.add(extractor(rs))
@@ -56,107 +89,15 @@ abstract class SchemaReader<Conn: AutoCloseable, Results> {
   }
 
   private fun extractTablesAndColumns(conn: Conn): Triple<List<TableMeta>, List<ColumnMeta>, DatabaseTypes.DatabaseType> = run {
-    val databaseType = getDatabaseType(conn)
+    val databaseType = conn.getDatabaseType()
+    if (databaseType is DatabaseTypes.Unknown && !allowUnknownDatabase) {
+      throw IllegalStateException(
+        "Failed to determine database type from product name: ${databaseType.databaseName}"
+      )
+    }
+
     val tables = extractTables(conn, databaseType)
     val columns = extractColumns(conn, databaseType)
     Triple(tables, columns, databaseType)
   }
-
-
-
-  operator fun invoke(connectionMaker: () -> Conn): Pair<List<RawTableMeta>, DatabaseTypes.DatabaseType> {
-    val (tables, columns, databaseType) = connectionMaker().use { conn ->
-      extractTablesAndColumns(conn)
-    }
-    val tableMap = tables.associateBy { Triple(it.tableCat, it.tableSchema, it.tableName) }
-    val columnMap =
-      columns
-      .groupBy { Triple(it.tableCat, it.tableSchema, it.tableName) }
-      .mapNotNull { (key, cols) ->
-        tableMap[key]?.let { table -> RawTableMeta(table, cols) }
-      }
-    return columnMap to databaseType
-  }
-
-
-  //  override def apply(connectionMaker: JdbcConnectionMaker): Seq[RawSchema[JdbcTableMeta, JdbcColumnMeta]] = {
-//    val tableMap =
-//      extractTables(connectionMaker)
-//        .map(t => ((t.tableCat, t.tableSchema, t.tableName), t))
-//        .toMap
-//
-//    val columns = extractColumns(connectionMaker)
-//    val tableColumns =
-//      columns
-//        .groupBy(c => (c.tableCat, c.tableSchema, c.tableName))
-//        .map { case (tup, cols) => tableMap.get(tup).map(RawSchema(_, cols)) }
-//        .collect { case Some(tbl) => tbl }
-//
-//    tableColumns.toSeq
-//  }
 }
-
-//class DefaultJdbcSchemaReader(
-//  databaseType: DatabaseType
-//) extends JdbcSchemaReader {
-//
-//  @tailrec
-//  private def resultSetExtractor[T](rs: ResultSet, extractor: (ResultSet) => T, acc: List[T] = List.empty): List[T] =
-//    if (!rs.next())
-//      acc.reverse
-//    else
-//      resultSetExtractor(rs, extractor, extractor(rs) :: acc)
-//
-//  private[getquill] def schemaPattern(schema: String): String =
-//    databaseType match {
-//      case Oracle => schema // Oracle meta fetch takes minutes to hours if schema is not specified
-//      case _      => null
-//    }
-//
-//  def jdbcEntityFilter(ts: JdbcTableMeta): Boolean =
-//    ts.tableType.existsInSetNocase("table", "view", "user table", "user view", "base table")
-//
-//  private[getquill] def extractTables(connectionMaker: () => Connection): List[JdbcTableMeta] = {
-//    val output = Using.Manager { use =>
-//      val conn   = use(connectionMaker())
-//      val schema = conn.getSchema
-//      val rs = use {
-//        conn.getMetaData.getTables(
-//          null,
-//          schemaPattern(schema),
-//          null,
-//          null
-//        )
-//      }
-//      resultSetExtractor(rs, rs => JdbcTableMeta.fromResultSet(rs))
-//    }
-//    val unfilteredJdbcEntities =
-//      output match {
-//        case Success(value) => value
-//        case Failure(e)     => throw e
-//      }
-//
-//    unfilteredJdbcEntities.filter(jdbcEntityFilter)
-//  }
-//
-//  private[getquill] def extractColumns(connectionMaker: () => Connection): List[JdbcColumnMeta] = {
-//    val output = Using.Manager { use =>
-//      val conn   = use(connectionMaker())
-//      val schema = conn.getSchema
-//      val rs = use {
-//        conn.getMetaData.getColumns(
-//          null,
-//          schemaPattern(schema),
-//          null,
-//          null
-//        )
-//      }
-//      resultSetExtractor(rs, rs => JdbcColumnMeta.fromResultSet(rs))
-//    }
-//    output match {
-//      case Success(value) => value
-//      case Failure(e)     => throw e
-//    }
-//  }
-//
-//}
