@@ -6,6 +6,7 @@ import io.exoquery.codegen.model.NamingAnnotationType
 import io.exoquery.codegen.model.NumericPreference
 import io.exoquery.codegen.model.TableMeta
 import io.exoquery.codegen.model.UnrecognizedTypeStrategy
+import io.exoquery.generation.CodeVersion
 
 typealias Namespacer = (TableMeta) -> String
 
@@ -20,7 +21,7 @@ data class BasicPath(val path: List<String>) {
   fun toPackageStringOrNull(): String? = if (path.isEmpty()) null else toPackageString()
 
   fun toDirPath(): String =
-    path.joinToString(separator = "/", prefix = "", postfix = "")
+    path.joinToString(separator = "/", prefix = "/", postfix = "")
 
   fun addFileExtension(extension: String): BasicPath =
     if (path.isEmpty()) this
@@ -42,6 +43,7 @@ data class BasicPath(val path: List<String>) {
 }
 
 data class LowLevelCodeGeneratorConfig(
+  val codeVersion: CodeVersion,
   val rootPath: BasicPath,
   val packagePrefix: BasicPath = BasicPath(listOf()),
   val nameParser: NameParser = NameParser.Literal,

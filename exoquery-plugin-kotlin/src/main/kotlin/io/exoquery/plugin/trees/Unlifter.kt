@@ -4,6 +4,7 @@ import io.decomat.*
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.NameProcessorLLM
 import io.exoquery.generation.Code
+import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.DatabaseDriver
 import io.exoquery.generation.FetchPolicy
 import io.exoquery.generation.TableGrouping
@@ -164,11 +165,18 @@ object Unlifter {
     ) ?: orFail(expr)
 
   context (CX.Scope)
+  fun CodeVersion.Companion.unlift(expr: IrExpression): CodeVersion =
+    on(expr).match(
+      case(Ir.ConstructorCallNullableN.of<CodeVersion.Fixed>()[Is()]).then { args -> CodeVersion.Fixed(unliftString(args[0] ?: parseError("Expected a non-null code version", expr))) },
+      case(Ir.GetObjectValue<CodeVersion.Floating>()).then { CodeVersion.Floating }
+    ) ?: orFail(expr)
+
+  context (CX.Scope)
   fun Code.DataClasses.Companion.unlift(expr: IrExpression): Code.DataClasses =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<Code.DataClasses>()[Is()]).then { args ->
         Code.DataClasses(
-          args[0]?.let { unliftString(it) } ?: parseError("Expected a non-null string for codeVersion", expr),
+          args[0]?.let { CodeVersion.unlift(it) } ?: parseError("Expected a non-null CodeVersion", expr),
           args[1]?.let { DatabaseDriver.unlift(it) } ?: parseError("Expected a non-null DatabaseDriver", expr),
           args[2]?.let { FetchPolicy.unlift(it) } ?: Code.DataClasses.DefaultFetchPolicy,
           args[3]?.let { unliftString(it) },

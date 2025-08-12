@@ -8,6 +8,7 @@ import io.exoquery.codegen.model.JdbcGenerator
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.WorkingDir
 import io.exoquery.generation.Code
+import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.toGenerator
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import javax.sql.DataSource
@@ -56,7 +57,7 @@ fun main() {
 
   val gen =
     Code.DataClasses(
-      "1.1",
+      CodeVersion.Fixed("1.1"),
       io.exoquery.generation.DatabaseDriver.Postgres(
         PostgresTestDB.embeddedPostgres.getJdbcUrl("postgres", "")
       ),

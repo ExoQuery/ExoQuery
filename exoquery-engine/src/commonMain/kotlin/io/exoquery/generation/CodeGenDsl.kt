@@ -19,9 +19,18 @@ capture.generate(
 )
  */
 
+@Ser
+sealed interface CodeVersion {
+  @Ser data class Fixed(val version: String): CodeVersion
+  @Ser data object Floating: CodeVersion
+
+  companion object {
+  }
+}
+
 object Code {
   @Ser data class DataClasses(
-    val codeVersion: String,
+    val codeVersion: CodeVersion,
     val driver: DatabaseDriver,
     val fetchPolicy: FetchPolicy = DefaultFetchPolicy,
     val packagePrefix: String? = null,

@@ -22,7 +22,7 @@ class GeneratedEntitiesDirConventions(val ext: ExoQueryGradlePluginExtension, va
   fun generatedEntitiesDir(project: Project) =
     if (codegenIntoPermanentLocation)
       // create a static Provider<Directory> from project.projectDir
-      project.layout.dir(project.provider<File> { project.projectDir })
+      project.layout.dir(project.provider<File> { project.projectDir }).map { it.dir("entities") }
     else
       project.generatedRootDir.map { it.dir("entities") }
 

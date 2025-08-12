@@ -5,11 +5,9 @@ import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
 import io.exoquery.codegen.model.AssemblingStrategy
 import io.exoquery.codegen.model.GeneratorBase
 import io.exoquery.codegen.model.JdbcGenerator
-import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.NamingAnnotationType
 import io.exoquery.codegen.model.NumericPreference
 import java.sql.Driver
-import java.sql.DriverManager
 import java.util.Properties
 
 actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String?): GeneratorBase<*, *, *> {
@@ -81,6 +79,7 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir
 
   val gen = JdbcGenerator.Live(
     LowLevelCodeGeneratorConfig(
+      codeVersion = this.codeVersion,
       rootPath = rootPathReal,
       packagePrefix = this.packagePrefix?.let { BasicPath.DotPath(it) } ?: BasicPath.Empty,
       // TODO get the unlifted name parser and run the AI retrieveal if needed

@@ -1,6 +1,7 @@
 package io.exoquery
 
 import io.exoquery.generation.Code
+import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.DatabaseDriver
 import io.exoquery.kmp.pprint
 
@@ -16,7 +17,7 @@ fun main() {
 
   val cc = capture.generateAndReturn(
     Code.DataClasses(
-      "1.1",
+      CodeVersion.Fixed("1.1"),
       DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
       packagePrefix = "io.exoquery",
       username = "postgres",

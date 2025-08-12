@@ -5,6 +5,8 @@ import io.exoquery.codegen.gen.CodeEmitterDeliverable
 import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
 import io.exoquery.codegen.util.JdbcSchemaReader
 import io.exoquery.codegen.util.SchemaReader
+import io.exoquery.generation.CodeVersion
+import io.ktor.http.content.VersionListProperty
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -14,6 +16,7 @@ import java.sql.Connection
 import java.sql.DatabaseMetaData
 import java.sql.ResultSet
 import javax.sql.DataSource
+import kotlin.code
 import kotlin.reflect.KClass
 
 
@@ -108,6 +111,33 @@ abstract class JdbcGenerator(override val config: LowLevelCodeGeneratorConfig, v
     basePath: BasicPath
   ): JdbcWriteableFile =
     JdbcWriteableFile(deliverable, code, basePath)
+
+  private val versionFile get() =
+    File((config.rootPath + config.packagePrefix).toDirPath(), "CurrentVersion.kt")
+
+  override fun readVersionFileIfPossible(): VersionFile? = run {
+    if (versionFile.exists()) {
+      try {
+        val body = Files.readString(versionFile.toPath())
+        VersionFile.parse(body)
+      } catch (e: Exception) {
+        throw IllegalStateException("Failed to read version file at ${versionFile.absolutePath}", e)
+      }
+    } else {
+      null
+    }
+  }
+
+  override fun writeVersionFileIfNeeded() {
+    // If we are actually configured to write a version file, write it
+    (config.codeVersion as? CodeVersion.Fixed)?.let { codeVersion ->
+      val versionFileConf = VersionFile(codeVersion.version)
+      println("[ExoQuery] Codegen: Writing version-file `${codeVersion.version}` to ${versionFile.absolutePath}")
+      versionFile.parentFile.mkdirs()
+      Files.writeString(versionFile.toPath(), versionFileConf.serialize(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+    }
+  }
+
 
   class Live(override val config: LowLevelCodeGeneratorConfig, connectionMaker: () -> Connection, allowUnknownDatabase: Boolean = false): JdbcGenerator(config, allowUnknownDatabase) {
     override val schemaReader = JdbcSchemaReader({ JdbcSchemaReader.Conn(connectionMaker()) }, allowUnknownDatabase)
