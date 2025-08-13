@@ -11,13 +11,11 @@ import kotlin.jvm.JvmInline
  * TODO move to a test module
  */
 class SchemaReaderTest(
-  val tables: List<TableMeta>,
-  val columns: List<ColumnMeta>,
-  val databaseType: DatabaseTypes.DatabaseType,
+  val testSchema: TestSchema,
   override val allowUnknownDatabase: Boolean
 ): SchemaReader() {
   override fun makeConnection(): SchemaReader.Conn =
-    Conn(tables, columns, databaseType)
+    Conn(testSchema.tables, testSchema.columns, testSchema.databaseType)
 
   @JvmInline
   value class ResultsTableMeta(private val iterator: Iterator<TableMeta>) : SchemaReader.ResultsTableMeta {
@@ -41,4 +39,10 @@ class SchemaReaderTest(
     override fun getDatabaseType(): DatabaseTypes.DatabaseType = knownDatabaseType
     override fun close() {}
   }
+
+  data class TestSchema(
+    val tables: List<TableMeta>,
+    val columns: List<ColumnMeta>,
+    val databaseType: DatabaseTypes.DatabaseType
+  )
 }

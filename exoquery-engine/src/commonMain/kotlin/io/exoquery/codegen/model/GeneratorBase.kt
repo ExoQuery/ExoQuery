@@ -9,23 +9,69 @@ import io.exoquery.codegen.util.SchemaReader
 import io.exoquery.generation.CodeVersion
 import kotlin.reflect.KClass
 
-interface WriteableFile {
-  // Passed in by the Generator
-  val deliverable: CodeEmitterDeliverable
-  val code: String
-  val basePath: BasicPath
+data class BasePath(val value: String)
 
-  fun print(): String
-  fun write(): Unit
+data class CodeFile(
+  // Passed in by the Generator
+  val deliverable: CodeEmitterDeliverable,
+  val code: String,
+  val basePath: String
+) {
+  fun makeWritePath() = deliverable.makeWritePath(basePath)
 }
 
-data class GeneratorDeliverable<F: WriteableFile>(
+interface CodeFileWriter {
+  fun write(writableFile: CodeFile): Unit
+  fun printPath(writableFile: CodeFile): String
+
+  class Test : CodeFileWriter {
+    private val writtenFiles = mutableListOf<CodeFile>()
+
+    override fun write(writableFile: CodeFile) {
+      writtenFiles.add(writableFile)
+    }
+
+    override fun printPath(writableFile: CodeFile): String =
+      writableFile.makeWritePath().toDirPath()
+
+    fun getWrittenFiles(): List<CodeFile> = writtenFiles
+  }
+}
+
+data class GeneratorDeliverable(
   val databaseType: DatabaseTypes.DatabaseType,
-  val files: List<F>
+  val files: List<CodeFile>
 )
 
-abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
+interface VersionFileWriter {
+  fun readVersionFileIfPossible(): VersionFile?
+  fun writeVersionFileIfNeeded(): Unit
+
+  class Test(val config: LowLevelCodeGeneratorConfig): VersionFileWriter {
+    val currentVersionFile: VersionFile? =
+      when (val codeVersion = config.codeVersion) {
+        is CodeVersion.Fixed -> VersionFile(codeVersion.version)
+        else -> null
+      }
+
+    private val writtenVersionFiles = mutableListOf<Pair<VersionFile, String>>()
+    fun getWrittenVersionFiles(): List<Pair<VersionFile, String>> = writtenVersionFiles
+
+    override fun readVersionFileIfPossible(): VersionFile? =
+      writtenVersionFiles.lastOrNull()?.let { VersionFile.parse(it.second) }
+    override fun writeVersionFileIfNeeded(): Unit {
+      currentVersionFile?.let { versionFile ->
+        writtenVersionFiles.add(versionFile to versionFile.serialize())
+      }
+    }
+  }
+}
+
+abstract class GeneratorBase<Conn: AutoCloseable, Results> {
   abstract val config: LowLevelCodeGeneratorConfig
+  abstract val fileWriter: CodeFileWriter
+  abstract val versionFileWriter: VersionFileWriter
+
   protected abstract fun kotlinTypeOf(cm: ColumnMeta): KClass<*>?
   protected abstract val schemaReader: SchemaReader
   protected abstract fun isNotNullable(cm: ColumnMeta): Boolean
@@ -57,10 +103,10 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
   protected abstract fun buildFile(
     deliverable: CodeEmitterDeliverable,
     code: String,
-    basePath: BasicPath,
-  ): F
+    basePath: String,
+  ): CodeFile
 
-  fun compute(): GeneratorDeliverable<F> {
+  fun compute(): GeneratorDeliverable {
     val (metasAll, databaseType) = readMetas()
     val metas = metasAll.filter { filter(it) }
     val rawTables =
@@ -101,11 +147,8 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
     val grouped = groupByNamespace(processedTables)
     val deliverables = packageIntoDeliverables(grouped)
     val writableFiles = deliverables.map { buildFile(it, CodeEmitter(it).code, config.rootPath) }
-    return GeneratorDeliverable<F>(databaseType, writableFiles)
+    return GeneratorDeliverable(databaseType, writableFiles)
   }
-
-  protected abstract fun readVersionFileIfPossible(): VersionFile?
-  protected abstract fun writeVersionFileIfNeeded(): Unit
 
   fun isCurrentVersion(versionFile: VersionFile): Boolean =
     (config.codeVersion as? CodeVersion.Fixed)?.let { it.version == versionFile.currentVersion } ?: run {
@@ -114,18 +157,18 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results, F: WriteableFile> {
     }
 
   fun run(): Unit {
-    val versionFile: VersionFile? = readVersionFileIfPossible()
-    val isCurrentVersion = versionFile?.let { isCurrentVersion(it) } ?: false
+    val foundVersionFile: VersionFile? = versionFileWriter.readVersionFileIfPossible()
+    val isCurrentVersion = foundVersionFile?.let { isCurrentVersion(it) } ?: false
     if (!isCurrentVersion) {
       val deliverable = compute()
       deliverable.files.forEach { file ->
-        println("[ExoQuery] Codegen: Writing file: ${file.print()}")
+        println("[ExoQuery] Codegen: Writing file: ${fileWriter.printPath(file)}")
         if (!config.dryRun)
-          file.write()
+          fileWriter.write(file)
       }
-      writeVersionFileIfNeeded()
+      versionFileWriter.writeVersionFileIfNeeded()
     } else {
-      println("[ExoQuery] Codegen: skipping code generation, current version ${versionFile.currentVersion} is up to date.")
+      println("[ExoQuery] Codegen: skipping code generation, current version ${foundVersionFile.currentVersion} is up to date.")
     }
   }
 

@@ -44,7 +44,7 @@ data class BasicPath(val path: List<String>) {
 
 data class LowLevelCodeGeneratorConfig(
   val codeVersion: CodeVersion,
-  val rootPath: BasicPath,
+  val rootPath: String,
   val packagePrefix: BasicPath = BasicPath(listOf()),
   val nameParser: NameParser = NameParser.Literal,
   val defaultNamespace: String = "schema",

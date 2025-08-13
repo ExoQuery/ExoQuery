@@ -18,16 +18,16 @@ data class CodeEmitterDeliverable(
   val columnNamingAnnotationType: NamingAnnotationType = NamingAnnotationType.SerialName,
 
 ) {
-  fun makeWritePath(basePath: BasicPath): BasicPath =
+  fun makeWritePath(basePath: String): BasicPath =
     when (codeWrapper.wrapperType) {
       // When we're generating an object it needs to be:
       // package ${packagePath.prefix}
       // object ${packagePath.extension} { ... }
-      is CodeWrapperType.ObjectGen -> basePath + packagePath.prefix.addFileExtension(".kt")
+      is CodeWrapperType.ObjectGen -> BasicPath(basePath) + packagePath.prefix.addFileExtension(".kt")
       // When we're generating a package it needs to be:
       // package ${packagePath.prefix}.${packagePath.extension} // i.e. packagePath.fullPath()
       // data class ...
-      is CodeWrapperType.PackageGen if (tables.size == 1) -> basePath + packagePath.fullPath() + "${tables.first().name}.kt"
+      is CodeWrapperType.PackageGen if (tables.size == 1) -> BasicPath(basePath) + packagePath.fullPath() + "${tables.first().name}.kt"
       is CodeWrapperType.PackageGen ->
         throw IllegalStateException(
           "Package path deliverable had multiple tables, which is not supported: ${tables.map { it.name }}"

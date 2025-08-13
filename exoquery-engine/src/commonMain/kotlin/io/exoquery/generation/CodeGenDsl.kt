@@ -32,6 +32,7 @@ object Code {
   @Ser data class DataClasses(
     val codeVersion: CodeVersion,
     val driver: DatabaseDriver,
+    // TODO don't need this anymore, captured in CodeVersion, currently unused. Remove it
     val fetchPolicy: FetchPolicy = DefaultFetchPolicy,
     val packagePrefix: String? = null,
     val username: String? = null,

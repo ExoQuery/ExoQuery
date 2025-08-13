@@ -10,22 +10,13 @@ import io.exoquery.codegen.model.NumericPreference
 import java.sql.Driver
 import java.util.Properties
 
-actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String?): GeneratorBase<*, *, *> {
-  val rootPathReal = BasicPath.SlashPath(absoluteRootPath)
 
-  val jdbcUrl = this.driver.jdbcUrl
+actual fun Code.DataClasses.toLowLevelConfig(absoluteRootPath: String, propertiesBaseDir: String?): Pair<LowLevelCodeGeneratorConfig, PropsData> {
 
-  fun Properties.setUser(user: String): Unit { this.setProperty("user", user) }
-  fun Properties.setPassword(password: String): Unit { this.setProperty("password", password) }
-  fun Properties.setApiKey(apiKey: String): Unit { this.setProperty("api-key", apiKey) }
-  fun Properties.getUser() = this.get("user")?.let { it.toString() }
-  fun Properties.getPassword() = this.get("password")?.let { it.toString() }
-  fun Properties.getApiKey() = this.get("api-key")?.let { it.toString() }
-
-  val props = run {
-    val workingProps = this.propertiesFile.let {
+  val propsData = with(PropsOps) {
+    val workingProps = propertiesFile.let {
       val props = java.util.Properties()
-      val propsFile = projectBaseDir?.let { baseDirValue -> java.io.File(baseDirValue, it) } ?: java.io.File(it)
+      val propsFile = propertiesBaseDir?.let { baseDirValue -> java.io.File(baseDirValue, it) } ?: java.io.File(it)
       if (propsFile.exists()) {
         println("[ExoQuery] Detected properties file for code generation: ${propsFile.absolutePath}")
         try {
@@ -38,49 +29,38 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir
       }
       props
     }
-    if (this.usernameEnvVar != null) {
-      val user = System.getenv(this.usernameEnvVar)
+    if (usernameEnvVar != null) {
+      val user = System.getenv(usernameEnvVar)
       if (user == null) {
-        throw IllegalArgumentException("Code Generation Failed. Environment variable for username is not set: ${this.usernameEnvVar}")
+        throw IllegalArgumentException("Code Generation Failed. Environment variable for username is not set: ${usernameEnvVar}")
       }
       workingProps.setUser(user)
     }
-    if (this.passwordEnvVar != null) {
-      val pass = System.getenv(this.passwordEnvVar)
+    if (passwordEnvVar != null) {
+      val pass = System.getenv(passwordEnvVar)
       if (pass == null) {
-        throw IllegalArgumentException("Code Generation Failed. Environment variable for password is not set: ${this.passwordEnvVar}")
+        throw IllegalArgumentException("Code Generation Failed. Environment variable for password is not set: ${passwordEnvVar}")
       }
       workingProps.setPassword(pass)
     }
-    if (this.username != null) workingProps.setUser(this.username)
-    if (this.password != null) workingProps.setPassword(this.password)
-    workingProps
+    if (username != null) workingProps.setUser(username)
+    if (password != null) workingProps.setPassword(password)
+
+    PropsData(
+      user = workingProps.getUser(),
+      password = workingProps.getPassword(),
+      apiKey = workingProps.getApiKey()
+    )
   }
 
   // copy the finalized values of various things into the data classes from the properties file
   val finalizedCodeDataClasses =
-    this.copy(username = props.getUser(), password = props.getPassword())
+    this.copy(username = propsData.user, password = propsData.password)
 
-  // TODO create a cache of this operation
-  val connectionMaker = {
-    // Even if a driver is on the classpath it isn't necessarily registered yet so it's easier
-    // to just look it up from the driver manager
-    val driver: Driver =
-      try {
-        Class.forName(driver.driverClass).newInstance() as? Driver
-          ?: throw IllegalArgumentException("Code Generation Failed. Constructed instance of ${driver.driverClass} was not a java.sql.Driver")
-      } catch (e: Exception) {
-        // TODO should have specific error about how you should include this library
-        //      in the gradle-config for ExoQuery i.e. the exoQuery { ... } block.
-        throw IllegalArgumentException("Code Generation Failed. Failed to load or construct driver class: ${driver.driverClass}", e)
-      }
-    driver.connect(jdbcUrl, props)
-  }
-
-  val gen = JdbcGenerator.Live(
+  val lowLevelConfig =
     LowLevelCodeGeneratorConfig(
       codeVersion = this.codeVersion,
-      rootPath = rootPathReal,
+      rootPath = absoluteRootPath,
       packagePrefix = this.packagePrefix?.let { BasicPath.DotPath(it) } ?: BasicPath.Empty,
       // NOTE: NameParser.preparedForRuntime SHOULD  NOT be used here because it requires Koog to be present at the compile-time code
       //       we do NOT want to assume that the client always has classpath, only when instruct the codegen at compile-time using
@@ -98,11 +78,57 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir
         },
       numericPreference = NumericPreference.UseDefaults,
       defaultNamespace = "schema",
-      rootLevelOpenApiKey = props.getApiKey(),
+      rootLevelOpenApiKey = propsData.apiKey,
       //defaultExcludedSchemas = TODO()
       dryRun = dryRun,
       detailedLogs = detailedLogs
-    ),
+    )
+
+  return lowLevelConfig to propsData
+}
+
+private fun PropsData.toDatabaseProps(): Properties {
+  val props = Properties()
+  with (PropsOps) {
+    user?.let { props.setUser(it) }
+    password?.let { props.setPassword(it) }
+  }
+  return props
+}
+
+private object PropsOps {
+  fun Properties.setUser(user: String): Unit { this.setProperty("user", user) }
+  fun Properties.setPassword(password: String): Unit { this.setProperty("password", password) }
+  fun Properties.setApiKey(apiKey: String): Unit { this.setProperty("api-key", apiKey) }
+  fun Properties.getUser() = this.get("user")?.let { it.toString() }
+  fun Properties.getPassword() = this.get("password")?.let { it.toString() }
+  fun Properties.getApiKey() = this.get("api-key")?.let { it.toString() }
+}
+
+
+actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String?): GeneratorBase<*, *> {
+  val (lowLevelConfig, propsData) = this.toLowLevelConfig(absoluteRootPath, projectBaseDir)
+
+  // TODO create a cache of this operation
+  val connectionMaker = {
+    // Even if a driver is on the classpath it isn't necessarily registered yet so it's easier
+    // to just look it up from the driver manager
+    val driver: Driver =
+      try {
+        Class.forName(driver.driverClass).newInstance() as? Driver
+          ?: throw IllegalArgumentException("Code Generation Failed. Constructed instance of ${driver.driverClass} was not a java.sql.Driver")
+      } catch (e: Exception) {
+        // TODO should have specific error about how you should include this library
+        //      in the gradle-config for ExoQuery i.e. the exoQuery { ... } block.
+        throw IllegalArgumentException("Code Generation Failed. Failed to load or construct driver class: ${driver.driverClass}", e)
+      }
+
+    val jdbcUrl = this.driver.jdbcUrl
+    driver.connect(jdbcUrl, propsData.toDatabaseProps())
+  }
+
+  val gen = JdbcGenerator.Live(
+    lowLevelConfig,
     connectionMaker = connectionMaker,
     allowUnknownDatabase = true
   )

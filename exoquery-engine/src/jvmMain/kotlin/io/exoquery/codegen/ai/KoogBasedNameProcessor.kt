@@ -1,11 +1,8 @@
 package io.exoquery.codegen.ai
 
-import ai.koog.agents.core.agent.AIAgent
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
@@ -25,7 +22,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
-import kotlin.math.log
 
 /**
  * IMPORTANT! This module should NOT be directly referenced anywhere
@@ -41,7 +37,9 @@ import kotlin.math.log
  * If the user wants to use this module directly (e.g. for testing purposes) they need
  * to explicitly include Koog in their gradle dependencies list.
  */
-class KoogBasedNameProcessor(val log: (String) -> Unit = {}, val agentCaller: AgentCallerService): NameProcessorLLM {
+abstract class KoogBasedNameProcessor(val log: (String) -> Unit = {}): NameProcessorLLM {
+  abstract val agentCaller: AgentCallerService
+
   class KoogCodegenError(message: String): Exception(message)
 
   override fun processTables(usingLLM: NameParser.UsingLLM, tables: List<TablePrepared>, ctx: ProcessingContext): List<TablePrepared> =
@@ -185,6 +183,13 @@ class KoogBasedNameProcessor(val log: (String) -> Unit = {}, val agentCaller: Ag
     log("[ExoQuery] Completed processing model ${modelName}")
     output
   }
+
+  class Live(log: (String) -> Unit): KoogBasedNameProcessor(log) {
+    override val agentCaller: AgentCallerService = AgentCallerService.Live
+  }
+  class Test(val makeLlmOutput: (String) -> String, log: (String) -> Unit): KoogBasedNameProcessor(log) {
+    override val agentCaller: AgentCallerService = AgentCallerService.Test(makeLlmOutput)
+  }
 }
 
 interface AgentCallerService {
@@ -278,29 +283,30 @@ class RequesterFactory(val type: LLM, val systemPrompt: String, val rootLevelApi
   }
 }
 
-fun NameParser.preparedForRuntime(
-  log: (String) -> Unit = {},
-  agentCaller: AgentCallerService = AgentCallerService.Live
-): NameParser {
-  val koogProcessor = KoogBasedNameProcessor(log, agentCaller)
 
+fun NameParser.preparedForRuntime(log: (String) -> Unit = {}): NameParser =
+  preparedFor(this, log, KoogBasedNameProcessor.Live(log))
+
+fun NameParser.preparedForTesting(log: (String) -> Unit, makeLlmOutput: (String) -> String): NameParser =
+  preparedFor(this, log, KoogBasedNameProcessor.Test(makeLlmOutput, log))
+
+private fun preparedFor(nameParser: NameParser, log: (String) -> Unit = {}, koogProcessor: KoogBasedNameProcessor): NameParser {
   fun prepareRecurse(nameParser: NameParser): NameParser =
     when (nameParser) {
       is NameParser.UsingLLM -> nameParser.copy(processor = koogProcessor)
       is NameParser.Composite -> nameParser.copy(parsers = nameParser.parsers.map { prepareRecurse(it) })
       else -> nameParser // No need to change other parsers
     }
-
-  return prepareRecurse(this)
+  return prepareRecurse(nameParser)
 }
 
-fun GeneratorBase<*, *, *>.preparedForRuntime(
+fun GeneratorBase<*, *>.preparedForRuntime(
   log: (String) -> Unit = {},
   agentCaller: AgentCallerService = AgentCallerService.Live
 ): JdbcGenerator =
   when (this) {
     is JdbcGenerator -> {
-      val nameParser = this.config.nameParser.preparedForRuntime(log, agentCaller)
+      val nameParser = this.config.nameParser.preparedForRuntime(log)
       this.withConfig(config = this.config.copy(nameParser = nameParser))
     }
     else -> throw IllegalArgumentException("GeneratorBase should be of type JdbcGenerator to prepare for runtime. Got: ${this::class.simpleName}")
