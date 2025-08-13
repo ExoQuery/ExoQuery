@@ -3,6 +3,7 @@ package io.exoquery.codegen.model
 import io.exoquery.codegen.gen.BasicPath
 import io.exoquery.codegen.gen.CodeEmitterDeliverable
 import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
+import io.exoquery.codegen.gen.RootedPath
 import io.exoquery.codegen.util.JdbcSchemaReader
 import io.exoquery.codegen.util.SchemaReader
 import io.exoquery.codegen.util.SchemaReaderTest
@@ -21,10 +22,12 @@ class JavaCodeFileWriter : CodeFileWriter {
   private fun CodeFile.fullPath(): Path = run {
     val fs = FileSystems.getDefault()
     val writePath = makeWritePath()
-    when (writePath.path.size) {
+    when (writePath.parts.size) {
       0 -> throw IllegalArgumentException("Cannot write to a path with no segments: ${writePath.toDirPath()} for table ${deliverable.tables.map { it.name }} code file:\n${code.take(1000) + "..."}")
       1 -> throw IllegalArgumentException("Cannot write to a path with only one segment (file must at least have a directory): ${writePath.toDirPath()} for table ${deliverable.tables.map { it.name }} code file:\n${code.take(1000) + "..."}")
-      else -> fs.getPath(fs.separator + writePath.path.joinToString(fs.separator))
+      // assuming it's a absolute path at this point (since the root-path has been tacked on to the code-file path)
+      // or perhaps should BasicPath have a concept of root-path segments?
+      else -> fs.getPath(writePath.parts.joinToString(fs.separator))
     }
   }
 
@@ -66,8 +69,10 @@ fun BasicPath.Companion.WorkingDir(): BasicPath {
 }
 
 class JavaVersionFileWriter(val config: LowLevelCodeGeneratorConfig): VersionFileWriter {
-  private val versionFile get() =
-    File((config.rootPath + config.packagePrefix.toDirPath()), "CurrentVersion.kt")
+  private val versionFile get() = run {
+    val rootedPath = RootedPath(config.rootPath, config.packagePrefix)
+    File(rootedPath.toDirPath(), "CurrentVersion.kt")
+  }
 
   override fun readVersionFileIfPossible(): VersionFile? = run {
     if (versionFile.exists()) {

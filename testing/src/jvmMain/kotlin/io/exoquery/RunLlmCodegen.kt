@@ -63,7 +63,7 @@ fun main() {
         NameParser.UsingLLM(
           //NameParser.TypeOfLLM.Ollama(),
           LLM.OpenAI(),
-          processor = KoogBasedNameProcessor({ println(it) }, AgentCallerService.Live)
+          processor = KoogBasedNameProcessor.Live({ println(it) })
         ),
         //NameParser.UncapitalizeColumns
       )

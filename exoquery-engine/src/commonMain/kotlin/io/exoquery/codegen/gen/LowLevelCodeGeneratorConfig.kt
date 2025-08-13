@@ -7,11 +7,31 @@ import io.exoquery.codegen.model.NumericPreference
 import io.exoquery.codegen.model.TableMeta
 import io.exoquery.codegen.model.UnrecognizedTypeStrategy
 import io.exoquery.generation.CodeVersion
+import kotlin.collections.plus
 
 typealias Namespacer = (TableMeta) -> String
 
 data class PackagePath(val prefix: BasicPath, val innermost: String) {
   fun fullPath(): BasicPath = prefix + innermost
+}
+
+data class RootedPath(val root: String, val rel: BasicPath) {
+  constructor(root: String, vararg rel: String) : this(root, BasicPath(rel.toList()))
+
+  fun addFileExtension(extension: String): RootedPath =
+    if (rel.path.isEmpty()) this
+    else RootedPath(root, rel.addFileExtension(extension))
+
+  /** Combine the absolute root path with the relative path. This is not really a 'path' the way would think of it
+   * but it is needed for actually doing useful things with the rooted path.
+   */
+  val parts = listOf(root) + rel.path
+
+  fun toDirPath(): String =
+    parts.joinToString(separator = "/", prefix = "", postfix = "")
+
+  operator fun plus(other: BasicPath): RootedPath = RootedPath(root, rel + other)
+  operator fun plus(other: String): RootedPath = RootedPath(root, rel + other)
 }
 
 data class BasicPath(val path: List<String>) {
@@ -21,7 +41,7 @@ data class BasicPath(val path: List<String>) {
   fun toPackageStringOrNull(): String? = if (path.isEmpty()) null else toPackageString()
 
   fun toDirPath(): String =
-    path.joinToString(separator = "/", prefix = "/", postfix = "")
+    path.joinToString(separator = "/")
 
   fun addFileExtension(extension: String): BasicPath =
     if (path.isEmpty()) this
@@ -52,7 +72,7 @@ data class LowLevelCodeGeneratorConfig(
   val unrecognizedTypeStrategy: UnrecognizedTypeStrategy = UnrecognizedTypeStrategy.SkipColumn,
   val namingAnnotation: NamingAnnotationType = NamingAnnotationType.SerialName,
   val assemblingStrategy: AssemblingStrategy = AssemblingStrategy.SchemaPerPackage,
-  val numericPreference: NumericPreference = NumericPreference.UseDefaults,
+  val numericPreference: NumericPreference = NumericPreference.PreferPrimitivesWhenPossible,
   // The default-name of the package or schema if one is not available from the database
   val schemaFilter: String? = null,
   val tableFilter: String? = null,
