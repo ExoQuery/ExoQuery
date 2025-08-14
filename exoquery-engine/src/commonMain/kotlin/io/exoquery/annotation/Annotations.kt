@@ -39,6 +39,12 @@ annotation class ExoGoldenTest
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoBuildFunction
 
+/**
+ * Use it to trace query compilation like this:
+ * ```
+ * @file:TracesEnabled(TraceType.SqlNormalizations::class, TraceType.Normalizations::class, TraceType.SqlQueryConstruct::class)
+ * ```
+ */
 @Target(AnnotationTarget.FILE, AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.BINARY)
 annotation class TracesEnabled(vararg val traceType: KClass<out TraceType>)

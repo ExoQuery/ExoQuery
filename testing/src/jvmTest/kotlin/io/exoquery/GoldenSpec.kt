@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.core.spec.style.scopes.FreeSpecRootScope
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestScope
+import kotlin.collections.LinkedHashMap
 import kotlin.test.assertEquals
 
 sealed interface Mode {
@@ -39,7 +40,7 @@ abstract class GoldenSpecDynamic(
   body: io.exoquery.GoldenSpecDynamic.() -> Unit
 ): FreeSpec(body as Function1<FreeSpec, Unit>) {
 
-  val outputQueries = mutableListOf<PrintableValue>()
+  val outputQueries = LinkedHashMap<String, PrintableValue>()
 
   fun TestScope.testPath() = run {
     tailrec fun rec(case: TestCase, acc: List<String>): String =
@@ -153,8 +154,20 @@ abstract class GoldenSpecDynamic(
           )
         } ?: errorCap("""No golden query found for label: "$label"""")
 
-      is Mode.ExoGoldenOverride ->
-        outputQueries.add(PrintableValue(this, printType, XR.ClassId.Empty, label, params))
+      is Mode.ExoGoldenOverride -> {
+        val printableValue = PrintableValue(this, printType, XR.ClassId.Empty, label, params)
+        if (outputQueries.containsKey(label)) {
+          val curr = outputQueries.get(label)!!
+          if (curr != printableValue) {
+            throw IllegalStateException("The label: \"$label\" was already used with a different query.\nOld: ${curr.value}\nNew: ${printableValue.value}" )
+          } else {
+            Unit
+          }
+        } else {
+          outputQueries.put(label, printableValue)
+        }
+      }
+
     }
 
   fun complete() {
@@ -162,7 +175,7 @@ abstract class GoldenSpecDynamic(
     val override = mode is Mode.ExoGoldenOverride
     val fileNameBase = mode.fileName.dropLastWhile { it != '.' }.dropLast(1).takeLastWhile { isNotSep(it) }
     val fileName = fileNameBase + "GoldenDynamic"
-    val fileContent = QueryFileKotlinMaker.invoke(outputQueries, fileName, "io.exoquery")
+    val fileContent = QueryFileKotlinMaker.invoke(outputQueries.values.toList(), fileName, "io.exoquery")
     println("========================= Generated Override File: ${mode.fileName} =========================\n" + fileContent)
     writeToFile(mode.fileName, fileName, fileContent, override)
   }

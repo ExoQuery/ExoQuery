@@ -21,13 +21,17 @@ class FilePrintOutputSink private constructor(val writer: BufferedWriter) : Trac
     writer.close()
   }
 
+  override fun flush() {
+    writer.flush()
+  }
+
   companion object {
     fun open(compileOptions: ExoCompileOptions) =
       open(compileOptions.projectDir)
 
     fun open(path: String): FilePrintOutputSink {
       val filePath = Path.of(path, "ExoQuery.log")
-      val writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      val writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
       return FilePrintOutputSink(writer)
     }
   }

@@ -4,6 +4,7 @@ package io.exoquery.sql
 
 import io.exoquery.sql.PostgresDialect
 import io.exoquery.printing.PrintXR
+import io.exoquery.sql.FlattenCriteria.flattenBase
 import io.exoquery.sql.SqlQueryHelper.flattenDualHeadsIfPossible
 import io.exoquery.util.Globals
 import io.exoquery.util.TraceConfig
@@ -355,19 +356,46 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
       // TODO Check if the 2nd-to-last source is a groupBy otherwise we're doing things
       //      between the groupBy and the final `select` which is illegal
       val contexts = sources.mapNotNull { if (it is Layer.Context) it.ctx else null }
+
+      // back here
       val (grouping, sorting, filtering) = sources.findComponentsOrNull()
 
       val queryRaw = flatten(contexts, finalFlatMapBody, alias, nestNextMap = false)
       val query =
         queryRaw
-          .let { if (grouping != null) it.copy(groupBy = grouping.groupBy) else it }
-          // TODO what if there is already an orderBy?
-          .let { if (sorting != null) it.copy(orderBy = FlattenCriteria.flattenOrderFields(sorting.criteria, contexts)) else it }
+          // Expand groupBy(person) into groupBy(person.id, person.name, ...)
+          .let {
+            if (grouping != null) {
+              assertNoGroupBy(it)
+              it.copy(groupBy = FlattenGroupings.flattenAndTupleizeGroupings(grouping.groupBy, contexts))
+            } else it
+          }
+          .let {
+            if (sorting != null) {
+              assertNoSort(it)
+              it.copy(orderBy = FlattenCriteria.flattenOrderFields(sorting.criteria, contexts))
+            } else it
+          }
           // Not sure if its possible to already have a where-clause but if it is combine them
-          .let { if (filtering != null) it.copy(where = combineWhereClauses(it.where, filtering.where)) else it }
+          .let {
+            if (filtering != null) {
+              it.copy(where = combineWhereClauses(it.where, filtering.where))
+            } else it
+          }
 
       query
     }
+
+  private fun assertNoGroupBy(query: FlattenSqlQuery) {
+    if (query.groupBy != null) {
+      xrError("Cannot have a groupBy clause in a query that is being flattened. Query: ${query.showRaw()}")
+    }
+  }
+  private fun assertNoSort(query: FlattenSqlQuery) {
+    if (query.orderBy.isNotEmpty()) {
+      xrError("Cannot have an orderBy clause in a query that is being flattened. Query: ${query.showRaw()}")
+    }
+  }
 
   private fun flatten(
     sources: List<FromContext>,
@@ -411,7 +439,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
               trace("base| Flattening Empty-Sources $query") andReturn { flatten(sources, query, alias, nestNextMap) }
 
             else -> trace("base| Nesting 'other' $query") andReturn {
-              sourceSpecific(query, alias.name)?.let { nest(it) } ?: xrError("Cannot compute base for the query: $query")
+              sourceSpecific(query, alias.name)?.let { nest(it) } ?: xrError("Cannot compute base for the query: ${query.showRaw()}")
             }
           }
         }
@@ -728,7 +756,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
         is XR.ExprToQuery -> source(this, alias)
         is XR.FlatJoin -> source(this, alias)
         is XR.Nested -> source(this, alias)
-        is FlatUnit -> xrError("Source of a query cannot a flat-unit (e.g. where/groupBy/sortedBy)\n" + this.toString())
+        is FlatUnit -> xrError("Source of a query cannot be a flat-unit (e.g. where/groupBy/sortedBy)\n" + this.toString())
         else -> null
       }
     }
@@ -758,7 +786,26 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
     }
 }
 
-
+object FlattenGroupings {
+  private fun flatten(ast: XR.Expression, from: List<FromContext>): List<XR.Expression> =
+    when {
+      ast.type.isProduct() ->
+        ExpandSelection(from).ofSubselect(listOf(SelectValue(ast))).map { it.expr }.flatMap { flatten(it, from) }
+      else ->
+        listOf(ast)
+    }
+  fun flattenAndTupleizeGroupings(
+    groupBy: XR.Expression,
+    from: List<FromContext>
+  ): XR.Expression = run {
+    val flat = flatten(groupBy, from)
+    when {
+      flat.size > 1 -> XR.Product.TupleSmartN(flat)
+      flat.size == 1 -> flat.first()
+      else -> groupBy // If somehow the groupBy is empty, return the original one. Nothing we can do about it (it shouldn't happen).
+    }
+  }
+}
 
 object FlattenCriteria {
 

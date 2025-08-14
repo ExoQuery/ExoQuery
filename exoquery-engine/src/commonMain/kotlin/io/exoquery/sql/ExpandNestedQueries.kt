@@ -18,11 +18,10 @@ class ExpandSelection(val from: List<FromContext>) {
     values.flatMap { invoke(it, level) }
 
   internal fun invoke(value: SelectValue, level: QueryLevel): List<SelectValue> {
-    fun concatOr(concatA: List<String>, concatB: List<String>, or: String?) =
-      if (!level.isTop)
-        concatA + concatB
-      else
-        if (or != null) listOf(or) else listOf()
+    fun concat(concatA: List<String>, concatB: List<String>) = run {
+      println("-------------- Concat: concatA:${concatA}, concatB:${concatB}")
+      concatA + concatB
+    }
 
     // Assuming there's no case class or tuple buried inside or a property i.e. if there were,
     // the beta reduction would have unrolled them already
@@ -45,8 +44,13 @@ class ExpandSelection(val from: List<FromContext>) {
               SelectValue(p, alias or p.name)
             // Append alias headers (i.e. _1,_2 from tuples and field names foo,bar from case classes) to the
             // value of the XRType path
-            p is XR.Property && path.isNotEmpty() ->
-              SelectValue(p, concatOr(alias, path, path.lastOrNull()), concat)
+            p is XR.Property && path.isNotEmpty() -> {
+              val alias =
+                if (level.isTop) path.lastOrNull().toListSingleOrEmpty()
+                else concat(alias, path)
+
+              SelectValue(p, alias, concat)
+            }
             else ->
               SelectValue(p, alias, concat)
           }
@@ -58,7 +62,14 @@ class ExpandSelection(val from: List<FromContext>) {
         fields.flatMap { (name, ast) ->
           // Go into the select values, if the level is Top we need to go TopUnwrapped since the top-level
           // XRType doesn't count anymore. If level=Inner then it's the same.
-          invoke(SelectValue(ast, concatOr(listOf(name), alias, name), concat), level.withoutTopQuat())
+          val fullAlias =
+            if (level.isTop) {
+              listOf(name)
+            } else {
+              concat(alias, listOf(name))
+            }
+
+          invoke(SelectValue(ast, fullAlias, concat), level.withoutTopQuat())
         }
       }
 
@@ -67,6 +78,9 @@ class ExpandSelection(val from: List<FromContext>) {
       ?: listOf(value)
   }
 }
+
+fun <T> T?.toListSingleOrEmpty(): List<T> =
+  if (this != null) listOf(this) else listOf()
 
 infix fun List<String>.or(alternate: String) =
   if (this.isEmpty()) listOf(alternate) else this

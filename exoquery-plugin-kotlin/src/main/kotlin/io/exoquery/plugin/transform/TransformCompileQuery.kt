@@ -133,7 +133,9 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
 
                 val (queryAndToken, compileTime) = measureTimedValue {
                   try {
-                    ProcessResult.Success(dialect.processQuery(xr))
+                    val processed = ProcessResult.Success(dialect.processQuery(xr))
+                    writeSource?.flush()
+                    processed
                   } catch(e: Throwable) {
                     ProcessResult.Failure(e)
                   } finally {

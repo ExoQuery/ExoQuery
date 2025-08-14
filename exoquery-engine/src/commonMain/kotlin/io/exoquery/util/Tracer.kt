@@ -37,11 +37,14 @@ class Tracer(
 
   interface OutputSink {
     fun output(str: String): Unit
-    fun close(): Unit = Unit
+    fun close(): Unit
+    fun flush(): Unit
 
     companion object {
       val None = object : OutputSink {
         override fun output(str: String) = Unit
+        override fun close() = Unit
+        override fun flush() = Unit
       }
     }
   }

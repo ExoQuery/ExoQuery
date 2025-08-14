@@ -73,13 +73,21 @@ interface SqlIdiom : HasPhasePrinting {
   }
 
   fun processQuery(xr: XR.Query): Pair<Token, SqlQueryModel> {
-    val q = prepareQuery(xr)
-    val token = tryOrFail("Error tokenizing prepared query: ${q.showRaw()}") { q.token }
-    return token to q
+    try {
+      val q = prepareQuery(xr)
+      val token = tryOrFail("Error tokenizing prepared query: ${q.showRaw()}") { q.token }
+      return token to q
+    } finally {
+      traceConf.outputSink.flush()
+    }
   }
 
   fun processAction(xr: XR.Action): Token {
-    return xr.token
+    try {
+      return xr.token
+    } finally {
+      traceConf.outputSink.flush()
+    }
   }
 
 

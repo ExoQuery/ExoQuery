@@ -6,9 +6,38 @@ import io.exoquery.xr.*
 import io.exoquery.xr.copy.*
 import io.decomat.*
 import io.exoquery.util.TraceConfig
+import io.exoquery.util.TraceType
+import io.exoquery.util.Tracer
+import io.exoquery.xr.copy.FlatMap
 
 // NOTE: Leaving Quill commneted-out code equivalents here for now for reference
 class AdHocReduction(val traceConfig: TraceConfig) {
+
+  val trace: Tracer =
+    Tracer(TraceType.Normalizations, traceConfig, 1)
+
+  /**
+   * This:
+   * ```
+   * You cannot use this pattern if the body of the FlatMap has a head that is a FlatJoin.
+   *
+   * Also, the fail position of the flatMap cannot have FlatUnit
+   * Filter(FlatMap(Entity(Person, Person(...)), Id(p, Person(...)), Map(FlatFilter(BinaryOp(Property(Id(p, Person(...)), age, Visible), >, Int(18))), Id(unused, BE), Id(p, Person(...)))), Id(ccc, Person(...)), BinaryOp(Property(Id(ccc, Person(...)), name, Visible), ==, String(Main St)))
+   * -> FlatMap(Entity(Person, Person(...)), Id(p, Person(...)), Filter(Map(FlatFilter(BinaryOp(Property(Id(p, Person(...)), age, Visible), >, Int(18))), Id(unused, BE), Id(p, Person(...))), Id(ccc, Person(...)), BinaryOp(Property(Id(ccc, Person(...)), name, Visible), ==, String(Main St))))
+   * ```
+   */
+  object DetachableFlatMap {
+    operator fun <AP : Pattern<XR.Query>, BP : Pattern<XR.Query>> get(x: AP, y: BP) =
+      customPattern2M("DetachableFlatMap", x, y) { it: XR.FlatMap ->
+        with(it) {
+          when {
+            body is XR.U.HasHead && body.head is XR.FlatJoin -> null
+            body is XR.U.HasHead && body.head is XR.FlatFilter -> null
+            else -> Components2M(head, id, body)
+          }
+        }
+      }
+  }
 
   operator fun invoke(q: Query): XR.Query? =
     on(q).match(
@@ -21,7 +50,9 @@ class AdHocReduction(val traceConfig: TraceConfig) {
       // Filter(Filter(a, b, c), d, e) =>
       case(Filter[Filter[Is(), Is()], Is()]).thenThis { (a, b, c), d, e ->
         val er = BetaReduction(e, d to b)
-        Filter.cs(a, b, XR.BinaryOp(c, OP.And, er.asExpr()))
+        trace("AdHoc-Reducing Filter[Filter] for:$q") andReturn {
+          Filter.cs(a, b, XR.BinaryOp(c, OP.And, er.asExpr()))
+        }
       },
       // ---------------------------
       // flatMap.*
@@ -31,14 +62,18 @@ class AdHocReduction(val traceConfig: TraceConfig) {
       //
       // Map(FlatMap(a, b, c), d, e) =>
       case(Map[FlatMap[Is(), Is()], Is()]).then { (a, b, c), d, e ->
-        FlatMap.csf(a, b, XR.Map.csf(c, d, e)(comp))(compLeft)
+        trace("AdHoc-Reducing Map[FlatMap] for:$q") andReturn {
+          FlatMap.csf(a, b, XR.Map.csf(c, d, e)(comp))(compLeft)
+        }
       },
       // a.flatMap(b => c).filter(d => e) =>
       //    a.flatMap(b => c.filter(d => e))
       //
       // case Filter(FlatMap(a, b, c), d, e) =>
-      case(Filter[FlatMap[Is(), Is()], Is()]).then { (a, b, c), d, e ->
-        FlatMap.csf(a, b, Filter.csf(c, d, e)(comp))(compLeft)
+      case(Filter[DetachableFlatMap[Is(), Is()], Is()]).then { (a, b, c), d, e ->
+        trace("AdHoc-Reducing Filter[FlatMap] for:$q") andReturn {
+          FlatMap.csf(a, b, Filter.csf(c, d, e)(comp))(compLeft)
+        }
       },
 
       // SymbolicReduction already does these
