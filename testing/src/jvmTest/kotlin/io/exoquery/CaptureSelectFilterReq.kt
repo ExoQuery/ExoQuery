@@ -6,7 +6,7 @@ import io.exoquery.annotation.CapturedFunction
 import io.exoquery.annotation.TracesEnabled
 import io.exoquery.util.TraceType
 
-class CaptureSelectFilterReq: GoldenSpecDynamic(CaptureSelectFilterReqGoldenDynamic, Mode.ExoGoldenOverride(), {
+class CaptureSelectFilterReq: GoldenSpecDynamic(CaptureSelectFilterReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "capture select.filter should expand correctly" - {
     "test query" {
       data class User(val id: Int, val name: String, val active: Int)
