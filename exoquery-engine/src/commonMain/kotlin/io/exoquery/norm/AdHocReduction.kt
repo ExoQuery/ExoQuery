@@ -19,9 +19,28 @@ class AdHocReduction(val traceConfig: TraceConfig) {
   /**
    * This:
    * ```
-   * You cannot use this pattern if the body of the FlatMap has a head that is a FlatJoin.
+   * You cannot use this pattern if the body of the FlatMap has a head that is a FlatJoin. For example:
+   * ```
+   * capture {
+   *   select {
+   *     val p = from(Table<Person>())
+   *     val a = joinLeft(Table<Address>()) { it.ownerId == p.id }
+   *     p to a
+   *   }.filter { ccc -> ccc.first.name == "Main St" }
+   * }
+   * ```
    *
-   * Also, the fail position of the flatMap cannot have FlatUnit
+   * Same kind of thing if there is a flatFilter
+   * ```
+   * capture.select {
+   *   val p = from(Table<Person>())
+   *   where { p.age > 18 }
+   *   p
+   * }.filter { ccc -> ccc.name == "Main St" }
+   * ```
+   *
+   * The latter creates a tree that looks something like this:
+   * ```
    * Filter(FlatMap(Entity(Person, Person(...)), Id(p, Person(...)), Map(FlatFilter(BinaryOp(Property(Id(p, Person(...)), age, Visible), >, Int(18))), Id(unused, BE), Id(p, Person(...)))), Id(ccc, Person(...)), BinaryOp(Property(Id(ccc, Person(...)), name, Visible), ==, String(Main St)))
    * -> FlatMap(Entity(Person, Person(...)), Id(p, Person(...)), Filter(Map(FlatFilter(BinaryOp(Property(Id(p, Person(...)), age, Visible), >, Int(18))), Id(unused, BE), Id(p, Person(...))), Id(ccc, Person(...)), BinaryOp(Property(Id(ccc, Person(...)), name, Visible), ==, String(Main St))))
    * ```
