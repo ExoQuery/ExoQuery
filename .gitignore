@@ -2,6 +2,7 @@
 build/
 .gradle/
 .kotlin/
+testing/entities
 
 # IDEA
 out/

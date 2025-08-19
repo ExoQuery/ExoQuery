@@ -38,6 +38,12 @@ sealed interface NameParser {
       is Composite -> parsers.any { it.containsOpenAI() }
       else -> false
     }
+  fun findFirstConfigWithAI(): UsingLLM? =
+    when (this) {
+      is UsingLLM -> this
+      is Composite -> parsers.firstNotNullOfOrNull { it.findFirstConfigWithAI() }
+      else -> null
+    }
 
   @Ser
   data class UsingLLM(
@@ -182,7 +188,7 @@ sealed interface NameParser {
 
   @Ser object Literal : SimpleNameParser {
     override fun parseColumn(cm: ColumnPrepared): String = cm.name
-    override fun parseTable(tm: TablePrepared): String = tm.name.capitalizeIt()
+    override fun parseTable(tm: TablePrepared): String = tm.name
   }
 
   @Ser object SnakeCase : SimpleNameParser {

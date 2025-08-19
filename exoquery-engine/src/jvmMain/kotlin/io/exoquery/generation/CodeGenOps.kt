@@ -81,7 +81,10 @@ actual fun Code.DataClasses.toLowLevelConfig(absoluteRootPath: String, propertie
       rootLevelOpenApiKey = propsData.apiKey,
       //defaultExcludedSchemas = TODO()
       dryRun = dryRun,
-      detailedLogs = detailedLogs
+      detailedLogs = detailedLogs,
+      tableFilter = this.tableFilter,
+      schemaFilter = this.schemaFilter,
+      unrecognizedTypeStrategy = this.unrecognizedTypeStrategy
     )
 
   return lowLevelConfig to propsData

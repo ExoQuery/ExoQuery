@@ -1,6 +1,12 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
+// In certain situations where tests are being rapidly iterated
+// and the KSP artifacts are already produced we may want to sepectively disable KSP
+// (i.e. while tests are being rewritten and other which requires XR changes -which is mostly where ExoQuery uses Decomat's KSP functionality-
+// we can disable the KSP-based decomat code generation)
+val kspEnabled = true
+
 plugins {
   kotlin("multiplatform") version "2.2.0"
   id("maven-publish")
@@ -10,15 +16,21 @@ plugins {
   id("conventions-multiplatform")
   id("publish")
 
+  // can remove this if kspEnabled is false (this the variable kspEnabled cannot be used here)
   id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+
   kotlin("plugin.serialization") version "2.2.0"
 }
 
 version = extra["pluginProjectVersion"].toString()
 
 dependencies {
-  add("kspCommonMainMetadata", "io.exoquery:decomat-ksp:1.0.0")
-  //add("kspJvm", "io.exoquery:decomat-ksp:1.0.0")
+  if (kspEnabled)
+    add("kspCommonMainMetadata", "io.exoquery:decomat-ksp:1.0.0")
+
+
+  // Double ksp entry causes strange overrides so do not use it
+  //if (kspEnabled) add("kspJvm", "io.exoquery:decomat-ksp:1.0.0")
   commonMainApi("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 }
 
@@ -84,16 +96,18 @@ kotlin {
   jvmToolchain(17)
 }
 
-tasks.withType<KotlinCompilationTask<*>>().configureEach {
-  if (name != "kspCommonMainKotlinMetadata") {
-    dependsOn("kspCommonMainKotlinMetadata")
+if (kspEnabled)
+  tasks.withType<KotlinCompilationTask<*>>().configureEach {
+    if (name != "kspCommonMainKotlinMetadata") {
+      dependsOn("kspCommonMainKotlinMetadata")
+    }
   }
-}
 
 // Add explicit dependency for KSP JVM tasks if they exist
-//tasks.matching { task -> task.name.startsWith("ksp") && task.name.contains("Jvm") }.configureEach {
-//  dependsOn("kspCommonMainKotlinMetadata")
-//}
+// if (kspEnabled)
+//   tasks.matching { task -> task.name.startsWith("ksp") && task.name.contains("Jvm") }.configureEach {
+//     dependsOn("kspCommonMainKotlinMetadata")
+//   }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
   compilerOptions {
@@ -121,18 +135,20 @@ repositories {
   maven("https://s01.oss.sonatype.org/content/repositories/releases")
 }
 
-ksp {
-  //arg("matchableName", "Mat")
-  //arg("componentName", "Slot")
-  //arg("middleComponentName", "MSlot")
-  //arg("constructorComponentName", "CS")
-  arg("fromHereFunctionName", "cs")
-  arg("fromFunctionName", "csf")
-  arg("renderAdtFunctions", "true")
-  arg("renderFromHereFunction", "false")
-  java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+if (kspEnabled) {
+  ksp {
+    //arg("matchableName", "Mat")
+    //arg("componentName", "Slot")
+    //arg("middleComponentName", "MSlot")
+    //arg("constructorComponentName", "CS")
+    arg("fromHereFunctionName", "cs")
+    arg("fromFunctionName", "csf")
+    arg("renderAdtFunctions", "true")
+    arg("renderFromHereFunction", "false")
+    java {
+      sourceCompatibility = JavaVersion.VERSION_11
+      targetCompatibility = JavaVersion.VERSION_11
+    }
   }
 }
 
@@ -160,6 +176,9 @@ tasks.named<Test>("jvmTest") {
 //tasks.findByName("mingwX64SourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
 //tasks.findByName("sourcesJar")?.dependsOn("kspCommonMainKotlinMetadata")
 // Preferably we can just use the following to get every target:
-tasks.filter { it.name == "sourcesJar" || it.name.endsWith("SourcesJar") }.forEach {
-  it.dependsOn("kspCommonMainKotlinMetadata")
+
+if (kspEnabled) {
+  tasks.filter { it.name == "sourcesJar" || it.name.endsWith("SourcesJar") }.forEach {
+    it.dependsOn("kspCommonMainKotlinMetadata")
+  }
 }

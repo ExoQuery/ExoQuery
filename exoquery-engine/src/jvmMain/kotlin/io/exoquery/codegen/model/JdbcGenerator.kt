@@ -68,13 +68,15 @@ fun BasicPath.Companion.WorkingDir(): BasicPath {
   return BasicPath.SlashPath(workingDir)
 }
 
-class JavaVersionFileWriter(val config: LowLevelCodeGeneratorConfig): VersionFileWriter {
-  private val versionFile get() = run {
+object JavaVersionFileWriter: VersionFileWriter {
+
+  private fun makeVersionFile(config: LowLevelCodeGeneratorConfig) = run {
     val rootedPath = RootedPath(config.rootPath, config.packagePrefix)
     File(rootedPath.toDirPath(), "CurrentVersion.kt")
   }
 
-  override fun readVersionFileIfPossible(): VersionFile? = run {
+  override fun readVersionFileIfPossible(config: LowLevelCodeGeneratorConfig): VersionFile? = run {
+    val versionFile = makeVersionFile(config)
     if (versionFile.exists()) {
       try {
         val body = Files.readString(versionFile.toPath())
@@ -87,7 +89,8 @@ class JavaVersionFileWriter(val config: LowLevelCodeGeneratorConfig): VersionFil
     }
   }
 
-  override fun writeVersionFileIfNeeded() {
+  override fun writeVersionFileIfNeeded(config: LowLevelCodeGeneratorConfig) {
+    val versionFile = makeVersionFile(config)
     (config.codeVersion as? CodeVersion.Fixed)?.let { codeVersion ->
       val versionFileConf = VersionFile(codeVersion.version)
       println("[ExoQuery] Codegen: Writing version-file `${codeVersion.version}` to ${versionFile.absolutePath}")
@@ -104,7 +107,7 @@ abstract class JdbcGenerator(
   override fun kotlinTypeOf(cm: ColumnMeta): KClass<*>? =
     DefaultJdbcTyper(config.numericPreference).invoke(JdbcTypeInfo.fromColumnMeta(cm))
 
-  override fun isNotNullable(cm: ColumnMeta): Boolean = cm.nullable == DatabaseMetaData.columnNullable
+  override fun isNullable(cm: ColumnMeta): Boolean = cm.nullable == DatabaseMetaData.columnNullable
 
   abstract fun withConfig(config: LowLevelCodeGeneratorConfig): JdbcGenerator
 
@@ -123,17 +126,30 @@ abstract class JdbcGenerator(
     override val schemaReader = JdbcSchemaReader({ JdbcSchemaReader.Conn(connectionMaker()) }, allowUnknownDatabase)
     override val fileWriter: CodeFileWriter = JavaCodeFileWriter()
     override fun withConfig(config: LowLevelCodeGeneratorConfig): JdbcGenerator = Live(config, connectionMaker, allowUnknownDatabase)
-    override val versionFileWriter: VersionFileWriter = JavaVersionFileWriter(config)
+    override val versionFileWriter: VersionFileWriter = JavaVersionFileWriter
   }
 
   data class Test(
-    val testSchemaReaderTest: SchemaReaderTest.TestSchema,
     override val config: LowLevelCodeGeneratorConfig,
+    override val schemaReader: SchemaReader,
     override val allowUnknownDatabase: Boolean = false,
-    override val fileWriter: CodeFileWriter.Test = CodeFileWriter.Test()
+    override val fileWriter: CodeFileWriter.Test = CodeFileWriter.Test(),
+    override val versionFileWriter: VersionFileWriter.Test = VersionFileWriter.Test()
   ): JdbcGenerator(config, allowUnknownDatabase) {
-    override val schemaReader = SchemaReaderTest(testSchemaReaderTest, allowUnknownDatabase)
-    override fun withConfig(config: LowLevelCodeGeneratorConfig): JdbcGenerator = Test(testSchemaReaderTest, config, allowUnknownDatabase, fileWriter)
-    override val versionFileWriter: VersionFileWriter = JavaVersionFileWriter(config)
+    constructor(
+      config: LowLevelCodeGeneratorConfig,
+      testSchemaReaderTest: SchemaReaderTest.TestSchema,
+      allowUnknownDatabase: Boolean = false,
+      fileWriter: CodeFileWriter.Test = CodeFileWriter.Test(),
+      versionFileWriter: VersionFileWriter.Test = VersionFileWriter.Test()
+    ): this(
+        config,
+        SchemaReaderTest(testSchemaReaderTest, allowUnknownDatabase),
+        allowUnknownDatabase,
+        fileWriter,
+        versionFileWriter
+      )
+
+    override fun withConfig(config: LowLevelCodeGeneratorConfig): JdbcGenerator = Test(config, schemaReader, allowUnknownDatabase, fileWriter)
   }
 }

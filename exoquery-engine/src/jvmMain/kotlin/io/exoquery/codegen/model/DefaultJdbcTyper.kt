@@ -14,41 +14,46 @@ class DefaultJdbcTyper(
 
   override fun invoke(jdbcTypeInfo: JdbcTypeInfo): KClass<*>? {
     val jdbcType = jdbcTypeInfo.jdbcType
-    return when (jdbcType) {
-      CHAR, VARCHAR, LONGVARCHAR, NCHAR, NVARCHAR, LONGNVARCHAR -> String::class
+    val jdbcTypeName = jdbcTypeInfo.typeName?.lowercase()
+    return when {
+      jdbcType in setOf(CHAR, VARCHAR, LONGVARCHAR, NCHAR, NVARCHAR, LONGNVARCHAR) -> String::class
 
-      NUMERIC -> when {
+      jdbcType == NUMERIC -> when {
         numericPreference == NumericPreference.PreferPrimitivesWhenPossible && jdbcTypeInfo.size <= maxIntDigits -> Int::class
         numericPreference == NumericPreference.PreferPrimitivesWhenPossible && jdbcTypeInfo.size <= maxLongDigits -> Long::class
         else -> BigDecimal::class
       }
-      DECIMAL -> when {
+      jdbcType == DECIMAL -> when {
         numericPreference == NumericPreference.PreferPrimitivesWhenPossible && jdbcTypeInfo.size <= maxIntDigits -> Int::class
         numericPreference == NumericPreference.PreferPrimitivesWhenPossible && jdbcTypeInfo.size <= maxLongDigits -> Long::class
         else -> BigDecimal::class
       }
 
-      BIT, BOOLEAN -> Boolean::class
-      TINYINT -> Byte::class
-      SMALLINT -> Short::class
-      INTEGER -> Int::class
-      BIGINT -> Long::class
-      REAL -> Float::class
-      FLOAT, DOUBLE -> Double::class
-      DATE -> kotlinx.datetime.LocalDate::class
-      TIME, TIMESTAMP -> kotlinx.datetime.LocalDateTime::class
-      ARRAY -> null // arrays not supported yet
+      jdbcType in setOf(BIT, BOOLEAN) -> Boolean::class
+      jdbcType == TINYINT -> Byte::class
+      jdbcType == SMALLINT -> Short::class
+      jdbcType == INTEGER -> Int::class
+      jdbcType == BIGINT -> Long::class
+      jdbcType == REAL -> Float::class
+      jdbcType == FLOAT || jdbcType == DOUBLE -> Double::class
+      jdbcType == DATE -> kotlinx.datetime.LocalDate::class
+      jdbcType == TIME || jdbcType == TIMESTAMP -> kotlinx.datetime.LocalDateTime::class
+      jdbcType == ARRAY -> null // arrays not supported yet
 
-      BINARY, VARBINARY, LONGVARBINARY, BLOB -> null
-      STRUCT -> null
-      REF -> null
-      DATALINK -> null
-      ROWID -> null
-      NCLOB -> null
-      SQLXML -> null
-      NULL -> null
+      jdbcType in setOf(BINARY, VARBINARY, LONGVARBINARY, BLOB) -> null
+      jdbcType == STRUCT -> null
+      jdbcType == REF -> null
+      jdbcType == DATALINK -> null
+      jdbcType == ROWID -> null
+      jdbcType == NCLOB -> null
+      jdbcType == SQLXML -> null
+      jdbcType == NULL -> null
 
-      CLOB -> null
+      jdbcType == CLOB -> null
+
+      jdbcTypeName == "json" || jdbcTypeName == "jsonb" -> String::class
+      jdbcTypeName == "uuid" -> String::class // TODO should depend on DatabaseType
+
       else -> null
     }
   }

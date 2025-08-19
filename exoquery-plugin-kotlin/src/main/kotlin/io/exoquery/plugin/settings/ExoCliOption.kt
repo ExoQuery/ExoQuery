@@ -77,5 +77,12 @@ enum class ExoCliOption(
     "<true|false>",
     "Enables/disables the printing of queries during compile-time",
     false
+  ),
+
+  ENABLE_CODEGEN_AI(
+    "enableCodegenAI",
+    "<true|false>",
+    "Enables/disables the use of AI models for code generation",
+    false
   )
 }

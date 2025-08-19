@@ -1,5 +1,6 @@
 package io.exoquery.plugin.logging
 
+import io.exoquery.codegen.model.NameParser
 import io.exoquery.plugin.dataClassProperties
 import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.safeName
@@ -16,6 +17,17 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 // @formatter:off
 object Messages {
+
+fun AttemptingToUseLLMWhenDisabled(dbUrl: String, usingLlm: NameParser.UsingLLM) =
+"""
+The code-generation configuration for the database `$dbUrl` is attempting to use AI-based naming but the plugin option 'enableCodegenAI' is set to false.
+========= Enable it in your build configuration like this =========
+exoquery {
+    enableCodegenAI = true // add this!
+}
+======== The following configuration block requires it: ========
+${usingLlm}
+"""
 
 // TODO longer explanation
 val UnexpectedCodegenCall: String =

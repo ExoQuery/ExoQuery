@@ -69,7 +69,7 @@ data class LowLevelCodeGeneratorConfig(
   val nameParser: NameParser = NameParser.Literal,
   val defaultNamespace: String = "schema",
   val tableNamespacer: Namespacer = { it.tableSchema ?: defaultNamespace },
-  val unrecognizedTypeStrategy: UnrecognizedTypeStrategy = UnrecognizedTypeStrategy.SkipColumn,
+  val unrecognizedTypeStrategy: UnrecognizedTypeStrategy = UnrecognizedTypeStrategy.ThrowTypingError,
   val namingAnnotation: NamingAnnotationType = NamingAnnotationType.SerialName,
   val assemblingStrategy: AssemblingStrategy = AssemblingStrategy.SchemaPerPackage,
   val numericPreference: NumericPreference = NumericPreference.PreferPrimitivesWhenPossible,

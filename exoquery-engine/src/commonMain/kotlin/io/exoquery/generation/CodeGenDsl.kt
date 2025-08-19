@@ -1,6 +1,7 @@
 package io.exoquery.generation
 
 import io.exoquery.codegen.model.NameParser
+import io.exoquery.codegen.model.UnrecognizedTypeStrategy
 import io.exoquery.xr.EncodingXR.protoBuf
 import kotlinx.serialization.encodeToHexString
 import kotlinx.serialization.Serializable as Ser
@@ -32,8 +33,6 @@ object Code {
   @Ser data class DataClasses(
     val codeVersion: CodeVersion,
     val driver: DatabaseDriver,
-    // TODO don't need this anymore, captured in CodeVersion, currently unused. Remove it
-    val fetchPolicy: FetchPolicy = DefaultFetchPolicy,
     val packagePrefix: String? = null,
     val username: String? = null,
     /**
@@ -56,36 +55,42 @@ object Code {
 
     val tableGrouping: TableGrouping = DefaultTableGrouping,
 
+
+    /**
+     * A regex schema filter. Only tables in schemas that match this regex will be included in the generated code.
+     */
     val schemaFilter: String? = null,
+
+    /**
+     * A regex table filter. Only tables that match this regex will be included in the generated code.
+     */
     val tableFilter: String? = null,
+
+    val unrecognizedTypeStrategy: UnrecognizedTypeStrategy = DefaultUnrecognizedTypeStrategy,
 
     val dryRun: Boolean = DefaultDryRun,
     val detailedLogs: Boolean = DefaultDetailedLogs
+
+
+    // TODO add typeMap
+    // TypeMap(
+    //    From(tableName=,columnName=,typeName=str,typeNum=) to KotlinType.of<T>() (or KotlinType.of(str))
+    // )
   ) {
     companion object {
       // Use the pattern of specifying the default fetch policy here so it can be used in the compiler plugin unlifter
-      val DefaultFetchPolicy = FetchPolicy.OnVersionChange
       val DefaultTableGrouping = TableGrouping.SchemaPerPackage
       val DefaultPropertiesFile = ".codegen.properties"
       val DefaultDryRun = false
       val DefaultNameParser = NameParser.Literal
       val DefaultDetailedLogs = false
+      val DefaultUnrecognizedTypeStrategy = UnrecognizedTypeStrategy.ThrowTypingError
     }
   }
 }
 
 fun Code.DataClasses.encode(): String {
   return protoBuf.encodeToHexString(this)
-}
-
-@Ser
-sealed interface FetchPolicy {
-  @Ser data object OnVersionChange: FetchPolicy
-  @Ser data object Always: FetchPolicy
-
-
-  companion object {
-  }
 }
 
 @Ser

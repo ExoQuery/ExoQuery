@@ -1,5 +1,6 @@
 package io.exoquery.codegen.util
 
+import io.exoquery.codegen.model.CodeGenerationError
 import io.exoquery.codegen.model.ColumnMeta
 import io.exoquery.codegen.model.DatabaseTypes
 import io.exoquery.codegen.model.JdbcMetaMakers
@@ -43,6 +44,6 @@ data class JdbcSchemaReader(val connectionMaker: () -> SchemaReader.Conn, overri
     try {
       connectionMaker()
     } catch (e: Exception) {
-      throw IllegalStateException("Code Generation Failed. JdbcGenerator Failed to make a connection using the provided connection maker: ${e.message}", e)
+      throw CodeGenerationError("Code Generation Failed. JdbcGenerator Failed to make a connection using the provided connection maker: ${e.message}", e)
     }
 }

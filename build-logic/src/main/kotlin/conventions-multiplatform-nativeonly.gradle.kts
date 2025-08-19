@@ -22,6 +22,7 @@ enables JVM by default (I need this for testing an exoquery-engine functionality
 has no JVM-target native libraries i.e. (Terpal's) controller-native doesn't work for JVM (that's what controller-jvm is for)
 and the sqlite libraries that it depends on don't have JVM targets either.
  */
+
 kotlin {
 
   val isCI = project.hasProperty("isCI")

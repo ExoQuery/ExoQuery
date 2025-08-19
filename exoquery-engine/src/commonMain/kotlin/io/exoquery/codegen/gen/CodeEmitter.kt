@@ -50,7 +50,14 @@ class CodeEmitter(
 
     inner class MemberGen(val column: ColumnPrepared): AbstractMemberGen() {
       override val rawType: String = column.dataType.qualifiedName ?: column.dataType.simpleName ?: "String"
-      override val actualType: String = KotlinLangUtil.escape(rawType.replaceFirst(Regex("^kotlin\\."), ""))
+      override val actualType: String =
+        KotlinLangUtil.escape(rawType.replaceFirst(Regex("^kotlin\\."), "")) + run {
+          if (column.nullable) {
+            "?"
+          } else {
+            ""
+          }
+        }
       override val rawFieldName: String = column.name
       override val fieldName: String = KotlinLangUtil.escape(rawFieldName)
       val databaseName = column.meta.columnName

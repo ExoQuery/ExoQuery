@@ -1,9 +1,17 @@
 package io.exoquery.codegen.model
 
+import io.exoquery.annotation.ExoInternal
+import kotlinx.serialization.Serializable as Ser
+
+@Ser
 sealed interface UnrecognizedTypeStrategy {
-    data object AssumeString : UnrecognizedTypeStrategy
-    data object SkipColumn : UnrecognizedTypeStrategy
-    data object ThrowTypingError : UnrecognizedTypeStrategy
+    @Ser data object AssumeString : UnrecognizedTypeStrategy
+    @Ser data object SkipColumn : UnrecognizedTypeStrategy
+    @Ser data object ThrowTypingError : UnrecognizedTypeStrategy
+
+    @ExoInternal
+    companion object {
+    }
 }
 
 sealed interface NumericPreference {

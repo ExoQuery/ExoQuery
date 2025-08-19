@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
 object ExtractorsDomain {
+  context(CX.Scope)
   fun IsSelectFunction() = Ir.Expr.ClassOf<SelectClauseCapturedBlock>()
 
   object SqlBuildFunction {

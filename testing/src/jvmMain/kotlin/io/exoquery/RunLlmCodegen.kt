@@ -23,7 +23,7 @@ object PostgresTestDB {
 
   val embeddedPostgres by lazy {
     val started = EmbeddedPostgres.start()
-    val postgresScriptsPath = "/testdb/ai-schema.sql"
+    val postgresScriptsPath = "/testdb/test-schema.sql"
     val resource = this::class.java.getResource(postgresScriptsPath)
     if (resource == null) throw NullPointerException("The postgres script path `$postgresScriptsPath` was not found")
     val postgresScript = resource.readText()

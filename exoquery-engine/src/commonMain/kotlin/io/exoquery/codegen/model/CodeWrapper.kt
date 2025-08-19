@@ -23,12 +23,18 @@ sealed interface CodeWrapper {
     override val wrapperType = CodeWrapperType.ObjectGen
     private val packageDef get() = packagePath.prefix.toPackageStringOrNull()?.let { "package $it\n\n" } ?: ""
 
+    companion object {
+      val importBlock =
+        """
+        import io.exoquery.annotation.ExoValue
+        import kotlinx.serialization.SerialName
+        """.trimIndent()
+    }
+
     override fun surround(innerCode: String): String = run {
       val objectName = packagePath.innermost
-packageDef +
-"""import io.exoquery.annotation.ExoValue
-import kotlinx.serialization.SerialName
-  
+packageDef + importBlock +
+"""
 object $objectName {
   ${innerCode.indent(2)}
 }

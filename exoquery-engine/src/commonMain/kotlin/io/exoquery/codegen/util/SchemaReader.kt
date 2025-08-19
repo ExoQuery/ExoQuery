@@ -6,6 +6,14 @@ import io.exoquery.codegen.model.RawTableMeta
 import io.exoquery.codegen.model.TableMeta
 
 abstract class SchemaReader {
+  /**
+   * Encapsulates a result-set that returns table metadata
+   * this was a undesired but necessary abstraction in order to be able to load test
+   * schemas into JdbcGenerator without having to mock JDBC ResultSet and other components.
+   * Also, in order to differentiate between table-meta and column-meta result sets
+   * I decided to have two different interfaces, this ensures that one is not
+   * accidentally swapped with the other.
+   */
   interface ResultsTableMeta {
     fun next(): Boolean
     fun makeTableMeta(): TableMeta

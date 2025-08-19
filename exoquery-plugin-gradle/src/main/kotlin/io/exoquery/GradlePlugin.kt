@@ -69,6 +69,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         queryFilesEnabled.convention(ExoCompileOptions.DefaultQueryFilesEnabled)
         queryPrintingEnabled.convention(ExoCompileOptions.DefaultQueryPrintingEnabled)
         codegenDrivers.convention(ExoCompileOptions.DefaultJdbcDrivers)
+        enableCodegenAI.convention(ExoCompileOptions.DefaultEnabledCodegenAI)
       }
 
     val isMultiplatform = target.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
@@ -124,7 +125,9 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       configurationName.let { project.dependencies.add(it, dependency) }
     }
 
-    if (ext.enableCodegenAI.convention(false).get()) {
+    val enableCodegenAI = ext.enableCodegenAI.convention(ExoCompileOptions.DefaultEnabledCodegenAI)
+
+    if (enableCodegenAI.get()) {
       val koogLibrary = ext.koogLibrary.convention(BuildConfig.KOOG_LIBRARY).get()
       val coroutinesLibrary = BuildConfig.COROUTINES_LIBRARY
 
@@ -172,7 +175,8 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         SubpluginOption("queriesBaseDir", queriesBaseDir),
         SubpluginOption("outputString", outputStringValue),
         SubpluginOption("queryFilesEnabled", queryFilesEnabled.toString()),
-        SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString())
+        SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString()),
+        SubpluginOption("enableCodegenAI", enableCodegenAI.toString())
       )
     }
   }
