@@ -18,8 +18,26 @@ interface ExoQueryGradlePluginExtension {
     /** Whether to print queries at compile-time or not (per the outputString syntax) */
     val queryPrintingEnabled: Property<Boolean>
 
+    /** If you want to use code generation for entities (at compile-time), you need to specify the JDBC drivers here.
+     * This is a list of gradle dependency strings, e.g. "org.postgresql:postgresql:42.7.3"
+     */
     val codegenDrivers: ListProperty<String>
-    val enableCodegenAI: Property<Boolean>
+
+  /**
+   * If you want to use NameParser.UsingLLM for code generation (at compile-time), you need to enable this property.
+   */
+  val enableCodegenAI: Property<Boolean>
+
+    /**
+     * Code-generated entities will either be placed into MyProject/build/generated/entities
+     * (or MyProject/entities if `codegenIntoPermanentLocation` is enabled). Normally
+     * these directories will not be created unless there is actually generated
+     * code that the plugin created there.
+     *
+     * Setting this property will automatically create empty directories at these locations
+     * (when the build is refreshed) i.e. they will exist even if there is no generated code.
+     */
+    val autoCreateCodenDirectories: Property<Boolean>
 
     /**
      * Move the location of generated entities from `MyProject/build/generated/entities` to `MyProject/src/main/entities`
@@ -161,7 +179,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     // and we need it to know where the generated directories are (i.e. it changes based on whether an LLM is used for codegen or not)
     project.afterEvaluate { project ->
       val kotlinExtension = project.extensions.findByType(KotlinProjectExtension::class.java)
-      kotlinExtension?.let { decorateKotlinProject(it, project, conventions) }
+      kotlinExtension?.let { decorateKotlinProject(it, project, conventions, ext) }
     }
 
     return project.provider {
@@ -181,14 +199,14 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     }
   }
 
-  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project, conventions: GeneratedEntitiesDirConventions) {
+  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project, conventions: GeneratedEntitiesDirConventions, ext: ExoQueryGradlePluginExtension) {
     when (kotlin) {
       is KotlinSingleTargetExtension<*> -> {
         val targetsAndSourceSets =
           kotlin.target.compilations.map { compilation ->
             kotlin.target to compilation.defaultSourceSet
           }
-        generateEntitiesDirs(project, targetsAndSourceSets, conventions)
+        generateEntitiesDirs(project, targetsAndSourceSets, conventions, ext)
       }
       is KotlinMultiplatformExtension -> {
         val targetsAndSourceSets =
@@ -197,12 +215,12 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
               target to compilation.defaultSourceSet
             }
           }
-        generateEntitiesDirs(project, targetsAndSourceSets, conventions)
+        generateEntitiesDirs(project, targetsAndSourceSets, conventions, ext)
       }
     }
   }
 
-  private fun generateEntitiesDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>, conventions: GeneratedEntitiesDirConventions) =
+  private fun generateEntitiesDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>, conventions: GeneratedEntitiesDirConventions, ext: ExoQueryGradlePluginExtension) =
     targetsAndSourceSets.forEach { (target, sourceSet) ->
       val targetName = target.name
       val sourceSetName = sourceSet.name
@@ -210,9 +228,11 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       // Add the generated directory to kotlin source directories
       val generatedDir =  conventions.generatedEntitiesKotlin(project, sourceSetName, targetName).get().asFile
 
-      println("[ExoQuery] Adding sources to [${project.name}] $targetName->$sourceSetName (${generatedDir})")
       sourceSet.kotlin.srcDir(generatedDir)
       // Ensure the directory exists
-      generatedDir.mkdirs()
+      if (ext.autoCreateCodenDirectories.convention(false).get()) {
+        println("[ExoQuery] Auto-Adding directories to [${project.name}] $targetName->$sourceSetName (${generatedDir})")
+        generatedDir.mkdirs()
+      }
     }
 }

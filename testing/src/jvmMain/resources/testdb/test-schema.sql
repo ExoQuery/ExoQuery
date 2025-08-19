@@ -49,29 +49,29 @@ CREATE TABLE gen_type_test.TimeEntity
     timeOffsetDateTime TIMESTAMP WITH TIME ZONE  -- java.time.OffsetDateTime
 );
 
-CREATE TABLE gen_type_test.EncodingTestEntity
-(
-    stringMan    VARCHAR(255),
-    booleanMan   BOOLEAN,
-    byteMan      SMALLINT,
-    shortMan     SMALLINT,
-    intMan       INTEGER,
-    longMan      BIGINT,
-    floatMan     FLOAT,
-    doubleMan    DOUBLE PRECISION,
-    byteArrayMan BYTEA,
-    customMan    VARCHAR(255),
-    stringOpt    VARCHAR(255),
-    booleanOpt   BOOLEAN,
-    byteOpt      SMALLINT,
-    shortOpt     SMALLINT,
-    intOpt       INTEGER,
-    longOpt      BIGINT,
-    floatOpt     FLOAT,
-    doubleOpt    DOUBLE PRECISION,
-    byteArrayOpt BYTEA,
-    customOpt    VARCHAR(255)
-);
+-- CREATE TABLE gen_type_test.EncodingTestEntity
+-- (
+--     stringMan    VARCHAR(255),
+--     booleanMan   BOOLEAN,
+--     byteMan      SMALLINT,
+--     shortMan     SMALLINT,
+--     intMan       INTEGER,
+--     longMan      BIGINT,
+--     floatMan     FLOAT,
+--     doubleMan    DOUBLE PRECISION,
+--     byteArrayMan BYTEA,
+--     customMan    VARCHAR(255),
+--     stringOpt    VARCHAR(255),
+--     booleanOpt   BOOLEAN,
+--     byteOpt      SMALLINT,
+--     shortOpt     SMALLINT,
+--     intOpt       INTEGER,
+--     longOpt      BIGINT,
+--     floatOpt     FLOAT,
+--     doubleOpt    DOUBLE PRECISION,
+--     byteArrayOpt BYTEA,
+--     customOpt    VARCHAR(255)
+-- );
 
 CREATE TABLE gen_type_test.JsonbExample2
 (
