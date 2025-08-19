@@ -1,6 +1,7 @@
 package io.exoquery.codegen
 
 import io.exoquery.PostgresTestDB
+import io.exoquery.capture
 import io.exoquery.codegen.model.CodeFileWriter
 import io.exoquery.codegen.model.JdbcGenerator
 import io.exoquery.codegen.model.NameParser
@@ -110,6 +111,36 @@ class GenerationSpec: FreeSpec({
         }
       }
     }
+  }
+
+  // Need to test for the following case:
+  // When there's a clause out of order e.g. DataClasses(
+  //   CodeVersion.Fixed("1.0.0"),
+  //   DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
+  //   schemaFilter = "purposely_inconsistent",
+  //   packagePrefix = "io.exoquery.example.schemaexample.content",
+  // )
+  // It shows up like this:
+  // { // BLOCK
+  //   val tmp0_codeVersion: Fixed = Fixed(version = "1.0.0")
+  //   val tmp1_driver: Postgres = Postgres(jdbcUrl = "jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent")
+  //   DataClasses(codeVersion = tmp0_codeVersion, driver = tmp1_driver, packagePrefix = "io.exoquery.example.schemaexample.content", schemaFilter = "purposely_inconsistent")
+  // }
+  // We need to account for this structure by skipping the variables in the block and then looking them up later
+  "should lookup vars when out of order" {
+    capture.generateJustReturn(
+      Code.DataClasses(
+        CodeVersion.Fixed("1.0.0"),
+        DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
+        schemaFilter = "purposely_inconsistent",
+        packagePrefix = "io.exoquery.example.schemaexample.content",
+      )
+    ) shouldBe Code.DataClasses(
+      CodeVersion.Fixed("1.0.0"),
+      DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
+      schemaFilter = "purposely_inconsistent",
+      packagePrefix = "io.exoquery.example.schemaexample.content",
+    )
   }
 
 })

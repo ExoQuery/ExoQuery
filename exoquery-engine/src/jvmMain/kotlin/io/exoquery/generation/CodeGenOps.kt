@@ -123,7 +123,17 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir
       } catch (e: Exception) {
         // TODO should have specific error about how you should include this library
         //      in the gradle-config for ExoQuery i.e. the exoQuery { ... } block.
-        throw IllegalArgumentException("Code Generation Failed. Failed to load or construct driver class: ${driver.driverClass}", e)
+        throw IllegalArgumentException(
+          """
+            Code Generation Failed. Failed to load or construct driver class: ${'$'}{driver.driverClass}. Have you included this driver in your gradle exoQuery { ... } block?
+            (Note that if you have a JDBC driver dependency in your regular dependencies block, this will not help if the code generator is running at compile-time. Instead you need to add it to the exoQuery block.)
+            ==================== For Example: ====================
+            exoQuery {
+              codegenDrivers.add("org.postgresql:postgresql:42.7.3")
+            }
+          """.trimIndent(),
+          e
+        )
       }
 
     val jdbcUrl = this.driver.jdbcUrl

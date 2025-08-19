@@ -14,6 +14,7 @@ import io.exoquery.parseError
 import io.exoquery.plugin.source
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.varargValues
+import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstKind
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -70,22 +71,22 @@ object Unlifter {
   fun DatabaseDriver.Companion.unlift(expr: IrExpression): DatabaseDriver =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<DatabaseDriver.Postgres>()[Is()]).then { args ->
-        DatabaseDriver.Postgres(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.Postgres.DefaultUrl)
+        DatabaseDriver.Postgres(unliftStringIfNotNull(args[0].lookupIfVar()) ?: DatabaseDriver.Postgres.DefaultUrl)
       },
       case(Ir.ConstructorCallNullableN.of<DatabaseDriver.MySQL>()[Is()]).then { args ->
-        DatabaseDriver.MySQL(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.MySQL.DefaultUrl)
+        DatabaseDriver.MySQL(unliftStringIfNotNull(args[0].lookupIfVar()) ?: DatabaseDriver.MySQL.DefaultUrl)
       },
       case(Ir.ConstructorCallNullableN.of<DatabaseDriver.SQLite>()[Is()]).then { args ->
-        DatabaseDriver.SQLite(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.SQLite.DefaultUrl)
+        DatabaseDriver.SQLite(unliftStringIfNotNull(args[0].lookupIfVar()) ?: DatabaseDriver.SQLite.DefaultUrl)
       },
       case(Ir.ConstructorCallNullableN.of<DatabaseDriver.H2>()[Is()]).then { args ->
-        DatabaseDriver.H2(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.H2.DefaultUrl)
+        DatabaseDriver.H2(unliftStringIfNotNull(args[0].lookupIfVar()) ?: DatabaseDriver.H2.DefaultUrl)
       },
       case(Ir.ConstructorCallNullableN.of<DatabaseDriver.Oracle>()[Is()]).then { args ->
-        DatabaseDriver.Oracle(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.Oracle.DefaultUrl)
+        DatabaseDriver.Oracle(unliftStringIfNotNull(args[0].lookupIfVar()) ?: DatabaseDriver.Oracle.DefaultUrl)
       },
       case(Ir.ConstructorCallNullableN.of<DatabaseDriver.SqlServer>()[Is()]).then { args ->
-        DatabaseDriver.SqlServer(unliftStringIfNotNull(args[0]) ?: DatabaseDriver.SqlServer.DefaultUrl)
+        DatabaseDriver.SqlServer(unliftStringIfNotNull(args[0].lookupIfVar()) ?: DatabaseDriver.SqlServer.DefaultUrl)
       },
       case(Ir.ConstructorCall2.of<DatabaseDriver.Custom>()[Is(), Is()]).then { a, b ->
         DatabaseDriver.Custom(unliftString(a), unliftString(b))
@@ -133,13 +134,13 @@ object Unlifter {
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<LLM.Ollama>()[Is()]).then { args ->
         LLM.Ollama(
-          model = unliftStringIfNotNull(args[0]) ?: LLM.Ollama.DefaultModel,
-          url = unliftStringIfNotNull(args[1]) ?: LLM.Ollama.DefaultUrl
+          model = unliftStringIfNotNull(args[0].lookupIfVar()) ?: LLM.Ollama.DefaultModel,
+          url = unliftStringIfNotNull(args[1].lookupIfVar()) ?: LLM.Ollama.DefaultUrl
         )
       },
       case(Ir.ConstructorCallNullableN.of<LLM.OpenAI>()[Is()]).then { args ->
         LLM.OpenAI(
-          model = unliftStringIfNotNull(args[0]) ?: LLM.OpenAI.DefaultModel
+          model = unliftStringIfNotNull(args[0].lookupIfVar()) ?: LLM.OpenAI.DefaultModel
         )
       }
     ) ?:
@@ -159,7 +160,7 @@ object Unlifter {
   fun NameParser.UsingLLM.Companion.unlift(expr: IrExpression): NameParser.UsingLLM =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<NameParser.UsingLLM>()[Is()]).then { args ->
-        val idx = args.withIndex()
+        val idx = args.withIndexAndLookup()
         NameParser.UsingLLM(
           idx.next()?.let { LLM.unlift(it) } ?: parseError("TypeOfLLM needs to be specified.", expr),
           idx.next()?.let { unliftInt(it) } ?: NameParser.UsingLLM.DefaultMaxTablesPerCall,
@@ -196,10 +197,11 @@ object Unlifter {
   fun NameParser.UsingRegex.Companion.unlift(expr: IrExpression): NameParser.UsingRegex =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<NameParser.UsingRegex>()[Is()]).then { args ->
+        val idx = args.withIndexAndLookup()
         NameParser.UsingRegex(
-          regex = args[0]?.let { unliftString(it) },
-          replace = args[1]?.let { unliftString(it) },
-          target = args[2]?.let { NameParser.Target.unlift(it) } ?: NameParser.UsingRegex.DefaultTarget,
+          idx.next()?.let { unliftString(it) },
+          idx.next()?.let { unliftString(it) },
+          idx.next()?.let { NameParser.Target.unlift(it) } ?: NameParser.UsingRegex.DefaultTarget,
         )
       }
     ) ?: orFail(
@@ -259,7 +261,7 @@ object Unlifter {
   context (CX.Scope)
   fun CodeVersion.Companion.unlift(expr: IrExpression): CodeVersion =
     on(expr).match(
-      case(Ir.ConstructorCallNullableN.of<CodeVersion.Fixed>()[Is()]).then { args -> CodeVersion.Fixed(unliftString(args[0] ?: parseError("Expected a non-null code version", expr))) },
+      case(Ir.ConstructorCallNullableN.of<CodeVersion.Fixed>()[Is()]).then { args -> CodeVersion.Fixed(unliftString(args[0].lookupIfVar() ?: parseError("Expected a non-null code version", expr))) },
       case(Ir.GetObjectValue<CodeVersion.Floating>()).then { CodeVersion.Floating }
     ) ?:
     orFail(
@@ -301,27 +303,61 @@ object Unlifter {
     )
 
   context (CX.Scope)
-  fun Code.DataClasses.Companion.unlift(expr: IrExpression): Code.DataClasses =
+  fun IrExpression?.lookupIfVar() =
+    if (this == null) null
+    else
+      on(this).match(
+        case(Ir.GetValue[Is()]).then {
+          on(it.symbol.owner).match(
+            case(Ir.Variable[Is(), Is()]).then { _, expr -> expr }
+          )
+        },
+      ) ?: this
+
+  context (CX.Scope)
+  fun Code.DataClasses.Companion.unlift(expr: IrExpression): Code.DataClasses = run {
+    fun process(args: Ir.ConstructorCallNullableN.Args) = run {
+      val idx = args.withIndexAndLookup()
+      Code.DataClasses(
+        idx.next()?.let { CodeVersion.unlift(it) } ?: parseError("Expected a non-null CodeVersion", expr),
+        idx.next()?.let { DatabaseDriver.unlift(it) } ?: parseError("Expected a non-null DatabaseDriver", expr),
+        idx.next()?.let { unliftString(it) },
+        idx.next()?.let { unliftString(it) },
+        idx.next()?.let { unliftString(it) },
+        idx.next()?.let { unliftString(it) },
+        idx.next()?.let { unliftString(it) },
+        idx.next()?.let { unliftString(it) } ?: Code.DataClasses.DefaultPropertiesFile,
+        idx.next()?.let { NameParser.unlift(it) } ?: Code.DataClasses.DefaultNameParser,
+        idx.next()?.let { TableGrouping.unlift(it) } ?: Code.DataClasses.DefaultTableGrouping,
+        idx.next()?.let { unliftString(it) },
+        idx.next()?.let { unliftString(it) },
+        idx.next()?.let { UnrecognizedTypeStrategy.unlift(it) } ?: Code.DataClasses.DefaultUnrecognizedTypeStrategy,
+        idx.next()?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDryRun,
+        idx.next()?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDetailedLogs
+      )
+    }
+
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<Code.DataClasses>()[Is()]).then { args ->
-        val idx = args.withIndex()
-        Code.DataClasses(
-          idx.next()?.let { CodeVersion.unlift(it) } ?: parseError("Expected a non-null CodeVersion", expr),
-          idx.next()?.let { DatabaseDriver.unlift(it) } ?: parseError("Expected a non-null DatabaseDriver", expr),
-          idx.next()?.let { unliftString(it) },
-          idx.next()?.let { unliftString(it) },
-          idx.next()?.let { unliftString(it) },
-          idx.next()?.let { unliftString(it) },
-          idx.next()?.let { unliftString(it) },
-          idx.next()?.let { unliftString(it) } ?: Code.DataClasses.DefaultPropertiesFile,
-          idx.next()?.let { NameParser.unlift(it) } ?: Code.DataClasses.DefaultNameParser,
-          idx.next()?.let { TableGrouping.unlift(it) } ?: Code.DataClasses.DefaultTableGrouping,
-          idx.next()?.let { unliftString(it) },
-          idx.next()?.let { unliftString(it) },
-          idx.next()?.let { UnrecognizedTypeStrategy.unlift(it) } ?: Code.DataClasses.DefaultUnrecognizedTypeStrategy,
-          idx.next()?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDryRun,
-          idx.next()?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDetailedLogs
-        )
+        process(args)
+      },
+      /*
+      When there's a clause out of order e.g. DataClasses(
+        CodeVersion.Fixed("1.0.0"),
+        DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
+        schemaFilter = "purposely_inconsistent",
+        packagePrefix = "io.exoquery.example.schemaexample.content",
+      )
+      It shows up like this:
+      { // BLOCK
+        val tmp0_codeVersion: Fixed = Fixed(version = "1.0.0")
+        val tmp1_driver: Postgres = Postgres(jdbcUrl = "jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent")
+        DataClasses(codeVersion = tmp0_codeVersion, driver = tmp1_driver, packagePrefix = "io.exoquery.example.schemaexample.content", schemaFilter = "purposely_inconsistent")
+      }
+      We need to account for this structure by skipping the variables in the block and then looking them up later
+       */
+      case(Ir.Block[Is(), Ir.ConstructorCallNullableN.of<Code.DataClasses>()[Is()]]).thenIf { stmts, _ -> stmts.all { it is IrVariable } }.then { stmts, (args) ->
+        process(args)
       }
     ) ?: orFail(
       expr,
@@ -342,20 +378,22 @@ object Unlifter {
         )
       """.trimIndent()
     )
+  }
 
   context (CX.Scope)
   fun unliftCodeDataClasses(expr: IrExpression): Code.DataClasses =
     Code.DataClasses.unlift(expr)
 
 
-  class ArgsWithIndex(val args: Ir.ConstructorCallNullableN.Args) {
+  class ArgsWithIndexAndLookup(val args: Ir.ConstructorCallNullableN.Args) {
     private var index = 0
+    context (CX.Scope)
     fun next() = run {
       val argsCurr = args[index]
       index += 1
-      argsCurr
+      argsCurr.lookupIfVar()
     }
   }
-  fun Ir.ConstructorCallNullableN.Args.withIndex() =
-    ArgsWithIndex(this)
+  fun Ir.ConstructorCallNullableN.Args.withIndexAndLookup() =
+    ArgsWithIndexAndLookup(this)
 }
