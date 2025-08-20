@@ -79,7 +79,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "SELECT x.id, x.name, x.age FROM Person x WHERE x.age > 18"
     ),
     "filter + correlated isEmpty/XR" to kt(
-      "Table(Person).filter { p -> p.age > Table(Person).map { p -> p.age }.avg_MC() }"
+      "Table(Person).filter { p -> p.age.toDouble_MCS() > Table(Person).map { p -> p.age }.avg_MC() }"
     ),
     "filter + correlated isEmpty" to cr(
       "SELECT p.id, p.name, p.age FROM Person p WHERE p.age > (SELECT avg(p1.age) FROM Person p1)"
