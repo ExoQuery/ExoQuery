@@ -3,7 +3,7 @@ package io.exoquery
 import io.exoquery.public.Person
 import io.exoquery.sql.PostgresDialect
 
-class AggregateReq: GoldenSpecDynamic(GoldenQueryFile.Empty, Mode.ExoGoldenOverride(), {
+class AggregateReq: GoldenSpecDynamic(AggregateReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
   "value function aggregate" - {
     "avg" {
