@@ -288,6 +288,8 @@ object Ir {
             it.isClassStrict<java.sql.Date>() ||
             it.isClassStrict<java.sql.Time>() ||
             it.isClassStrict<java.sql.Timestamp>() ||
+            it.isClassStrict<java.math.BigDecimal>() ||
+            it.isClassStrict<java.math.BigInteger>() ||
             it.isClass<ValueWithSerializer<*>>() ||
             it.hasAnnotation<Contextual>() ||
             (it.classOrNull?.owner?.hasAnnotation<Contextual>() ?: false) ||
