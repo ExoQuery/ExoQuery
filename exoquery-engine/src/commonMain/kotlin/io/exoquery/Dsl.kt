@@ -386,10 +386,16 @@ interface CapturedBlock {
   fun <T : Comparable<T>> max(value: T): T = errorCap("The `min` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun <T : Comparable<T>> avg(value: T): Double = errorCap("The `min` expression of the Query was not inlined")
+  fun avg(value: Comparable<*>): Double = errorCap("The `min` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun <T : Comparable<T>> stddev(value: T): Double = errorCap("The `stddev` expression of the Query was not inlined")
+  fun <R> avg(value: Comparable<*>): R = errorCap("The `min` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.Aggregator::class)
+  fun stddev(value: Comparable<*>): Double = errorCap("The `stddev` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.Aggregator::class)
+  fun <R> stddev(value: Comparable<*>): R = errorCap("The `stddev` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
   fun <T : Comparable<T>> sum(value: T): T = errorCap("The `min` expression of the Query was not inlined")
@@ -429,7 +435,16 @@ interface CapturedBlock {
   fun <T : Comparable<T>> SqlQuery<T>.max(): T = errorCap("The `min` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.QueryAggregator::class)
-  fun <T : Comparable<T>> SqlQuery<T>.avg(): T = errorCap("The `min` expression of the Query was not inlined")
+  fun SqlQuery<*>.avg(): Double = errorCap("The `avg` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.QueryAggregator::class)
+  fun <R> SqlQuery<*>.avg(): R = errorCap("The `avg<T>` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.QueryAggregator::class)
+  fun SqlQuery<*>.stddev(): Double = errorCap("The `stddev` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.QueryAggregator::class)
+  fun <R> SqlQuery<*>.stddev(): R = errorCap("The `staddev<T>` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.QueryAggregator::class)
   fun <T : Comparable<T>> SqlQuery<T>.sum(): T = errorCap("The `min` expression of the Query was not inlined")
