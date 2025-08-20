@@ -11,7 +11,7 @@ data class TablePrepared(
 
 data class ColumnPrepared(
   val name: String,
-  val dataType: KClass<*>,
+  val dataType: ClassName,
   val nullable: Boolean,
   val meta: ColumnMeta
 )

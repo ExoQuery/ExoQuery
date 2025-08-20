@@ -7,12 +7,15 @@ import java.sql.Types.*
 // TODO move to using the Java enum JDBCType
 class DefaultJdbcTyper(
   private val numericPreference: NumericPreference
-) : (JdbcTypeInfo) -> KClass<*>? {
+) : (JdbcTypeInfo) -> ClassName? {
 
   private val maxIntDigits = 9
   private val maxLongDigits = 18
 
-  override fun invoke(jdbcTypeInfo: JdbcTypeInfo): KClass<*>? {
+  override fun invoke(jdbcTypeInfo: JdbcTypeInfo): ClassName? =
+    invokeInternal(jdbcTypeInfo)?.qualifiedName?.let { ClassName(it) }
+
+  private fun invokeInternal(jdbcTypeInfo: JdbcTypeInfo): KClass<*>? {
     val jdbcType = jdbcTypeInfo.jdbcType
     val jdbcTypeName = jdbcTypeInfo.typeName?.lowercase()
     return when {

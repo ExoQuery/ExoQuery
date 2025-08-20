@@ -1,7 +1,10 @@
+@file:OptIn(ExoInternal::class)
 package io.exoquery.generation
 
+import io.exoquery.annotation.ExoInternal
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.UnrecognizedTypeStrategy
+import io.exoquery.generation.typemap.TypeMap
 import io.exoquery.xr.EncodingXR.protoBuf
 import kotlinx.serialization.encodeToHexString
 import kotlinx.serialization.Serializable as Ser
@@ -68,26 +71,27 @@ object Code {
 
     val unrecognizedTypeStrategy: UnrecognizedTypeStrategy = DefaultUnrecognizedTypeStrategy,
 
+    val typeMap: TypeMap = DefaultTypeMap,
+
     val dryRun: Boolean = DefaultDryRun,
     val detailedLogs: Boolean = DefaultDetailedLogs
-
-
-    // TODO add typeMap
-    // TypeMap(
-    //    From(tableName=,columnName=,typeName=str,typeNum=) to KotlinType.of<T>() (or KotlinType.of(str))
-    // )
   ) {
     companion object {
       // Use the pattern of specifying the default fetch policy here so it can be used in the compiler plugin unlifter
-      val DefaultTableGrouping = TableGrouping.SchemaPerPackage
-      val DefaultPropertiesFile = ".codegen.properties"
-      val DefaultDryRun = false
-      val DefaultNameParser = NameParser.Literal
-      val DefaultDetailedLogs = false
-      val DefaultUnrecognizedTypeStrategy = UnrecognizedTypeStrategy.ThrowTypingError
+      @ExoInternal val DefaultTableGrouping = TableGrouping.SchemaPerPackage
+      @ExoInternal val DefaultPropertiesFile = ".codegen.properties"
+      @ExoInternal val DefaultDryRun = false
+      @ExoInternal val DefaultNameParser = NameParser.Literal
+      @ExoInternal val DefaultDetailedLogs = false
+      @ExoInternal val DefaultUnrecognizedTypeStrategy = UnrecognizedTypeStrategy.ThrowTypingError
+      @ExoInternal val DefaultTypeMap = TypeMap()
     }
   }
 }
+
+
+
+
 
 fun Code.DataClasses.encode(): String {
   return protoBuf.encodeToHexString(this)
@@ -151,6 +155,7 @@ sealed interface DatabaseDriver {
   @Ser data object SchemaPerPackage: TableGrouping
   @Ser data object SchemaPerObject: TableGrouping
 
+  @ExoInternal
   companion object {
   }
 }

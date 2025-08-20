@@ -3,6 +3,7 @@ package io.exoquery
 import io.exoquery.config.ExoCompileOptions
 import io.exoquery.exoquery_plugin_gradle.BuildConfig
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -60,6 +61,7 @@ interface ExoQueryGradlePluginExtension {
 
     val koogLibrary: Property<String>
 
+    val debugGeneratedDirConventions: Property<Boolean>
 }
 
 
@@ -174,17 +176,20 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     val queryPrintingEnabled = ext.queryPrintingEnabled.convention(ExoCompileOptions.DefaultQueryPrintingEnabled).get()
 
     val queriesBaseDir = project.generatedRootDir.get().dir("queries").asFile.absolutePath
+    val (entitiesBaseDir, entitiesDirType) = conventions.generatedEntitiesDir(project)
+    val autoCreateDirs = ext.autoCreateCodenDirectories.convention(false).get()
+    val debugGeneratedDirConventions = ext.debugGeneratedDirConventions.convention(false).get()
 
     // Need to do this here and not in apply() because the kotlinExtension is not available yet there
     // and we need it to know where the generated directories are (i.e. it changes based on whether an LLM is used for codegen or not)
     project.afterEvaluate { project ->
       val kotlinExtension = project.extensions.findByType(KotlinProjectExtension::class.java)
-      kotlinExtension?.let { decorateKotlinProject(it, project, conventions, ext) }
+      kotlinExtension?.let { decorateKotlinProject(it, DecorationContext(kotlinExtension, project, conventions, entitiesBaseDir, entitiesDirType, autoCreateDirs, debugGeneratedDirConventions)) }
     }
 
     return project.provider {
       listOf(
-        SubpluginOption("entitiesBaseDir", conventions.generatedEntitiesDir(project).get().asFile.absolutePath),
+        SubpluginOption("entitiesBaseDir",entitiesBaseDir.get().asFile.absolutePath),
         SubpluginOption("generationDir", project.generatedRootDir.get().asFile.absolutePath),
         SubpluginOption("projectSrcDir", project.projectDir.toPath().resolve("src").toAbsolutePath().toString()),
         SubpluginOption("sourceSetName", sourceSetName),
@@ -199,14 +204,24 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     }
   }
 
-  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, project: Project, conventions: GeneratedEntitiesDirConventions, ext: ExoQueryGradlePluginExtension) {
+  data class DecorationContext(
+    val kotlin: KotlinProjectExtension,
+    val project: Project,
+    val conventions: GeneratedEntitiesDirConventions,
+    val entitiesBaseDir: Provider<Directory>,
+    val entitiesDirType: EntitiesDirType,
+    val autoCreateDirs: Boolean,
+    val debugGeneratedDirConventions: Boolean
+  )
+
+  private fun decorateKotlinProject(kotlin: KotlinProjectExtension, deco: DecorationContext) {
     when (kotlin) {
       is KotlinSingleTargetExtension<*> -> {
         val targetsAndSourceSets =
           kotlin.target.compilations.map { compilation ->
             kotlin.target to compilation.defaultSourceSet
           }
-        generateEntitiesDirs(project, targetsAndSourceSets, conventions, ext)
+        generateEntitiesDirs(targetsAndSourceSets, deco)
       }
       is KotlinMultiplatformExtension -> {
         val targetsAndSourceSets =
@@ -215,23 +230,30 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
               target to compilation.defaultSourceSet
             }
           }
-        generateEntitiesDirs(project, targetsAndSourceSets, conventions, ext)
+        generateEntitiesDirs(targetsAndSourceSets, deco)
       }
     }
   }
 
-  private fun generateEntitiesDirs(project: Project, targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>, conventions: GeneratedEntitiesDirConventions, ext: ExoQueryGradlePluginExtension) =
+  private fun generateEntitiesDirs(targetsAndSourceSets: List<Pair<KotlinTarget, KotlinSourceSet>>, deco: DecorationContext) =
     targetsAndSourceSets.forEach { (target, sourceSet) ->
       val targetName = target.name
       val sourceSetName = sourceSet.name
 
       // Add the generated directory to kotlin source directories
-      val generatedDir =  conventions.generatedEntitiesKotlin(project, sourceSetName, targetName).get().asFile
+      val project = deco.project
+      val autoCreateDirs = deco.autoCreateDirs
+      val (generatedDirProvider, dirType) =  deco.conventions.generatedEntitiesKotlin(deco.project, sourceSetName, targetName)
+      val generatedDir = generatedDirProvider.get().asFile
+
+      if (deco.debugGeneratedDirConventions)
+        deco.conventions.show(project, sourceSetName, targetName)
+
+      println("[ExoQuery] Auto-Adding directories${if (autoCreateDirs) "(with mkdirs)" else ""} to [${project.name}] ($targetName/$sourceSetName) (target/sourceSet) using a ${dirType} configuration (${generatedDir})")
 
       sourceSet.kotlin.srcDir(generatedDir)
       // Ensure the directory exists
-      if (ext.autoCreateCodenDirectories.convention(false).get()) {
-        println("[ExoQuery] Auto-Adding directories to [${project.name}] $targetName->$sourceSetName (${generatedDir})")
+      if (autoCreateDirs) {
         generatedDir.mkdirs()
       }
     }

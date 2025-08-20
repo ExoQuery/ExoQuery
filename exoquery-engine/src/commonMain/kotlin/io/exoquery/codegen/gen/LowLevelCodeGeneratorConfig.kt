@@ -7,6 +7,7 @@ import io.exoquery.codegen.model.NumericPreference
 import io.exoquery.codegen.model.TableMeta
 import io.exoquery.codegen.model.UnrecognizedTypeStrategy
 import io.exoquery.generation.CodeVersion
+import io.exoquery.generation.typemap.TypeMap
 import kotlin.collections.plus
 
 typealias Namespacer = (TableMeta) -> String
@@ -78,6 +79,7 @@ data class LowLevelCodeGeneratorConfig(
   val tableFilter: String? = null,
   val defaultExcludedSchemas: Set<String> = setOf("information_schema", "performance_schema", "sys", "mysql"),
   val rootLevelOpenApiKey: String? = null,
+  val typeMap: TypeMap = TypeMap(),
   val dryRun: Boolean = false,
   val detailedLogs: Boolean = false
 )

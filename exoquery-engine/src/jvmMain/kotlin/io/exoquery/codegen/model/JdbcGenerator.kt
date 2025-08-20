@@ -104,7 +104,7 @@ abstract class JdbcGenerator(
   override val config: LowLevelCodeGeneratorConfig,
   open val allowUnknownDatabase: Boolean
 ): GeneratorBase<Connection, ResultSet>() {
-  override fun kotlinTypeOf(cm: ColumnMeta): KClass<*>? =
+  override fun defaultKotlinTypeOf(cm: ColumnMeta): ClassName? =
     DefaultJdbcTyper(config.numericPreference).invoke(JdbcTypeInfo.fromColumnMeta(cm))
 
   override fun isNullable(cm: ColumnMeta): Boolean = cm.nullable == DatabaseMetaData.columnNullable

@@ -8,6 +8,9 @@ import io.exoquery.generation.Code
 import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.DatabaseDriver
 import io.exoquery.generation.TableGrouping
+import io.exoquery.generation.typemap.ClassOf
+import io.exoquery.generation.typemap.From
+import io.exoquery.generation.typemap.TypeMap
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
@@ -239,6 +242,43 @@ class UnliftingSpec: FreeSpec({
         CodeVersion.Fixed("0"),
         DatabaseDriver.Custom("A", "B"),
         unrecognizedTypeStrategy = UnrecognizedTypeStrategy.AssumeString
+      )
+    }
+  }
+
+  "unlift TypeMap" - {
+    "using just column" {
+      capture.generateJustReturn(
+        Code.DataClasses(
+          CodeVersion.Fixed("0"),
+          DatabaseDriver.Custom("A", "B"),
+          typeMap = TypeMap(
+            From("A") to ClassOf<String>()
+          )
+        )
+      ) shouldBe Code.DataClasses(
+        CodeVersion.Fixed("0"),
+        DatabaseDriver.Custom("A", "B"),
+        typeMap = TypeMap(
+          From("A") to ClassOf<String>()
+        )
+      )
+    }
+    "using all fields" {
+      capture.generateJustReturn(
+        Code.DataClasses(
+          CodeVersion.Fixed("0"),
+          DatabaseDriver.Custom("A", "B"),
+          typeMap = TypeMap(
+            From("A", "B", "C", "D", 1, true) to ClassOf("E")
+          )
+        )
+      ) shouldBe Code.DataClasses(
+        CodeVersion.Fixed("0"),
+        DatabaseDriver.Custom("A", "B"),
+        typeMap = TypeMap(
+          From("A", "B", "C", "D", 1, true) to ClassOf("E")
+        )
       )
     }
   }

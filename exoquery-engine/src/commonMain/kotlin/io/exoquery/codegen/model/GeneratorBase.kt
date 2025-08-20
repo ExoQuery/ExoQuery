@@ -6,9 +6,14 @@ import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
 import io.exoquery.codegen.gen.PackagePath
 import io.exoquery.codegen.util.SchemaReader
 import io.exoquery.generation.CodeVersion
+import io.exoquery.generation.typemap.From
+import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
 
 class CodeGenerationError(override val message: String, cause: Exception? = null) : RuntimeException(message, cause)
+
+@JvmInline
+value class ClassName(val value: String)
 
 data class BasePath(val value: String)
 
@@ -73,12 +78,40 @@ interface VersionFileWriter {
   }
 }
 
+
+private fun String.toRegex(matchCaseSensitive: Boolean): Regex =
+  if (matchCaseSensitive) {
+    this.toRegex()
+  } else {
+    this.toRegex(RegexOption.IGNORE_CASE)
+  }
+
+
+private fun From.matches(cm: ColumnMeta) = run {
+  (schema == null || cm.tableSchema?.matches(schema.toRegex(matchCaseSensitive))  ?: true /*auto-pass this clause if there is no schema*/) &&
+    (table == null || cm.tableName.matches(table.toRegex(matchCaseSensitive))) &&
+    (column == null || cm.columnName.matches(column.toRegex(matchCaseSensitive))) &&
+    (typeName == null || cm.typeName.matches(typeName.toRegex(matchCaseSensitive))) &&
+    (typeNum == null || cm.dataType == typeNum)
+}
+
 abstract class GeneratorBase<Conn: AutoCloseable, Results> {
   abstract val config: LowLevelCodeGeneratorConfig
   abstract val fileWriter: CodeFileWriter
   abstract val versionFileWriter: VersionFileWriter
 
-  protected abstract fun kotlinTypeOf(cm: ColumnMeta): KClass<*>?
+
+  /**
+   * Find the first match in the LowLevelCodeGeneratorConfig.typeMap
+   * return if it exists or null if not found.
+   */
+  protected fun kotlinTypeOf(cm: ColumnMeta): ClassName? =
+    config.typeMap.entries
+      .firstOrNull { (from, _) -> from.matches(cm) }
+      ?.let { (_, classOf) -> ClassName(classOf.fullTypePath) }
+
+
+  protected abstract fun defaultKotlinTypeOf(cm: ColumnMeta): ClassName?
   protected abstract val schemaReader: SchemaReader
   protected abstract fun isNullable(cm: ColumnMeta): Boolean
 
@@ -123,9 +156,9 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results> {
         val columns =
           meta.columns
             .mapNotNull { cm ->
-              kotlinTypeOf(cm)?.let { cm to it } ?: run {
+              (kotlinTypeOf(cm) ?: defaultKotlinTypeOf(cm))?.let { cm to it } ?: run {
                 when (config.unrecognizedTypeStrategy) {
-                  UnrecognizedTypeStrategy.AssumeString -> cm to String::class
+                  UnrecognizedTypeStrategy.AssumeString -> cm to ClassName("kotlin.String")
                   UnrecognizedTypeStrategy.SkipColumn -> null
                   UnrecognizedTypeStrategy.ThrowTypingError ->
                     throw CodeGenerationError(

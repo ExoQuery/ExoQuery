@@ -84,7 +84,8 @@ actual fun Code.DataClasses.toLowLevelConfig(absoluteRootPath: String, propertie
       detailedLogs = detailedLogs,
       tableFilter = this.tableFilter,
       schemaFilter = this.schemaFilter,
-      unrecognizedTypeStrategy = this.unrecognizedTypeStrategy
+      unrecognizedTypeStrategy = this.unrecognizedTypeStrategy,
+      typeMap = this.typeMap
     )
 
   return lowLevelConfig to propsData

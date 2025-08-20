@@ -49,7 +49,7 @@ class CodeEmitter(
         }
 
     inner class MemberGen(val column: ColumnPrepared): AbstractMemberGen() {
-      override val rawType: String = column.dataType.qualifiedName ?: column.dataType.simpleName ?: "String"
+      override val rawType: String = column.dataType.value ?: "String"
       override val actualType: String =
         KotlinLangUtil.escape(rawType.replaceFirst(Regex("^kotlin\\."), "")) + run {
           if (column.nullable) {
