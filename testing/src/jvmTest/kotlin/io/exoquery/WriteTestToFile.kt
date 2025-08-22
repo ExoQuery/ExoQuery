@@ -4,7 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
-fun writeToFile(originalFilePath: String, newFileName: String, contents: String, override: Boolean) {
+actual fun writeToFile(originalFilePath: String, newFileName: String, contents: String, override: Boolean) {
   val parentDir = Path.of(originalFilePath).parent
   val fullPath = parentDir.resolve(newFileName + ".kt")
   // If the file does not exist or if we are supposed to override it

@@ -15,7 +15,7 @@ object FreeReqGoldenDynamic: GoldenQueryFile {
     "static free/simple sql function - condition" to cr(
       "SELECT p.id, p.name, p.age FROM Person p WHERE MyFunction(p.age)"
     ),
-    "static free/simple sql function - condition" to cr(
+    "static free/(1) simple sql function - condition" to cr(
       "SELECT p.id, p.name, p.age FROM Person p WHERE MyFunction(p.age)"
     ),
     "query with free/static query in free" to cr(

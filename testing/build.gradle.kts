@@ -1,6 +1,7 @@
 plugins {
   id("conventions-multiplatform")
   kotlin("multiplatform") version "2.2.0"
+  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
   alias(libs.plugins.kotest)
   id("io.exoquery.exoquery-plugin")
 
@@ -57,10 +58,8 @@ kotlin {
 
     val jvmTest by getting {
       dependencies {
-        implementation("io.kotest:kotest-runner-junit5:6.0.0.M1")
-        implementation("io.kotest:kotest-framework-api:6.0.0.M1")
-        implementation("io.kotest:kotest-framework-discovery:6.0.0.M1")
-        implementation("io.kotest:kotest-framework-engine:6.0.0.M1")
+        implementation(libs.kotest.runner.junit5)
+        implementation(libs.kotest.framework.engine)
       }
     }
   }

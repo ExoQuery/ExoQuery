@@ -34,18 +34,35 @@ sealed interface Mode {
   }
 }
 
-abstract class GoldenSpecDynamic(
+/**
+ * I want to make this abstract but then in the Kotest KSP infra there's a strange error:
+ * ```
+ * # Kotest.kt
+ * SpecRef.Function ({ `GoldenSpecDynamic`() }, `GoldenSpecDynamic`::class, "io.exoquery.GoldenSpecDynamic"),
+ * ```
+ */
+open class GoldenSpecDynamic(
   val goldenQueries: GoldenQueryFile,
   val mode: Mode,
   body: io.exoquery.GoldenSpecDynamic.() -> Unit
 ): FreeSpec(body as Function1<FreeSpec, Unit>) {
 
+  /**
+   * Also the Kotest.kt requires a no-arg constructor to be able to instantiate the spec dynamically
+   * which makes no sense since this is a base-spec that doesn't need to be instantiated.
+   */
+  constructor(): this(
+    goldenQueries = GoldenQueryFile.Empty,
+    mode = Mode.ExoGoldenTest(""),
+    body = {}
+  )
+
   val outputQueries = LinkedHashMap<String, PrintableValue>()
 
   fun TestScope.testPath() = run {
     tailrec fun rec(case: TestCase, acc: List<String>): String =
-      case.parent?.let { rec(it, acc + it.name.originalName) } ?: acc.reversed().joinToString("/")
-    rec(this.testCase, listOf(testCase.name.originalName))
+      case.parent?.let { rec(it, acc + it.name.name) } ?: acc.reversed().joinToString("/")
+    rec(this.testCase, listOf(testCase.name.name))
   }
 
   // In golden testing you can do asserts but if ExoGoldenOverride it is important not to run them since we want the new golden file to always be prodcued
@@ -181,7 +198,6 @@ abstract class GoldenSpecDynamic(
   }
 
   init {
-    body()
     afterSpec { complete() }
   }
 }
@@ -195,8 +211,8 @@ abstract class GoldenSpec(val goldenQueries: GoldenQueryFile, body: GoldenSpec.(
 
   fun TestScope.testPath() = run {
     tailrec fun rec(case: TestCase, acc: List<String>): String =
-      case.parent?.let { rec(it, acc + it.name.originalName) } ?: acc.reversed().joinToString("/")
-    rec(this.testCase, listOf(testCase.name.originalName))
+      case.parent?.let { rec(it, acc + it.name.name) } ?: acc.reversed().joinToString("/")
+    rec(this.testCase, listOf(testCase.name.name))
   }
 
   private fun String.shouldBeGolden(label: String?, printType: PrintableValue.Type) =
@@ -212,8 +228,4 @@ abstract class GoldenSpec(val goldenQueries: GoldenQueryFile, body: GoldenSpec.(
       label ?: errorCap("""The following query did not have a label: "$value""""),
       PrintableValue.Type.SqlQuery(originalXR())
     )
-
-  init {
-    body()
-  }
 }

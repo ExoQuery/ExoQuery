@@ -6,10 +6,10 @@ import io.exoquery.printing.kt
 
 object CaptureSelectFilterReqGoldenDynamic: GoldenQueryFile {
   override val queries = mapOf<String, GoldenResult>(
-    "capture select.filter should expand correctly/test query/XR" to kt(
+    "capture select filter should expand correctly/test query/XR" to kt(
       """select { val u = from(Table(User)); val c = leftJoin(Table(Comment)) { c.userId == u.id }; where(u.active == 1 && c.createdAt > free("now()").invoke() - { days -> free("interval ', ${'$'}days,  days'").invoke() }.apply(30)); groupBy(u); UserCommentCount(user = u, commentCount = count_GC(c.id)) }.filter { uc -> uc.commentCount > 5 }"""
     ),
-    "capture select.filter should expand correctly/test query" to cr(
+    "capture select filter should expand correctly/test query" to cr(
       """
       SELECT
         uc.user_id AS id,
@@ -38,10 +38,10 @@ object CaptureSelectFilterReqGoldenDynamic: GoldenQueryFile {
         uc.commentCount > 5
       """
     ),
-    "capture select.filter should expand correctly/capture select.filter simple/XR" to kt(
+    "capture select filter should expand correctly/capture select filter simple/XR" to kt(
       "select { val p = from(Table(Person)); where(p.age > 18); p }.filter { ccc -> ccc.name == Main St }"
     ),
-    "capture select.filter should expand correctly/capture select.filter simple" to cr(
+    "capture select filter should expand correctly/capture select filter simple" to cr(
       """
       SELECT
         ccc.id,
@@ -62,10 +62,10 @@ object CaptureSelectFilterReqGoldenDynamic: GoldenQueryFile {
         ccc.name = 'Main St'
       """
     ),
-    "capture select.filter should expand correctly/capture select(where,groupBy).filter/XR" to kt(
+    "capture select filter should expand correctly/capture select(where,groupBy) filter/XR" to kt(
       "select { val p = from(Table(Person)); val a = leftJoin(Table(Address)) { a.ownerId == p.id }; where(p.age > 18); groupBy(p); p }.filter { ccc -> ccc.name == Main St }"
     ),
-    "capture select.filter should expand correctly/capture select(where,groupBy).filter" to cr(
+    "capture select filter should expand correctly/capture select(where,groupBy) filter" to cr(
       """
       SELECT
         ccc.id,
@@ -91,10 +91,10 @@ object CaptureSelectFilterReqGoldenDynamic: GoldenQueryFile {
         ccc.name = 'Main St'
       """
     ),
-    "capture select.filter should expand correctly/capture select(where,groupBy).map/XR" to kt(
+    "capture select filter should expand correctly/capture select(where,groupBy) map/XR" to kt(
       "select { val p = from(Table(Person)); val a = leftJoin(Table(Address)) { a.ownerId == p.id }; where(p.age > 18); groupBy(p); p }.map { ccc -> Tuple(first = ccc.name, second = ccc.age) }"
     ),
-    "capture select.filter should expand correctly/capture select(where,groupBy).map" to cr(
+    "capture select filter should expand correctly/capture select(where,groupBy) map" to cr(
       """
       SELECT
         p.name AS first,

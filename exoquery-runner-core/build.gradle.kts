@@ -1,6 +1,7 @@
 plugins {
   id("conventions-multiplatform-nativeonly")
   kotlin("multiplatform") version "2.2.0"
+  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
   alias(libs.plugins.kotest)
   id("io.exoquery.exoquery-plugin")
 

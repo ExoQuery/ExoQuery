@@ -4,6 +4,7 @@ plugins {
   // Only uses the base conventions-project because this builds only for jvm and all of those define native targets
   id("conventions")
   kotlin("multiplatform") version "2.2.0"
+  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
   alias(libs.plugins.kotest)
   id("io.exoquery.exoquery-plugin")
 
@@ -89,8 +90,8 @@ kotlin {
         implementation("com.h2database:h2:2.2.224")
         implementation("com.oracle.ojdbc:ojdbc8:19.3.0.0")
         implementation("org.xerial:sqlite-jdbc:3.42.0.1")
+        implementation(libs.kotest.runner.junit5)
 
-        implementation("io.kotest:kotest-runner-junit5:6.0.0.M1")
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
 

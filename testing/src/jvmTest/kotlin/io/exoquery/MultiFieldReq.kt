@@ -1,9 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
-import io.exoquery.annotation.TracesEnabled
-import io.exoquery.util.TraceType
-
 class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "multi groupBy should expand correctly" - {
     data class Person(val id: Int, val name: String, val age: Int)
