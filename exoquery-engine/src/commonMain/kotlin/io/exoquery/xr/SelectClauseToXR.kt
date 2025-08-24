@@ -110,21 +110,23 @@ object SelectClauseToXR {
               )
             )
 
+          // TODO sxw, sxg, sxs are not used as real variables in the clause
+
           is SX.Where ->
             FlatMap(
               prev, prevVar,
               // Since there is no 'new' variable to bind to use use Ident.Unused
-              nestRecurse(FlatFilter(curr.condition, curr.loc), XR.Ident.Unused, remaining.tail)
+              nestRecurse(FlatFilter(curr.condition, curr.loc), XR.Ident.Unused("sxw", prevVar.type), remaining.tail)
             )
           is SX.GroupBy ->
             FlatMap(
               prev, prevVar,
-              nestRecurse(FlatGroupBy(curr.grouping, curr.loc), XR.Ident.Unused, remaining.tail)
+              nestRecurse(FlatGroupBy(curr.grouping, curr.loc), XR.Ident.Unused("sxg", prevVar.type), remaining.tail)
             )
           is SX.SortBy ->
             FlatMap(
               prev, prevVar,
-              nestRecurse(FlatSortBy(curr.criteria, curr.loc), XR.Ident.Unused, remaining.tail)
+              nestRecurse(FlatSortBy(curr.criteria, curr.loc), XR.Ident.Unused("sxs", prevVar.type), remaining.tail)
             )
         }
     return nestRecurse(prev, prevVar, remaining)

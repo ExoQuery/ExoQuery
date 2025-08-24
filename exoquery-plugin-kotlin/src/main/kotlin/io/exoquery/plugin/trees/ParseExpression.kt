@@ -48,7 +48,7 @@ object ParseWindow {
       },
       // This is the core of the window
       case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<CapturedBlock>(), Is("over")]).thenThis { _, _ ->
-        XR.Window(listOf(), listOf(), XR.Ident.Unused, expr.loc)
+        XR.Window(listOf(), listOf(), XR.Ident.Unused("windowcore"), expr.loc)
       },
     ) ?: parseError("Could not parse Window from:\n${expr.dumpSimple()}")
 }

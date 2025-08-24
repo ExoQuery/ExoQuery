@@ -190,7 +190,8 @@ interface SqlIdiom : HasPhasePrinting {
   // at this point we need to get rid of the dollar signs.
   private fun String.sane() = run {
     val dol = '$' + ""
-    this.replace(dol, "")
+    val replaced = this.replace(dol, "")
+    escapeIfNeeded(replaced)
   }
 
   val XR.Ident.token
@@ -662,11 +663,26 @@ interface SqlIdiom : HasPhasePrinting {
         // When it's just a top-level select the prefix will be empty
         ast is Ident && (ast.visibility == Hidden || ast.isThisRef()) ->
           joinAlias(prefix).token
+
+        // This is essentially a band-aid in the situation an empty list is returned from the property name
+        // if the property name actually use it but return a comment that the type is bad.
+        // There is no current case in ExoQuery that I know of where this occurred but I decided
+        // to leave it in just in case this kind of problem manifests in some other way.
+        // See the DealiasBugSpec description for more detail.
+        ast is Ident && prefix.isEmpty() -> {
+          if (propertyImpl.name.isNotEmpty())
+            +"${scopedTokenizer(ast)}.${(tokenizeColumn(propertyImpl.name).token)} /*empty-prefix,type:${this.type.shortString()}*/"
+          else
+            +"${scopedTokenizer(ast)}.* /*empty-prefix,type:${this.type.shortString()}*/"
+        }
+
         // This happens when the SQL dialect supports some notion of structured-data
         // and we are selecting something from a nested expression
         // SELECT /*this ->*/ (someExpression).otherStuff FROM (....)
-        else ->
-          +"${scopedTokenizer(ast)}.${(tokenizeColumn(joinAlias(prefix)).token)}"
+        else -> {
+          val columnName = joinAlias(prefix)
+          +"${scopedTokenizer(ast)}.${(tokenizeColumn(columnName).token)}"
+        }
       }
     }
   }

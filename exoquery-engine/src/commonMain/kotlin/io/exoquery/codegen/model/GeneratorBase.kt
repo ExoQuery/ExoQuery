@@ -10,7 +10,7 @@ import io.exoquery.generation.typemap.From
 import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
 
-class CodeGenerationError(override val message: String, cause: Exception? = null) : RuntimeException(message, cause)
+class CodeGenerationError(override val message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 @JvmInline
 value class ClassName(val value: String)
@@ -29,6 +29,7 @@ data class CodeFile(
 interface CodeFileWriter {
   fun write(writableFile: CodeFile): Unit
   fun printPath(writableFile: CodeFile): String
+  fun resetCodeRoot(path: String): Unit
 
   class Test : CodeFileWriter {
     private val writtenFiles = mutableListOf<CodeFile>()
@@ -39,6 +40,10 @@ interface CodeFileWriter {
 
     override fun printPath(writableFile: CodeFile): String =
       writableFile.makeWritePath().toDirPath()
+
+    override fun resetCodeRoot(path: String) {
+      // no-op for test
+    }
 
     fun getWrittenFiles(): List<CodeFile> = writtenFiles
 
@@ -124,14 +129,13 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results> {
 
     val filteredMetas =
       tableMetas.filter {
-        it.table.tableCat?.let { schemaFilter(it) } ?: true && tableFilter(it.table.tableName)
+        // Filter by the schema-filter if a schema exists
+        (it.table.tableSchema?.let { schemaFilter(it) } ?: true)
+            && tableFilter(it.table.tableName)
       }
 
     filteredMetas to databaseType
   }
-
-  // TODO unknown-column type behavior needs to be exposed in Code.DataClasses
-
 
   protected fun filter(tc: RawTableMeta): Boolean = true
 
@@ -201,6 +205,7 @@ abstract class GeneratorBase<Conn: AutoCloseable, Results> {
     val foundVersionFile: VersionFile? = versionFileWriter.readVersionFileIfPossible(config)
     val isCurrentVersion = foundVersionFile?.let { isCurrentVersion(it) } ?: false
     if (!isCurrentVersion) {
+      fileWriter.resetCodeRoot(config.rootPath)
       val deliverable = compute()
       deliverable.files.forEach { file ->
         println("[ExoQuery] Codegen: Writing file: ${fileWriter.printPath(file)}")

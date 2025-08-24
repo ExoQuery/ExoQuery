@@ -154,7 +154,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); where(a.city == Someplace); a }); where(p.name == Joe); Tuple(first = p, second = a) }"
     ),
     "transformation of nested select clauses/where clauses are combined" to cr(
-      "SELECT p.id, p.name, p.age, unused.ownerId, unused.street, unused.city FROM Person p, Address a WHERE a.city = 'Someplace' AND p.name = 'Joe'"
+      "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM Person p, Address a WHERE a.city = 'Someplace' AND p.name = 'Joe'"
     ),
     "transformation of nested select clauses/groupBy clauses cause nesting/variation A/XR" to kt(
       "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); groupBy(a.city); a }); where(p.name == Joe); Tuple(first = p, second = a) }"

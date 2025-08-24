@@ -44,7 +44,10 @@ class VersionFileControlSpec: FreeSpec({
     CodeFileContent(
       "/my/drive/foo/bar/myschema/test_table.kt",
       "foo.bar.myschema",
-      "data class test_table(val id: Long, val first_name: String?)"
+      """
+      @Serializable
+      data class test_table(val id: Long, val first_name: String?)
+      """.trimIndent()
     )
 
   "Fixed Version + file-not-exists -> file-exists (and regen) -> no-change, file-updated -> regen" {

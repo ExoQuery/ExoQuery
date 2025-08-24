@@ -1524,6 +1524,20 @@ What is being passed from `filteredPeople` to `joinedClauses` is literally the *
 
 TBD
 
+
+# Schema-First Development
+
+In ExoQuery, queries are synthesized from a DSL so all you need for a Schema-First (or Database-First) development
+workflow is the ability to generate record-classes (i.e. Data-Classes) from your database schema. ExoQuery provides
+a way to generate record-classes at compile-time and automatically adds them to the classpath so that you can
+use them to write queries queries right away.
+
+// TODO need to mention that the schemas need need to be on the search path
+
+// TODO also need to remind the user to pass the driver into the exoquery 
+
+
+
 # In the Nuts and Bolts
 
 > WARNING: This section is not for the faint of heart. It is a deep-dive into the more obscure parts of ExoQuery,

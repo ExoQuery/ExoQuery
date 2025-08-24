@@ -18,6 +18,7 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
   override operator fun invoke(q: Query): Pair<Query, StatefulTransformer<Ident?>> =
     with(q) {
       when (this) {
+
         is FlatMap -> {
           val (a, b, c, _) = dealias(head, id, body)
           val (cn, cnt) = invoke(c) // need to recursively dealias this clause e.g. if it is a map-clause that has another alias inside
@@ -107,7 +108,7 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
     val (an, t) = invoke(a)
     val alias = t.state
     return when {
-      alias != null && alias.name != XR.Ident.Unused.name -> {
+      alias != null && !alias.isUnused() -> {
         val retypedAlias = alias.copy(type = b.type)
         trace("Dealias (Q/Expr) $b into $retypedAlias").andLog()
         DealiasResultA(an, retypedAlias, BetaReduction(c, b to retypedAlias).asExpr(), t)
@@ -121,7 +122,7 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
     val (an, t) = invoke(a)
     val alias = t.state
     return when {
-      alias != null -> {
+      alias != null && !alias.isUnused() -> {
         val retypedAlias = alias.copy(type = b.type)
         trace("Dealias (Q/Q) $b into $retypedAlias").andLog()
         DealiasResultB(an, retypedAlias, BetaReduction.ofQuery(c, b to retypedAlias), t)

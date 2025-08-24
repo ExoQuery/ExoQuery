@@ -45,6 +45,7 @@ class GenerationSpec: FreeSpec({
             "/my/drive/foo/bar/purposely_inconsistent/UserProfile.kt",
             "foo.bar.purposely_inconsistent",
             """
+              @Serializable
               data class UserProfile(
                 val userId: Int,
                 val firstName: String,
@@ -84,7 +85,10 @@ class GenerationSpec: FreeSpec({
               CodeFileContent(
                 "/my/drive/foo/bar/myschema/test_table.kt",
                 "foo.bar.myschema",
-                "data class test_table(val id: Long, val first_name: String?)"
+                """
+                @Serializable
+                data class test_table(val id: Long, val first_name: String?)
+                """.trimIndent()
               )
         }
         "with snake_case naming" {
@@ -104,6 +108,7 @@ class GenerationSpec: FreeSpec({
                 "/my/drive/foo/bar/myschema/TestTable.kt",
                 "foo.bar.myschema",
                 """
+                @Serializable
                 @SerialName("test_table")
                 data class TestTable(val id: Long, @SerialName("first_name") val firstName: String?)
               """.trimIndent()

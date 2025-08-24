@@ -45,7 +45,10 @@ class TypeMapSpec: FreeSpec({
           CodeFileContent(
             "/my/drive/foo/bar/myschema/TestTable.kt",
             "foo.bar.myschema",
-            "data class TestTable(val id: Long, val firstName: Double?)"
+            """
+            @Serializable
+            data class TestTable(val id: Long, val firstName: Double?)
+            """.trimIndent()
           )
     }
     "column type" {
@@ -60,7 +63,10 @@ class TypeMapSpec: FreeSpec({
           CodeFileContent(
             "/my/drive/foo/bar/myschema/TestTable.kt",
             "foo.bar.myschema",
-            "data class TestTable(val id: Long, val firstName: Double?)"
+            """
+            @Serializable
+            data class TestTable(val id: Long, val firstName: Double?)
+            """.trimIndent()
           )
     }
 
@@ -76,7 +82,10 @@ class TypeMapSpec: FreeSpec({
           CodeFileContent(
             "/my/drive/foo/bar/myschema/TestTable.kt",
             "foo.bar.myschema",
-            "data class TestTable(val id: Long, val firstName: Double?)"
+            """
+            @Serializable
+            data class TestTable(val id: Long, val firstName: Double?)
+            """.trimIndent()
           )
     }
 
@@ -104,7 +113,10 @@ class TypeMapSpec: FreeSpec({
           CodeFileContent(
             "/my/drive/foo/bar/myschema/TestTable.kt",
             "foo.bar.myschema",
-            "data class TestTable(val id: Long, val firstName: Double?, val firstName: Long)"
+            """
+            @Serializable
+            data class TestTable(val id: Long, val firstName: Double?, val firstName: Long)
+            """.trimIndent()
           )
     }
     "column name and table name" {
@@ -140,12 +152,18 @@ class TypeMapSpec: FreeSpec({
             CodeFileContent(
               "/my/drive/foo/bar/myschema/TestTable.kt",
               "foo.bar.myschema",
-              "data class TestTable(val id: Long, val firstName: Double?)"
+              """
+              @Serializable
+              data class TestTable(val id: Long, val firstName: Double?)
+              """.trimIndent()
             ),
             CodeFileContent(
               "/my/drive/foo/bar/myschema/AnotherTestTable.kt",
               "foo.bar.myschema",
-              "data class AnotherTestTable(val id: Long, val firstName: String?)"
+              """
+              @Serializable
+              data class AnotherTestTable(val id: Long, val firstName: String?)
+              """.trimIndent()
             )
           )
 
@@ -183,12 +201,18 @@ class TypeMapSpec: FreeSpec({
             CodeFileContent(
               "/my/drive/foo/bar/myschema/TestTable.kt",
               "foo.bar.myschema",
-              "data class TestTable(val id: Long, val firstName: Double?)"
+              """
+              @Serializable
+              data class TestTable(val id: Long, val firstName: Double?)
+              """.trimIndent()
             ),
             CodeFileContent(
               "/my/drive/foo/bar/another_schema/TestTable.kt",
               "foo.bar.another_schema",
-              "data class TestTable(val id: Long, val firstName: String?)"
+              """
+              @Serializable
+              data class TestTable(val id: Long, val firstName: String?)
+              """.trimIndent()
             )
           )
     }

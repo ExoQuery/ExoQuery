@@ -43,7 +43,8 @@ class TypeConversionSpec: FreeSpec({
           "/my/drive/foo/bar/myschema/test_table.kt",
           "foo.bar.myschema",
           """
-            data class test_table(val id: String, val first_name: String?)
+          @Serializable
+          data class test_table(val id: String, val first_name: String?)
           """.trimIndent()
         )
     }
@@ -79,7 +80,8 @@ class TypeConversionSpec: FreeSpec({
           "/my/drive/foo/bar/myschema/test_table.kt",
           "foo.bar.myschema",
           """
-            data class test_table(val first_name: String?)
+          @Serializable
+          data class test_table(val first_name: String?)
           """.trimIndent()
         )
     }

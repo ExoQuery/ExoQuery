@@ -7,16 +7,19 @@ import io.exoquery.generation.DatabaseDriver
 
 
 fun main() {
-//  val cc = capture.generateAndReturn(
-//    Code.DataClasses(
-//      CodeVersion.Fixed("1.5"),
-//      DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
-//      packagePrefix = "io.exoquery",
-//      username = "postgres",
-//      password = "postgres",
-//      nameParser = NameParser.Literal,
-//      detailedLogs = true
-//    )
-//  )
-//  println(pprint(cc))
+  //val cc = capture.generateAndReturn(
+  //  Code.DataClasses(
+  //    CodeVersion.Fixed("1.2"),
+  //    DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
+  //    packagePrefix = "io.exoquery",
+  //    username = "postgres",
+  //    password = "postgres",
+  //    nameParser = NameParser.Composite(
+  //      NameParser.CapitalizeTables
+  //    ),
+  //    detailedLogs = true,
+  //    schemaFilter = "public"
+  //  )
+  //)
+  //println(pprint(cc))
 }

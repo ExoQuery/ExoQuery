@@ -6,7 +6,6 @@ import io.exoquery.codegen.model.TablePrepared
 import io.exoquery.codegen.util.KotlinLangUtil
 import io.exoquery.codegen.util.indent
 
-// Kotlin:
 class CodeEmitter(
   val emitterDeliverable: CodeEmitterDeliverable
 ): AbstractCodeEmitter() {
@@ -43,13 +42,13 @@ class CodeEmitter(
     override val code: String
       get() =
         if (caseClassName != databaseName) {
-          "$annotation\n$dataClassCode"
+          "@Serializable\n$annotation\n$dataClassCode"
         } else {
-          dataClassCode
+          "@Serializable\n$dataClassCode"
         }
 
     inner class MemberGen(val column: ColumnPrepared): AbstractMemberGen() {
-      override val rawType: String = column.dataType.value ?: "String"
+      override val rawType: String = column.dataType.value
       override val actualType: String =
         KotlinLangUtil.escape(rawType.replaceFirst(Regex("^kotlin\\."), "")) + run {
           if (column.nullable) {

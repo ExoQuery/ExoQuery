@@ -186,10 +186,17 @@ object Unlifter {
   context (CX.Scope)
   fun NameParser.Composite.Companion.unlift(expr: IrExpression): NameParser.Composite =
     on(expr).match(
-      case(Ir.Call.FunctionMem2[Ir.GetObjectValue<NameParser.Composite.Companion>(), Is("invoke"), Is()]).then { _, (nameParser, otherNameParsers) ->
+      case(Ir.Call.FunctionMem2.AllowNulls[Ir.GetObjectValue<NameParser.Composite.Companion>(), Is("invoke"), Is()]).then { _, (nameParser, otherNameParsers) ->
+        if (nameParser == null)
+          parseError("At least one NameParser must be provided to NameParser.Composite(...)", expr)
         val parser = NameParser.unlift(nameParser)
-        val otherParsers = ((otherNameParsers as? IrVararg)?.let{ it.varargValues().map { NameParser.unlift(it) } } ?: emptyList())
-        NameParser.Composite(parser, *otherParsers.toTypedArray())
+
+        if (otherNameParsers != null) {
+          val otherParsers = ((otherNameParsers as? IrVararg)?.let { it.varargValues().map { NameParser.unlift(it) } } ?: emptyList())
+          NameParser.Composite(parser, *otherParsers.toTypedArray())
+        } else {
+          NameParser.Composite(parser)
+        }
       }
     ) ?: orFail(
       expr,

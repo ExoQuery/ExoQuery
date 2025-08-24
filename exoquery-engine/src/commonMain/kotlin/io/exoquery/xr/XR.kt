@@ -613,7 +613,7 @@ sealed interface XR {
 
     // Tokenization of actions requires being able to extract the alias from the XR.Action. If this is a free of an action we need to be able to do that.
     val foundCoreAlias: Ident =
-      params.flatMap { param -> CollectXR.byType<XR.U.CoreAction>(param) }.firstOrNull()?.coreAlias() ?: Ident.Unused
+      params.flatMap { param -> CollectXR.byType<XR.U.CoreAction>(param) }.firstOrNull()?.coreAlias() ?: Ident.Unused("actioncore")
 
     override fun coreAlias(): Ident = foundCoreAlias
 
@@ -845,8 +845,18 @@ sealed interface XR {
     @Transient
     override val productComponents = productOf(this, name)
 
+    fun isUnused() = name.startsWith(unusedPrefix)
+
     companion object {
-      val Unused = XR.Ident("unused", XRType.Unknown, XR.Location.Synth)
+      private val unusedPrefix = "exo_synth_"
+
+      /**
+       * Create a Ident that that should "theoretically" be unused (e.g. placeholders
+       * for SelectClauseToXR expansions etc...)
+       * In practice the dealiaser can actually use them in some cases.
+       */
+      fun Unused(name: String, type: XRType? = null) = XR.Ident("${unusedPrefix}${name}", type ?: XRType.Unknown, XR.Location.Synth)
+
       private val dol: Char = '$'
       val HiddenRefName = "${dol}this${dol}hidden"
       val HiddenRef = XR.Ident(HiddenRefName, XRType.Unknown, XR.Location.Synth)

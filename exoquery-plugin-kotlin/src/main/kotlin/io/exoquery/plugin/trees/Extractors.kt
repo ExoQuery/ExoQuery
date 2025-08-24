@@ -633,6 +633,22 @@ object Ir {
             null
           }
         }
+
+      object AllowNulls {
+        context (CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<Pair<IrExpression?, IrExpression?>>> get(
+          x: AP,
+          m: MP,
+          y: BP
+        ): Pattern2<AP, BP, IrExpression, Pair<IrExpression?, IrExpression?>, IrCall> =
+          customPattern2("Ir.Call.FunctionMemNAllowNulls", x, y) { it: IrCall ->
+            val reciever = it.extensionArg ?: it.dispatchArg
+            if (reciever != null && it.regularArgs.size == 2 && m.matchesAny(it.symbol.safeName)) {
+              Components2(reciever, it.regularArgs[0] to it.regularArgs[1])
+            } else {
+              null
+            }
+          }
+      }
     }
 
     object FunctionMemAllowNulls {
