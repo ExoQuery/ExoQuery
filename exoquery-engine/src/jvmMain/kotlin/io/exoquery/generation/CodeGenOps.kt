@@ -11,7 +11,7 @@ import java.sql.Driver
 import java.util.Properties
 
 
-actual fun Code.DataClasses.toLowLevelConfig(absoluteRootPath: String, propertiesBaseDir: String?): Pair<LowLevelCodeGeneratorConfig, PropsData> {
+actual fun Code.Entities.toLowLevelConfig(absoluteRootPath: String, propertiesBaseDir: String?): Pair<LowLevelCodeGeneratorConfig, PropsData> {
 
   val propsData = with(PropsOps) {
     val workingProps = propertiesFile.let {
@@ -54,7 +54,7 @@ actual fun Code.DataClasses.toLowLevelConfig(absoluteRootPath: String, propertie
   }
 
   // copy the finalized values of various things into the data classes from the properties file
-  val finalizedCodeDataClasses =
+  val finalizedCodeEntities =
     this.copy(username = propsData.user, password = propsData.password)
 
   val lowLevelConfig =
@@ -67,7 +67,7 @@ actual fun Code.DataClasses.toLowLevelConfig(absoluteRootPath: String, propertie
       //       exoQuery { enableCodegenAI = true } (for compile-time code generation) or when they explicit import the Koog library
       //       via a dependency e.g. `implementation("io.exoquery:koog-runtime:___")` can we assume that the client has Koog. None
       //       of which we actually know are the case here.
-      nameParser = finalizedCodeDataClasses.nameParser, // If an API key is needed, it will be set in the nameParser by the procedure above
+      nameParser = finalizedCodeEntities.nameParser, // If an API key is needed, it will be set in the nameParser by the procedure above
       //tableNamespacer = TODO(),
       //unrecognizedTypeStrategy = TODO(),
       namingAnnotation = NamingAnnotationType.SerialName,
@@ -110,7 +110,7 @@ private object PropsOps {
 }
 
 
-actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String?, log: (String) -> Unit): GeneratorBase<*, *> {
+actual fun Code.Entities.toGenerator(absoluteRootPath: String, projectBaseDir: String?, log: (String) -> Unit): GeneratorBase<*, *> {
   val (lowLevelConfig, propsData) = this.toLowLevelConfig(absoluteRootPath, projectBaseDir)
 
   // TODO create a cache of this operation

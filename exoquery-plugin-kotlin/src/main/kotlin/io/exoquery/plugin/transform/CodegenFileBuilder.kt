@@ -1,10 +1,6 @@
 package io.exoquery.plugin.transform
 
 import io.exoquery.codegen.ai.preparedForRuntime
-import io.exoquery.codegen.gen.BasicPath
-import io.exoquery.codegen.gen.LowLevelCodeGeneratorConfig
-import io.exoquery.codegen.model.CodeGenerationError
-import io.exoquery.codegen.model.GeneratorBase
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.config.ExoCompileOptions
 import io.exoquery.generation.Code
@@ -16,7 +12,7 @@ import org.jetbrains.kotlin.ir.declarations.name
 
 class CodegenFileBuilder(val options: ExoCompileOptions) {
   context (CX.Scope)
-  operator fun invoke(dcs: List<Code.DataClasses>, thisFile: IrFile) {
+  operator fun invoke(dcs: List<Code.Entities>, thisFile: IrFile) {
     dcs.forEach { dc ->
 
       // When the configuration uses an AI model, and we haven't enabled the AI model in the plugin options return an error

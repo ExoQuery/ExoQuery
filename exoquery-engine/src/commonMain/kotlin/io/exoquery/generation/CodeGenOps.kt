@@ -5,5 +5,5 @@ import io.exoquery.codegen.model.GeneratorBase
 
 data class PropsData(val user: String?, val password: String?, val apiKey: String?)
 
-expect fun Code.DataClasses.toLowLevelConfig(absoluteRootPath: String, propertiesBaseDir: String?): Pair<LowLevelCodeGeneratorConfig, PropsData>
-expect fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String? = null, log: (String) -> Unit = {}): GeneratorBase<*, *>
+expect fun Code.Entities.toLowLevelConfig(absoluteRootPath: String, propertiesBaseDir: String?): Pair<LowLevelCodeGeneratorConfig, PropsData>
+expect fun Code.Entities.toGenerator(absoluteRootPath: String, projectBaseDir: String? = null, log: (String) -> Unit = {}): GeneratorBase<*, *>

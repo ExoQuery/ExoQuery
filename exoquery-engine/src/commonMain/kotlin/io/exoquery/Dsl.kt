@@ -29,13 +29,9 @@ import io.exoquery.innerdsl.SqlActionFilterable
 import io.exoquery.innerdsl.set
 import io.exoquery.innerdsl.setParams
 import io.exoquery.serial.ParamSerializer
-import io.exoquery.sql.SqlQueryModel
-import io.exoquery.xr.EncodingXR
-import io.exoquery.xr.XR
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.decodeFromHexString
 import org.intellij.lang.annotations.Language
 import kotlin.reflect.KClass
 
@@ -132,15 +128,15 @@ object capture {
     errorCap("The `batch` expression of the Query was not inlined")
 
   @ExoCodegenFunction
-  fun generate(code: Code.DataClasses): Unit =
+  fun generate(code: Code.Entities): Unit =
     errorCap("The `generate` function was not inlined")
 
   @ExoCodegenReturnFunction
-  fun generateAndReturn(code: Code.DataClasses): Code.DataClasses =
+  fun generateAndReturn(code: Code.Entities): Code.Entities =
     errorCap("The `generate` function was not inlined")
 
   @ExoCodegenJustReturnFunction
-  fun generateJustReturn(code: Code.DataClasses): Code.DataClasses =
+  fun generateJustReturn(code: Code.Entities): Code.Entities =
     errorCap("The `generate` function was not inlined")
 }
 

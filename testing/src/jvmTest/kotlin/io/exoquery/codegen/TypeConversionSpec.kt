@@ -28,7 +28,7 @@ class TypeConversionSpec: FreeSpec({
 
     "should assume string" {
       val (config, _) =
-        Code.DataClasses(
+        Code.Entities(
           CodeVersion.Fixed("1.0.0"), // TODO need a test-generator for this
           DatabaseDriver.Postgres(),
           packagePrefix = "foo.bar",
@@ -50,7 +50,7 @@ class TypeConversionSpec: FreeSpec({
     }
     "should throw typing error" {
       val (config, propsData) =
-        Code.DataClasses(
+        Code.Entities(
           CodeVersion.Fixed("1.0.0"), // TODO need a test-generator for this
           DatabaseDriver.Postgres(),
           packagePrefix = "foo.bar",
@@ -65,7 +65,7 @@ class TypeConversionSpec: FreeSpec({
     }
     "should skip column" {
       val (config, _) =
-        Code.DataClasses(
+        Code.Entities(
           CodeVersion.Fixed("1.0.0"), // TODO need a test-generator for this
           DatabaseDriver.Postgres(),
           packagePrefix = "foo.bar",

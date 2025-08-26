@@ -16,7 +16,7 @@ package io.exoquery
  */
 fun main() {
   //val cc = capture.generateAndReturn(
-  //  Code.DataClasses(
+  //  Code.Entities(
   //    CodeVersion.Fixed("1.5"),
   //    DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
   //    packagePrefix = "io.exoquery",

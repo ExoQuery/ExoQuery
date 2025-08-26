@@ -8,8 +8,8 @@ import io.exoquery.xr.XR
 import kotlinx.serialization.decodeFromHexString
 
 @ExoInternal
-fun unpackCodeDataClasses(expr: String): Code.DataClasses =
-  EncodingXR.protoBuf.decodeFromHexString<Code.DataClasses>(expr)
+fun unpackCodeEntities(expr: String): Code.Entities =
+  EncodingXR.protoBuf.decodeFromHexString<Code.Entities>(expr)
 
 @ExoInternal
 fun unpackExpr(expr: String): XR.Expression =

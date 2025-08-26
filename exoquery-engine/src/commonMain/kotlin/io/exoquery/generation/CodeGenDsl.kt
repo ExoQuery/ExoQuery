@@ -33,7 +33,7 @@ sealed interface CodeVersion {
 }
 
 object Code {
-  @Ser data class DataClasses(
+  @Ser data class Entities(
     val codeVersion: CodeVersion,
     val driver: DatabaseDriver,
     val packagePrefix: String? = null,
@@ -93,7 +93,7 @@ object Code {
 
 
 
-fun Code.DataClasses.encode(): String {
+fun Code.Entities.encode(): String {
   return protoBuf.encodeToHexString(this)
 }
 

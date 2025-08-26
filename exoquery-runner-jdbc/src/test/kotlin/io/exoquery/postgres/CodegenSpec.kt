@@ -7,7 +7,7 @@ class CodegenSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
   //capture.generate(
-  //  Code.DataClasses(
+  //  Code.Entities(
   //    "v1",
   //    DatabaseDriver.Postgres(),
   //    packagePrefix = "io.exoquery",

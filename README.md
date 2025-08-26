@@ -1544,7 +1544,7 @@ package my.example.app
 
 fun myFunction() {
   capture.generate(
-    Code.DataClasses(
+    Code.Entities(
       CodeVersion.Fixed("1.0.0"),
       DatabaseDriver.Postgres("jdbc:postgresql://<db-host>:<db-port>/<db-name>"),
       "my.example.app",   // root package for generated entities

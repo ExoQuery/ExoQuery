@@ -28,7 +28,7 @@ class TransformCaptureCodegenRead(val codegenAccum: FileCodegenAccum) : Transfor
       on(expression).match(
         case(ExtractorsDomain.Call.CaptureGenerate[Is(), Is()]).then { codeDataClassConstructor, callType ->
           val arg = codeDataClassConstructor.regularArgs[0]
-          Unlifter.unliftCodeDataClasses(arg ?: parseError("case class codegen argument was null")) to callType
+          Unlifter.unliftCodeEntities(arg ?: parseError("case class codegen argument was null")) to callType
         }
       ) ?: parseError(
         Messages.UnexpectedCodegenCall,
@@ -45,8 +45,8 @@ class TransformCaptureCodegenRead(val codegenAccum: FileCodegenAccum) : Transfor
       }
       CallType.GenAndReturn, CallType.JustReturn -> {
         // if it's a generateAndReturn call, we need to return the generated code. Pack it up and prep it for unpacking on the client side
-        val packedCodeDataClasses = caseClassCodegen.encode()
-        call(PT.io_exoquery_unpackCodeDataClasses)(builder.irString(packedCodeDataClasses))
+        val packedCodeEntities = caseClassCodegen.encode()
+        call(PT.io_exoquery_unpackCodeEntities)(builder.irString(packedCodeEntities))
       }
     }
   }

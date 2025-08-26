@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 
 typealias FileQueryAccum = FileAccum<PrintableQuery>
-typealias FileCodegenAccum = FileAccum<Code.DataClasses>
+typealias FileCodegenAccum = FileAccum<Code.Entities>
 
 data class VisitorContext(val symbolSet: SymbolSet, val queriesAccum: FileQueryAccum, val codegenAccum: FileCodegenAccum = FileCodegenAccum.empty()) {
   fun withNewAccum() = VisitorContext(symbolSet, FileQueryAccum.empty(), FileCodegenAccum.empty())

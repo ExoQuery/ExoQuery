@@ -25,7 +25,7 @@ class TypeMapSpec: FreeSpec({
   ).toSchema()
 
   fun makeWithTypeMap(typeMap: TypeMap) =
-    Code.DataClasses(
+    Code.Entities(
       CodeVersion.Fixed("1.0.0"),
       DatabaseDriver.Postgres(),
       packagePrefix = "foo.bar",

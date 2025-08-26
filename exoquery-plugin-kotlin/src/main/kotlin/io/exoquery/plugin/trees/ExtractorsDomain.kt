@@ -352,10 +352,10 @@ object ExtractorsDomain {
           if (it.ownerHasAnnotation<ExoCodegenFunction>() && it.type.isUnit()) {
             Components2(it, CallType.Gen)
           }
-          else if (it.ownerHasAnnotation<ExoCodegenReturnFunction>() && it.type.isClass<Code.DataClasses>()) {
+          else if (it.ownerHasAnnotation<ExoCodegenReturnFunction>() && it.type.isClass<Code.Entities>()) {
             Components2(it, CallType.GenAndReturn)
           }
-          else if (it.ownerHasAnnotation<ExoCodegenJustReturnFunction>() && it.type.isClass<Code.DataClasses>()) {
+          else if (it.ownerHasAnnotation<ExoCodegenJustReturnFunction>() && it.type.isClass<Code.Entities>()) {
             Components2(it, CallType.JustReturn)
           }
           else {

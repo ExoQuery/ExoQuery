@@ -8,7 +8,7 @@ import io.exoquery.generation.DatabaseDriver
 
 fun main() {
   //val cc = capture.generateAndReturn(
-  //  Code.DataClasses(
+  //  Code.Entities(
   //    CodeVersion.Fixed("1.2"),
   //    DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres"),
   //    packagePrefix = "io.exoquery",

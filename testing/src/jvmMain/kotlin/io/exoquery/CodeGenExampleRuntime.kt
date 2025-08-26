@@ -13,7 +13,7 @@ import kotlin.use
 
 /**
  * This is an example of how to use the ExoQuery CodeGen at runtime.
- * Unlike the compile-time code generation, you can compose Code.DataClasses
+ * Unlike the compile-time code generation, you can compose Code.Entities
  * using functions, variables, etc... and it does not need to be put together
  * with compile-time-constant values. The disadvantage is that it does not run at
  * compile-time.
@@ -24,7 +24,7 @@ import kotlin.use
  */
 fun main() {
   val gen =
-    Code.DataClasses(
+    Code.Entities(
       CodeVersion.Fixed("1.1"),
       io.exoquery.generation.DatabaseDriver.Postgres(
         PostgresTestDB.embeddedPostgres.getJdbcUrl("postgres", "")

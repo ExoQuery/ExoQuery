@@ -10,26 +10,18 @@ import io.exoquery.generation.Code
 import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.DatabaseDriver
 import io.exoquery.generation.TableGrouping
-import io.exoquery.generation.typemap.ClassOf
-import io.exoquery.generation.typemap.From
 import io.exoquery.generation.typemap.TypeMap
 import io.exoquery.parseError
-import io.exoquery.plugin.classId
-import io.exoquery.plugin.source
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.varargValues
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.IrConst
-import org.jetbrains.kotlin.ir.expressions.IrConstKind
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 import io.exoquery.plugin.trees.UnlifterBasics.orFail
 import io.exoquery.plugin.trees.UnlifterBasics.unliftString
 import io.exoquery.plugin.trees.UnlifterBasics.unliftStringIfNotNull
-import io.exoquery.plugin.trees.UnlifterBasics.unliftIntIfNotNull
 import io.exoquery.plugin.trees.UnlifterBasics.unliftInt
 import io.exoquery.plugin.trees.UnlifterBasics.unliftBoolean
-import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 @OptIn(ExoInternal::class)
 object Unlifter {
@@ -67,7 +59,7 @@ object Unlifter {
         A compile-time code generation construct is a essentially a configuration embedded within Kotlin code. For more flexible
         code generation, use the runtime code generation technique instead.
         ============ For example, a valid value is: ============
-        Code.DataClasses(
+        Code.Entities(
           ...,
           DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/mydb")
         )
@@ -88,7 +80,7 @@ object Unlifter {
         A compile-time code generation construct is a essentially a configuration embedded within Kotlin code. For more flexible
         code generation, use the runtime code generation technique instead.
         ============ For example, a valid value is: ============
-        Code.DataClasses(
+        Code.Entities(
           ...,
           TableGrouping.SchemaPerPackage
         )
@@ -246,7 +238,7 @@ object Unlifter {
         A compile-time code generation construct is a essentially a configuration embedded within Kotlin code. For more flexible
         code generation, use the runtime code generation technique instead.
         ============ For example, a valid value is: ============
-        Code.DataClasses(
+        Code.Entities(
           CodeVersion.Fixed("1.0.0"),
           ...
         )
@@ -269,7 +261,7 @@ object Unlifter {
         A compile-time code generation construct is a essentially a configuration embedded within Kotlin code. For more flexible
         code generation, use the runtime code generation technique instead.
         ============ For example, a valid value is: ============
-        Code.DataClasses(
+        Code.Entities(
           ...,
           unrecognizedTypeStrategy = UnrecognizedTypeStrategy.AssumeString
         )
@@ -289,10 +281,10 @@ object Unlifter {
       ) ?: this
 
   context (CX.Scope)
-  fun Code.DataClasses.Companion.unlift(expr: IrExpression): Code.DataClasses = run {
+  fun Code.Entities.Companion.unlift(expr: IrExpression): Code.Entities = run {
     fun process(args: Ir.ConstructorCallNullableN.Args) = run {
       val idx = args.withIndexAndLookup()
-      Code.DataClasses(
+      Code.Entities(
         idx.next()?.let { CodeVersion.unlift(it) } ?: parseError("Expected a non-null CodeVersion", expr),
         idx.next()?.let { DatabaseDriver.unlift(it) } ?: parseError("Expected a non-null DatabaseDriver", expr),
         idx.next()?.let { unliftString(it) },
@@ -300,24 +292,24 @@ object Unlifter {
         idx.next()?.let { unliftString(it) },
         idx.next()?.let { unliftString(it) },
         idx.next()?.let { unliftString(it) },
-        idx.next()?.let { unliftString(it) } ?: Code.DataClasses.DefaultPropertiesFile,
-        idx.next()?.let { NameParser.unlift(it) } ?: Code.DataClasses.DefaultNameParser,
-        idx.next()?.let { TableGrouping.unlift(it) } ?: Code.DataClasses.DefaultTableGrouping,
+        idx.next()?.let { unliftString(it) } ?: Code.Entities.DefaultPropertiesFile,
+        idx.next()?.let { NameParser.unlift(it) } ?: Code.Entities.DefaultNameParser,
+        idx.next()?.let { TableGrouping.unlift(it) } ?: Code.Entities.DefaultTableGrouping,
         idx.next()?.let { unliftString(it) },
         idx.next()?.let { unliftString(it) },
-        idx.next()?.let { UnrecognizedTypeStrategy.unlift(it) } ?: Code.DataClasses.DefaultUnrecognizedTypeStrategy,
-        idx.next()?.let { with (UnlifterTypeMap) { TypeMap.unlift(it) } } ?: Code.DataClasses.DefaultTypeMap,
-        idx.next()?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDryRun,
-        idx.next()?.let { unliftBoolean(it) } ?: Code.DataClasses.DefaultDetailedLogs
+        idx.next()?.let { UnrecognizedTypeStrategy.unlift(it) } ?: Code.Entities.DefaultUnrecognizedTypeStrategy,
+        idx.next()?.let { with (UnlifterTypeMap) { TypeMap.unlift(it) } } ?: Code.Entities.DefaultTypeMap,
+        idx.next()?.let { unliftBoolean(it) } ?: Code.Entities.DefaultDryRun,
+        idx.next()?.let { unliftBoolean(it) } ?: Code.Entities.DefaultDetailedLogs
       )
     }
 
     on(expr).match(
-      case(Ir.ConstructorCallNullableN.of<Code.DataClasses>()[Is()]).then { args ->
+      case(Ir.ConstructorCallNullableN.of<Code.Entities>()[Is()]).then { args ->
         process(args)
       },
       /*
-      When there's a clause out of order e.g. DataClasses(
+      When there's a clause out of order e.g. Entities(
         CodeVersion.Fixed("1.0.0"),
         DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
         schemaFilter = "purposely_inconsistent",
@@ -327,23 +319,23 @@ object Unlifter {
       { // BLOCK
         val tmp0_codeVersion: Fixed = Fixed(version = "1.0.0")
         val tmp1_driver: Postgres = Postgres(jdbcUrl = "jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent")
-        DataClasses(codeVersion = tmp0_codeVersion, driver = tmp1_driver, packagePrefix = "io.exoquery.example.schemaexample.content", schemaFilter = "purposely_inconsistent")
+        Entities(codeVersion = tmp0_codeVersion, driver = tmp1_driver, packagePrefix = "io.exoquery.example.schemaexample.content", schemaFilter = "purposely_inconsistent")
       }
       We need to account for this structure by skipping the variables in the block and then looking them up later
        */
-      case(Ir.Block[Is(), Ir.ConstructorCallNullableN.of<Code.DataClasses>()[Is()]]).thenIf { stmts, _ -> stmts.all { it is IrVariable } }.then { stmts, (args) ->
+      case(Ir.Block[Is(), Ir.ConstructorCallNullableN.of<Code.Entities>()[Is()]]).thenIf { stmts, _ -> stmts.all { it is IrVariable } }.then { stmts, (args) ->
         process(args)
       }
     ) ?: orFail(
       expr,
       """
-        The expression was not a simple Code.DataClasses(CodeVersion, DatabaseDriver, ...) construct with zero variables or substitutions.
-        Compile-time code-generation constructs like Code.DataClasses can only use constant values, no variables, functions, branching, or other logic is allowed.
+        The expression was not a simple Code.Entities(CodeVersion, DatabaseDriver, ...) construct with zero variables or substitutions.
+        Compile-time code-generation constructs like Code.Entities can only use constant values, no variables, functions, branching, or other logic is allowed.
         Nullable values can be implicitly skipped if not used.
         A compile-time code generation construct is a essentially a configuration embedded within Kotlin code. For more flexible
         code generation, use the runtime code generation technique instead.
         ============ For example, a valid value is: ============
-        Code.DataClasses(
+        Code.Entities(
           CodeVersion.Fixed("0.1.0"),
           DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/mydb"),
           "my.package",
@@ -356,8 +348,8 @@ object Unlifter {
   }
 
   context (CX.Scope)
-  fun unliftCodeDataClasses(expr: IrExpression): Code.DataClasses =
-    Code.DataClasses.unlift(expr)
+  fun unliftCodeEntities(expr: IrExpression): Code.Entities =
+    Code.Entities.unlift(expr)
 
 
   class ArgsWithIndexAndLookup(val args: Ir.ConstructorCallNullableN.Args) {

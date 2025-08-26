@@ -27,7 +27,7 @@ class VersionFileControlSpec: FreeSpec({
     ).toSchema()
 
   fun schemaWithVersion(codeVersion: CodeVersion) =
-    Code.DataClasses(
+    Code.Entities(
       codeVersion,
       DatabaseDriver.Postgres(),
       packagePrefix = "foo.bar",

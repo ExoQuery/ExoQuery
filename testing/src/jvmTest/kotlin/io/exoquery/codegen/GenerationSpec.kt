@@ -2,20 +2,14 @@ package io.exoquery.codegen
 
 import io.exoquery.PostgresTestDB
 import io.exoquery.capture
-import io.exoquery.codegen.model.CodeFileWriter
 import io.exoquery.codegen.model.JdbcGenerator
 import io.exoquery.codegen.model.NameParser
-import io.exoquery.codegen.model.UnrecognizedTypeStrategy
-import io.exoquery.codegen.model.VersionFile
-import io.exoquery.codegen.model.VersionFileWriter
 import io.exoquery.codegen.util.JdbcSchemaReader
 import io.exoquery.generation.Code
 import io.exoquery.generation.CodeVersion
 import io.exoquery.generation.DatabaseDriver
 import io.exoquery.generation.toLowLevelConfig
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import java.sql.JDBCType
 
@@ -26,7 +20,7 @@ class GenerationSpec: FreeSpec({
       val postgres = PostgresTestDB.embeddedPostgres
       val connectionMaker = { postgres.getPostgresDatabase().connection }
       val (config, propsData) =
-        Code.DataClasses(
+        Code.Entities(
           tableFilter = "UserProfile",
           codeVersion = CodeVersion.Fixed("1.0.0"), // TODO need a test-generator for this
           driver = DatabaseDriver.Postgres(postgres.getJdbcUrl("postgres", "postgres") + "?search_path=purposely_inconsistent"),
@@ -72,7 +66,7 @@ class GenerationSpec: FreeSpec({
       "with various naming schemes" - {
         "with literal naming" {
           val (config, propsData) =
-            Code.DataClasses(
+            Code.Entities(
               CodeVersion.Fixed("1.0.0"), // TODO need a test-generator for this
               DatabaseDriver.Postgres(),
               packagePrefix = "foo.bar",
@@ -93,7 +87,7 @@ class GenerationSpec: FreeSpec({
         }
         "with snake_case naming" {
           val (config, propsData) =
-            Code.DataClasses(
+            Code.Entities(
               CodeVersion.Fixed("1.0.0"), // TODO need a test-generator for this
               DatabaseDriver.Postgres(),
               packagePrefix = "foo.bar",
@@ -119,7 +113,7 @@ class GenerationSpec: FreeSpec({
   }
 
   // Need to test for the following case:
-  // When there's a clause out of order e.g. DataClasses(
+  // When there's a clause out of order e.g. Entities(
   //   CodeVersion.Fixed("1.0.0"),
   //   DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
   //   schemaFilter = "purposely_inconsistent",
@@ -129,18 +123,18 @@ class GenerationSpec: FreeSpec({
   // { // BLOCK
   //   val tmp0_codeVersion: Fixed = Fixed(version = "1.0.0")
   //   val tmp1_driver: Postgres = Postgres(jdbcUrl = "jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent")
-  //   DataClasses(codeVersion = tmp0_codeVersion, driver = tmp1_driver, packagePrefix = "io.exoquery.example.schemaexample.content", schemaFilter = "purposely_inconsistent")
+  //   Entities(codeVersion = tmp0_codeVersion, driver = tmp1_driver, packagePrefix = "io.exoquery.example.schemaexample.content", schemaFilter = "purposely_inconsistent")
   // }
   // We need to account for this structure by skipping the variables in the block and then looking them up later
   "should lookup vars when out of order" {
     capture.generateJustReturn(
-      Code.DataClasses(
+      Code.Entities(
         CodeVersion.Fixed("1.0.0"),
         DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
         schemaFilter = "purposely_inconsistent",
         packagePrefix = "io.exoquery.example.schemaexample.content",
       )
-    ) shouldBe Code.DataClasses(
+    ) shouldBe Code.Entities(
       CodeVersion.Fixed("1.0.0"),
       DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),
       schemaFilter = "purposely_inconsistent",
