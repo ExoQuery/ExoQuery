@@ -301,12 +301,11 @@ private fun preparedFor(nameParser: NameParser, log: (String) -> Unit = {}, koog
 }
 
 fun GeneratorBase<*, *>.preparedForRuntime(
-  log: (String) -> Unit = {},
   agentCaller: AgentCallerService = AgentCallerService.Live
 ): JdbcGenerator =
   when (this) {
     is JdbcGenerator -> {
-      val nameParser = this.config.nameParser.preparedForRuntime(log)
+      val nameParser = this.config.nameParser.preparedForRuntime({ this.log(it) })
       this.withConfig(config = this.config.copy(nameParser = nameParser))
     }
     else -> throw IllegalArgumentException("GeneratorBase should be of type JdbcGenerator to prepare for runtime. Got: ${this::class.simpleName}")

@@ -76,6 +76,15 @@ class VersionFileControlSpec: FreeSpec({
     fileWriter.getWrittenFiles().shouldBeEmpty()
     versionFileWriter.getWrittenVersionFiles().single().second shouldBe VersionFile("1.0.0").serialize()
   }
+  "Fixed Version + file-exists + forcedRegen -> regen" {
+    val fileWriter = CodeFileWriter.Test()
+    val versionFileWriter = VersionFileWriter.Test()
+    versionFileWriter.writeVersionFileIfNeeded(schemaWithFixedVersion("1.0.0"))
+
+    JdbcGenerator.Test(schemaWithFixedVersion("1.0.0"), schema, fileWriter = fileWriter, versionFileWriter = versionFileWriter).run(forceRegen = true)
+    fileWriter.getWrittenFiles().single().toContent() shouldBe expectedContent
+    versionFileWriter.getWrittenVersionFiles().map { it.second } shouldBe listOf(VersionFile("1.0.0").serialize(), VersionFile("1.0.0").serialize())
+  }
   "Floating Version: file-not-exists, file-not-exists (and regen)" {
     val fileWriter = CodeFileWriter.Test()
     val versionFileWriter = VersionFileWriter.Test()

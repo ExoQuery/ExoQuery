@@ -29,14 +29,13 @@ class CodegenFileBuilder(val options: ExoCompileOptions) {
 
       try {
         val rootPath = "${options.entitiesBaseDir}/${options.targetName}/${options.sourceSetName}/kotlin"
-        val gen = dc.toGenerator(rootPath, options.projectDir).preparedForRuntime(
-          {msg -> logger.warn(msg)}
-        )
-        logger.warn("Generating Code for ${thisFile.name} in: ${rootPath}")
-        gen.run()
+        val gen = dc.toGenerator(rootPath, options.projectDir, {msg -> logger.warn(msg)}).preparedForRuntime()
+        val forceRegenString = if (options.forceRegen) " (forced-regen)" else ""
+        logger.warn("Attempting${forceRegenString} Entity-Gen for ${thisFile.name} in: ${rootPath}")
+        gen.run(options.forceRegen)
       } catch (t: Throwable) {
          logger.error(
-           "Code Generation Failed for the database ${dc.driver.jdbcUrl}\n================== Cause ==================\n${t.stackTraceToString()}"
+           "Entity-Gen Failed for the database ${dc.driver.jdbcUrl}\n================== Cause ==================\n${t.stackTraceToString()}"
          )
       }
     }

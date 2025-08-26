@@ -110,7 +110,7 @@ private object PropsOps {
 }
 
 
-actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String?): GeneratorBase<*, *> {
+actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir: String?, log: (String) -> Unit): GeneratorBase<*, *> {
   val (lowLevelConfig, propsData) = this.toLowLevelConfig(absoluteRootPath, projectBaseDir)
 
   // TODO create a cache of this operation
@@ -144,7 +144,8 @@ actual fun Code.DataClasses.toGenerator(absoluteRootPath: String, projectBaseDir
   val gen = JdbcGenerator.Live(
     lowLevelConfig,
     connectionMaker = connectionMaker,
-    allowUnknownDatabase = true
+    allowUnknownDatabase = true,
+    logger = log
   )
 
   return gen

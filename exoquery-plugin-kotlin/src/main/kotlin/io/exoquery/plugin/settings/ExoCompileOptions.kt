@@ -17,6 +17,7 @@ class ExoCompileOptionsBuilder {
   var queryFilesEnabled: Boolean? = true
   var queryPrintingEnabled: Boolean? = true
   var enableCodegenAI: Boolean? = false
+  var forceRegen: Boolean? = false
 
 
   fun build(): ExoCompileOptions {
@@ -31,7 +32,8 @@ class ExoCompileOptionsBuilder {
       outputString ?: ExoCompileOptions.DefaultOutputString,
       queryFilesEnabled ?: ExoCompileOptions.DefaultQueryFilesEnabled,
       queryPrintingEnabled ?: ExoCompileOptions.DefaultQueryPrintingEnabled,
-      enableCodegenAI ?: ExoCompileOptions.DefaultEnabledCodegenAI
+      enableCodegenAI ?: ExoCompileOptions.DefaultEnabledCodegenAI,
+      forceRegen ?: ExoCompileOptions.DefaultForceRegen
     )
   }
 }
@@ -48,4 +50,5 @@ fun ExoCompileOptionsBuilder.processOption(option: ExoCliOption, value: String) 
   ExoCliOption.QUERY_FILES_ENABLED -> queryFilesEnabled = value.toBoolean()
   ExoCliOption.QUERY_PRINTING_ENABLED -> queryPrintingEnabled = value.toBoolean()
   ExoCliOption.ENABLE_CODEGEN_AI -> enableCodegenAI = value.toBoolean()
+  ExoCliOption.FORCE_REGEN -> forceRegen = value.toBoolean()
 }

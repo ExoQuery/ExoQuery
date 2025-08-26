@@ -50,12 +50,14 @@ abstract class JdbcGenerator(
   data class Live(
     override val config: LowLevelCodeGeneratorConfig,
     val connectionMaker: () -> Connection,
-    override val allowUnknownDatabase: Boolean = false
+    override val allowUnknownDatabase: Boolean = false,
+    val logger: (String) -> Unit = {}
   ): JdbcGenerator(config, allowUnknownDatabase) {
     override val schemaReader = JdbcSchemaReader({ JdbcSchemaReader.Conn(connectionMaker()) }, allowUnknownDatabase)
     override val fileWriter: CodeFileWriter = JavaCodeFileWriter()
     override fun withConfig(config: LowLevelCodeGeneratorConfig): JdbcGenerator = Live(config, connectionMaker, allowUnknownDatabase)
     override val versionFileWriter: VersionFileWriter = JavaVersionFileWriter
+    override fun log(msg: String) = logger(msg)
   }
 
   data class Test(
@@ -63,7 +65,8 @@ abstract class JdbcGenerator(
     override val schemaReader: SchemaReader,
     override val allowUnknownDatabase: Boolean = false,
     override val fileWriter: CodeFileWriter.Test = CodeFileWriter.Test(),
-    override val versionFileWriter: VersionFileWriter.Test = VersionFileWriter.Test()
+    override val versionFileWriter: VersionFileWriter.Test = VersionFileWriter.Test(),
+    val logger: (String) -> Unit = {}
   ): JdbcGenerator(config, allowUnknownDatabase) {
     constructor(
       config: LowLevelCodeGeneratorConfig,
@@ -79,6 +82,7 @@ abstract class JdbcGenerator(
         versionFileWriter
       )
 
+    override fun log(msg: String) = logger(msg)
     override fun withConfig(config: LowLevelCodeGeneratorConfig): JdbcGenerator = Test(config, schemaReader, allowUnknownDatabase, fileWriter)
   }
 }

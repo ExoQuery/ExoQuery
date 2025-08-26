@@ -68,6 +68,13 @@ interface ExoQueryGradlePluginExtension {
 
     val koogLibrary: Property<String>
 
+  /**
+   * Normally the code-generator will only regenerate code if the CodeVersion.Fixed("x.y.z") changes
+   * or if it is set to CodeVersion.Floating. However, during development it can be useful to override
+   * the CodeVersion.Fixed and force regeneration to happen anyway. This property does that.
+   */
+  val forceRegen: Property<Boolean>
+
     val debugGeneratedDirConventions: Property<Boolean>
 }
 
@@ -97,6 +104,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         queryPrintingEnabled.convention(ExoCompileOptions.DefaultQueryPrintingEnabled)
         codegenDrivers.convention(ExoCompileOptions.DefaultJdbcDrivers)
         enableCodegenAI.convention(ExoCompileOptions.DefaultEnabledCodegenAI)
+        forceRegen.convention(ExoCompileOptions.DefaultForceRegen)
       }
 
     val isMultiplatform = target.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
@@ -153,6 +161,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     }
 
     val enableCodegenAI = ext.enableCodegenAI.convention(ExoCompileOptions.DefaultEnabledCodegenAI)
+    val forceRegen = ext.forceRegen.convention(ExoCompileOptions.DefaultForceRegen)
 
     if (enableCodegenAI.get()) {
       val koogLibrary = ext.koogLibrary.convention(BuildConfig.KOOG_LIBRARY).get()
@@ -206,7 +215,8 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         SubpluginOption("outputString", outputStringValue),
         SubpluginOption("queryFilesEnabled", queryFilesEnabled.toString()),
         SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString()),
-        SubpluginOption("enableCodegenAI", enableCodegenAI.toString())
+        SubpluginOption("enableCodegenAI", enableCodegenAI.toString()),
+        SubpluginOption("forceRegen", forceRegen.get().toString())
       )
     }
   }

@@ -22,6 +22,7 @@ class ExoCompileOptions(
   val queryFilesEnabled: Boolean = DefaultQueryFilesEnabled,
   val queryPrintingEnabled: Boolean = DefaultQueryPrintingEnabled,
   val enableCodegenAI: Boolean = DefaultEnabledCodegenAI,
+  val forceRegen: Boolean = DefaultForceRegen
 ) {
   fun encode(): String {
     return EncodingXR.protoBuf.encodeToHexString(ExoCompileOptions.serializer(), this)
@@ -32,6 +33,7 @@ class ExoCompileOptions(
     val DefaultQueryPrintingEnabled = true
     val DefaultJdbcDrivers = emptyList<String>()
     val DefaultEnabledCodegenAI = false
+    val DefaultForceRegen = false
   }
 
   val outputStringMaker: OutputStringMaker = OutputStringMaker(outputString)

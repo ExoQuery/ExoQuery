@@ -1528,8 +1528,8 @@ TBD
 # Schema-First Development
 
 In ExoQuery, queries are synthesized from a DSL so all you need for a Schema-First (or Database-First) development
-workflow is the ability to generate record-classes (i.e. Data-Classes) from your database schema. ExoQuery provides
-a way to generate record-classes at compile-time and automatically adds them to the classpath so that you can
+workflow is the ability to generate entity-classes (i.e. Annotated Data-Classes) from your database schema. ExoQuery provides
+a way to generate entity-classes at compile-time and automatically adds them to the classpath so that you can
 use them to write queries queries right away.
 
 Let's say that you have a fairly consistent Postgres database schema that looks like this:
@@ -1539,7 +1539,7 @@ CREATE TABLE Address (id SERIAL PRIMARY KEY, owner_id INT REFERENCES Person(id),
 ```
 Add the following code to your source files:
 ```kotlin
-// GeneratedRecordsExample.kt
+// GeneratedEntitiesExample.kt
 package my.example.app
 
 fun myFunction() {
@@ -1547,17 +1547,17 @@ fun myFunction() {
     Code.DataClasses(
       CodeVersion.Fixed("1.0.0"),
       DatabaseDriver.Postgres("jdbc:postgresql://<db-host>:<db-port>/<db-name>"),
-      "my.example.app",   // root package for generated records
+      "my.example.app",   // root package for generated entities
       // Since database-schema is snake_case, use SnakeCase parser to convert table/column names to CamelCase class/property names
       nameParser = NameParser.SnakeCase
     )
   )
 }
 ```
-Then compile `GeneratedRecordsExample.kt` the following files will be generated in your `build/generated/exoquery/...` directory:
+Then compile `GeneratedEntitiesExample.kt` the following files will be generated in your `MyProject/entities/main/kotlin` directory:
 ```kotlin
 // TODO check the path
-// MyProject/entities/kotlin/exoquery/my/example/app/Person.kt
+// MyProject/entities/main/kotlin/my/example/app/<db-name>/Person.kt
 package my.example.app.<db-name>
 ...
 @Serializable
@@ -1565,7 +1565,7 @@ data class Person(val id: Int, @SerialName("first_name") val firstName: String, 
 ```
 and...
 ```
-// build/generated/exoquery/my/example/app/Address.kt
+// MyProject/entities/main/kotlin/my/example/app/<db-name>/Address.kt
 package my.example.app.<db-name>
 ...
 @Serializable

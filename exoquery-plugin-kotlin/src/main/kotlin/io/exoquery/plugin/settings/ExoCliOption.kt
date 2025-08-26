@@ -84,5 +84,12 @@ enum class ExoCliOption(
     "<true|false>",
     "Enables/disables the use of AI models for code generation",
     false
+  ),
+
+  FORCE_REGEN(
+    "forceRegen",
+    "<true|false>",
+    "Forces regeneration of all entities, even if they are up-to-date",
+    false
   )
 }
