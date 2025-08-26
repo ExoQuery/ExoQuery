@@ -1532,12 +1532,23 @@ workflow is the ability to generate entity-classes (i.e. Annotated Data-Classes)
 a way to generate entity-classes at compile-time and automatically adds them to the classpath so that you can
 use them to write queries queries right away.
 
+## Entity Generation
+
 Let's say that you have a fairly consistent Postgres database schema that looks like this:
 ```sql
 CREATE TABLE Person (id SERIAL PRIMARY KEY, first_name VARCHAR, last_name VARCHAR, age INT);
 CREATE TABLE Address (id SERIAL PRIMARY KEY, owner_id INT REFERENCES Person(id), street VARCHAR, zip VARCHAR);
 ```
-Add the following code to your source files:
+
+Firstly, add the JDBC driver to your ExoQuery plugin dependencies. For example:
+```kotlin
+exoQuery {
+  codegenDrivers.add("org.postgresql:postgresql:42.7.3")
+}
+```
+
+
+Then, add the following code to your source files:
 ```kotlin
 // GeneratedEntitiesExample.kt
 package my.example.app
@@ -1557,16 +1568,16 @@ fun myFunction() {
 Then compile `GeneratedEntitiesExample.kt` the following files will be generated in your `MyProject/entities/main/kotlin` directory:
 ```kotlin
 // TODO check the path
-// MyProject/entities/main/kotlin/my/example/app/<db-name>/Person.kt
-package my.example.app.<db-name>
+// MyProject/entities/main/kotlin/my/example/app/<db-schema>/Person.kt
+package my.example.app.<db-schema>
 ...
 @Serializable
 data class Person(val id: Int, @SerialName("first_name") val firstName: String, @SerialName("last_name") val lastName: String, val age: Int)
 ```
 and...
 ```
-// MyProject/entities/main/kotlin/my/example/app/<db-name>/Address.kt
-package my.example.app.<db-name>
+// MyProject/entities/main/kotlin/my/example/app/<db-schema>/Address.kt
+package my.example.app.<db-schema>
 ...
 @Serializable
 data class Address(val id: Int, @SerialName("owner_id") val ownerId: Int, val street: String, val zip: String)
@@ -1585,9 +1596,11 @@ fun myQuery() {
 }
 ```
 
+> NOTE: If you are using Postgres, it may be necessary to add the `<db-schema>` that you are using to the
+> search path. You can do this by adding `?currentSchema=public,...,<db-schema>` to the end of your JDBC URL.
 
 
-> TODO need to mention that the schemas need need to be on the search path
+
 
 > TODO also need to remind the user to pass the driver into the exoquery 
 

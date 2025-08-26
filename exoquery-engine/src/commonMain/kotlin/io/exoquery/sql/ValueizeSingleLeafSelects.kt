@@ -4,6 +4,7 @@ import io.exoquery.xr.StatelessTransformer
 import io.exoquery.xr.XR
 import io.exoquery.xr.XR.Ident
 import io.exoquery.xr.XRType
+import io.exoquery.xr.XRType.Product.Meta
 
 // If we run this right after SqlQuery we know that in every place with a single select-value it is a leaf clause e.g. `SELECT x FROM (SELECT p.name from Person p)) AS x`
 // in that case we know that SelectValue(x) is a leaf clause that we should expand into a `x.value`.
@@ -14,13 +15,13 @@ class ValueizeSingleLeafSelects() : StatelessQueryTransformer() {
   val ValueFieldName = "value"
 
   protected fun productize(origType: XRType) =
-    XRType.Product("<Value>", listOf(ValueFieldName to origType))
+    XRType.Product("<Value>", listOf(ValueFieldName to origType), Meta.Empty)
 
   protected fun productize(ast: Ident): Ident =
-    Ident(ast.name, XRType.Product("<Value>", listOf(ValueFieldName to XRType.Value)))
+    Ident(ast.name, XRType.Product("<Value>", listOf(ValueFieldName to XRType.Value), Meta.Empty))
 
   protected fun valueize(ast: Ident): XR.Property =
-    XR.Property(productize(ast), ValueFieldName)
+    XR.Property(productize(ast), ValueFieldName, XR.HasRename.NotHas)
 
   private fun collectAliases(contexts: List<FromContext>): List<Ident> =
     contexts.flatMap {

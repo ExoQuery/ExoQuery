@@ -4,6 +4,7 @@ import io.decomat.*
 import io.exoquery.ActionKind
 import io.exoquery.BID
 import io.exoquery.xr.XR.BinaryOp
+import io.exoquery.xr.XR.HasRename
 
 // Can't use || or && chars because they don't work with linuxX64
 infix fun XR.Expression._Or_(other: XR.Expression): XR.BinaryOp = XR.BinaryOp(this, OP.Or, other, this.loc)
@@ -348,7 +349,7 @@ class DistinctHeadMatchSortBy() {
 
 
 fun XR.When.nestProperty(propertyName: String): XR.When =
-  XR.When(this.branches.map { it.copy(then = XR.Property(it.then, propertyName)) }, XR.Property(this.orElse, propertyName))
+  XR.When(this.branches.map { it.copy(then = XR.Property(it.then, propertyName, HasRename.NotHas)) }, XR.Property(this.orElse, propertyName, HasRename.NotHas))
 
 
 object CID {

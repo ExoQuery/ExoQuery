@@ -150,9 +150,9 @@ class StatelessTransformerSpec: FreeSpec({
         Subject()(ast) shouldBe ast
       }
       "product" {
-        val ast: XR = Product("CC", listOf("foo" to Ident("a"), "bar" to Ident("b"), "baz" to Ident("c")))
+        val ast: XR = Product("CC", "foo" to Ident("a"), "bar" to Ident("b"), "baz" to Ident("c"))
         Subject(Ident("a") to Ident("a'"), Ident("b") to Ident("b'"), Ident("c") to Ident("c'"))(ast) shouldBe
-            Product("CC", listOf("foo" to Ident("a'"), "bar" to Ident("b'"), "baz" to Ident("c'")))
+            Product("CC", "foo" to Ident("a'"), "bar" to Ident("b'"), "baz" to Ident("c'"))
       }
       "ident" {
         val ast: XR = Ident("a")

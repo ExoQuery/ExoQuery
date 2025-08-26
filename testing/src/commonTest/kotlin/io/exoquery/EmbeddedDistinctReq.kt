@@ -1,5 +1,7 @@
 package io.exoquery
 
+import io.exoquery.annotation.ExoEntity
+import io.exoquery.annotation.ExoField
 import io.exoquery.sql.PostgresDialect
 
 class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, Mode.ExoGoldenTest(), {
@@ -27,6 +29,17 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
     "function property inside of nested distinct queries" {
       data class Emb(val a: Int, val b: Int)
       data class Parent(val id: Int, val emb1: Emb)
+
+      val q = capture {
+        Table<Emb>().map { e -> Parent(1, e) }.distinct()
+      }
+      shouldBeGolden(q.xr, "XR")
+      shouldBeGolden(q.build<PostgresDialect>(), "SQL")
+    }
+
+    "function property inside of nested distinct queries with renames" {
+      @ExoEntity("EMB") data class Emb(@ExoField("A") val a: Int, @ExoField("B") val b: Int)
+      data class Parent(@ExoField("ID") val id: Int, val emb1: Emb)
 
       val q = capture {
         Table<Emb>().map { e -> Parent(1, e) }.distinct()
@@ -91,28 +104,34 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
+
+    "function property inside of nested distinct queries - twice - into tuple - with renames" {
+      @ExoEntity("EMB") data class Emb(@ExoField("A") val a: Int, val b: Int)
+      data class Parent(val idP: Int, val emb1: Emb)
+      data class Grandparent(val idG: Int, val par: Parent)
+
+      val q = capture {
+        // Not right result. Need to debug this
+        Table<Emb>().map { e -> Parent(1, e) }.distinct().map { p -> Grandparent(2, p) }.distinct().map { g -> 3 to g }
+          .distinct()
+      }
+      shouldBeGolden(q.xr, "XR")
+      shouldBeGolden(q.build<PostgresDialect>(), "SQL")
+    }
+
+    "function property inside of nested distinct queries - twice - into tuple - with renames in middle (should not quote)" {
+      @ExoEntity("EMB") data class Emb(@ExoField("A") val a: Int, val b: Int)
+      // it SHOULD NOT quote idP but it should rename it
+      data class Parent(@ExoField("idPREN") val idP: Int, @ExoField("emb1REN") val emb1: Emb)
+      data class Grandparent(val idG: Int, val par: Parent)
+
+      val q = capture {
+        // Not right result. Need to debug this
+        Table<Emb>().map { e -> Parent(1, e) }.distinct().map { p -> Grandparent(2, p) }.distinct().map { g -> 3 to g }
+          .distinct()
+      }
+      shouldBeGolden(q.xr, "XR")
+      shouldBeGolden(q.build<PostgresDialect>(), "SQL")
+    }
   }
 })
-
-// Scala:
-//  "queries with embedded entities should" - {
-//    "function property inside of nested distinct queries - twice" in {
-//      case class Grandparent(idG: Int, par: Parent)
-//      case class Parent(idP: Int, emb1: Emb)
-//      case class Emb(a: Int, b: Int)
-//      val q = quote {
-//        query[Emb].map(e => Parent(1, e)).distinct.map(p => Grandparent(2, p)).distinct
-//      }
-//      ctx.run(q).string mustEqual "SELECT DISTINCT 2 AS idG, e.idP, e.emb1a AS a, e.emb1b AS b FROM (SELECT DISTINCT 1 AS idP, e.a AS emb1a, e.b AS emb1b FROM Emb e) AS e"
-//    }
-//
-//    "function property inside of nested distinct queries - twice - into tuple" in {
-//      case class Grandparent(idG: Int, par: Parent)
-//      case class Parent(idP: Int, emb1: Emb)
-//      case class Emb(a: Int, b: Int)
-//      val q = quote {
-//        query[Emb].map(e => Parent(1, e)).distinct.map(p => Grandparent(2, p)).distinct.map(g => (3, g)).distinct
-//      }
-//      ctx.run(q).string mustEqual "SELECT DISTINCT 3 AS _1, p.idG, p.paridP AS idP, p.paremb1a AS a, p.paremb1b AS b FROM (SELECT DISTINCT 2 AS idG, p.idP AS paridP, p.emb1a AS paremb1a, p.emb1b AS paremb1b FROM (SELECT DISTINCT 1 AS idP, e.a AS emb1a, e.b AS emb1b FROM Emb e) AS p) AS p"
-//    }
-//  }

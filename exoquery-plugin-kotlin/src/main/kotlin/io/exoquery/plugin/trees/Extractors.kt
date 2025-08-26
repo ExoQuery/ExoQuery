@@ -192,17 +192,18 @@ object Ir {
     }
 
     object DataClass {
-      data class Prop(val name: String, val type: IrType, val isMarkedValue: Boolean)
+      data class Name(val name: String, val isRenamed: Boolean)
+      data class Prop(val name: String, val type: IrType, val isMarkedValue: Boolean, val isRenamed: Boolean, val originalName: String)
 
-      context(CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<List<DataClass.Prop>>> get(name: AP, fields: BP) =
+      context(CX.Scope) operator fun <AP : Pattern<Name>, BP : Pattern<List<DataClass.Prop>>> get(name: AP, fields: BP) =
         customPattern2("Type.DataClass", name, fields) { it: IrType ->
           val cls = it.classOrNull
           if (cls != null && cls.isDataClass()) {
-            val name =
-              cls.owner.getAnnotationArgs<ExoEntity>().firstConstStringOrNull() // Try to get entity name from ExoEntity
-                ?: cls.owner.getAnnotationArgs<SerialName>().firstConstStringOrNull() // Then try SerialName from the class
-                ?: it.classFqName?.sanitizedClassName() // Then try the class fully-qualified name
-                ?: cls.safeName // If all else fails, use the class symbol name
+            val (name, isRenamed) =
+              cls.owner.getAnnotationArgs<ExoEntity>().firstConstStringOrNull()?.let { it to true } // Try to get entity name from ExoEntity
+                ?: cls.owner.getAnnotationArgs<SerialName>().firstConstStringOrNull()?.let { it to true } // Then try SerialName from the class
+                ?: it.classFqName?.sanitizedClassName()?.let { it to false } // Then try the class fully-qualified name
+                ?: cls.safeName.let { it to false } // If all else fails, use the class symbol name
 
             val props = cls.owner.declarations.filterIsInstance<IrProperty>()
             val propNames =
@@ -216,13 +217,14 @@ object Ir {
                     ?: (propName to false)
 
                 val isValue = hasFieldAnnotation || irProp.hasAnnotation<ExoValue>() || cls.owner.hasAnnotation<Contextual>() || cls.owner.hasAnnotation<ExoValue>()
-                DataClass.Prop(realPropName, propType, isValue)
+                val isRenamed = hasFieldAnnotation
+                DataClass.Prop(realPropName, propType, isValue, isRenamed, propName)
               }
 
             // Note that this was not matching without props.toList() because it was a Sequence object instead of a list
             // this is improtant to note since if the types to not line up the match won't happen although the IDE
             // or build will not complain about the mismatched types (at least during compilation of this file)
-            val output = Components2(name, propNames.toList())
+            val output = Components2(Name(name, isRenamed), propNames.toList())
             output
           } else null
         }
@@ -839,7 +841,7 @@ object Ir {
 
     object Property {
       sealed interface PropertyKind {
-        data class Named(val name: String) : PropertyKind
+        data class Named(val name: String, val isRenamed: Boolean) : PropertyKind
         data class Component(val index: Int) : PropertyKind
       }
 
@@ -868,9 +870,12 @@ object Ir {
             isProperty && reciever != null && it.regularArgs.all { it != null } -> {
               // @ExoField name takes priority, then serialNameArgValue, then use the property name
               // In the future should add support for class-level naming schemes e.g. @ExoNaming(UnderScore), @ExoNaming(UnderScoreCapitalized)
-              val argValue = exoFieldArgValue() ?: serialNameArgValue() ?: it.symbol.sanitizedSymbolName()
+              val (argValue, isRenamed) =
+                exoFieldArgValue()?.let { it to true }
+                  ?: serialNameArgValue()?.let { it to true }
+                  ?: it.symbol.sanitizedSymbolName().let { it to false }
 
-              Components2(reciever, PropertyKind.Named(argValue))
+              Components2(reciever, PropertyKind.Named(argValue, isRenamed))
             }
 
             isComponent() ->

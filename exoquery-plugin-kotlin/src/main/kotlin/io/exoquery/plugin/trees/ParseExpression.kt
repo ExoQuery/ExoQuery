@@ -13,7 +13,6 @@ import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.containsBatchParam
 import io.exoquery.plugin.transform.isBatchParam
-import io.exoquery.plugin.transform.prepareForPrintingAdHoc
 import io.exoquery.xr.*
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
@@ -164,7 +163,20 @@ object ParseExpression {
 
       case(ExtractorsDomain.CaseClassConstructorCall[Is()]).thenThis { data ->
         if (this.symbol.safeName == "SqlExpression" || this.symbol.safeName == "SqlQuery") parseError("Illegal state, processing ${this.symbol.safeName} as a case class constructor")
-        XR.Product(data.className, data.fields.map { (name, valueOpt) -> name to (valueOpt?.let { parse(it) } ?: XR.Const.Null(expr.loc)) }, expr.loc)
+
+        // Can get the type here if we want it but not needed since we get more precise type information from the applied arguments (e.g. if there are generics)
+        //val tpe = TypeParser.of(expr).let { it as? XRType.Product ?: parseError("Data-Class constructor result was expected to be a XRType.Product (CC) but it was a ${it.shortString()}") }
+
+        val (productName, fieldRenames) =
+          on(expr.type).match(
+            case(Ir.Type.DataClass[Is(), Is()]).then { name, props ->
+              name.name to props.map { it.originalName to it.name }.toMap()
+            }
+          ) ?: parseError("The XR-Type of the intermediate constructor ${expr.dumpKotlinLike()} was not a data-class. It was a ${expr.type.dumpKotlinLike()}", expr)
+
+        XR.Product(productName, data.fields.map { (name, valueOpt) ->
+          (fieldRenames[name] ?: name) to (valueOpt?.let { parse(it) } ?: XR.Const.Null(expr.loc)) }, expr.loc
+        )
       },
 
       // parse lambda in a capture block
@@ -472,12 +484,12 @@ object ParseExpression {
         val core = parse(expr)
         when (propKind) {
           is Ir.Call.Property.PropertyKind.Named ->
-            XR.Property(core, propKind.name, XR.Visibility.Visible, expr.loc)
+            XR.Property(core, propKind.name, XR.HasRename.hasOrNot(propKind.isRenamed), XR.Visibility.Visible, expr.loc)
           is Ir.Call.Property.PropertyKind.Component -> {
             (core.type as? XRType.Product)?.let { productType ->
               val field = productType.fields[propKind.index]?.first
                 ?: parseError("Could not find field at index ${propKind.index} in product type ${productType.name}. The fields were: ${productType.fields.map { (fieldName, _) -> fieldName }.withIndex()}", expr)
-              XR.Property(core, field, XR.Visibility.Visible, expr.loc)
+              XR.Property(core, field, XR.HasRename.NotHas, XR.Visibility.Visible, expr.loc)
             } ?: parseError("Component property can only be used on a product type but the IRType of the expression was: ${core.type}.\nThe expression was parsed as:\n${core.showRaw(false)}", expr)
           }
         }

@@ -12,7 +12,6 @@ import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.isBatchParam
 import io.exoquery.plugin.transform.prepareForPrinting
-import io.exoquery.plugin.transform.prepareForPrintingAdHoc
 import io.exoquery.xr.BetaReduction
 import io.exoquery.xr.XR
 import io.exoquery.xr.XRType
@@ -265,13 +264,13 @@ object ParseQuery {
   fun entityFromType(type: IrType, location: CompilerMessageSourceLocation): XR.Entity {
     val tpe = TypeParser.ofTypeAt(type, location)
     val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", location)
-    return XR.Entity(tpeProd.name, tpeProd, location.toLocationXR())
+    return XR.Entity(tpeProd.name, tpeProd, XR.HasRename.hasOrNot(tpeProd.meta.hasRename), location.toLocationXR())
   }
 
   context(CX.Scope, CX.Parsing, CX.Symbology)
   fun parseEntity(type: IrType, location: CompilerMessageSourceLocation): XR.Entity {
     val tpe = TypeParser.ofTypeAt(type, location)
     val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", location)
-    return XR.Entity(tpeProd.name, tpeProd, location.toLocationXR())
+    return XR.Entity(tpeProd.name, tpeProd, XR.HasRename.hasOrNot(tpeProd.meta.hasRename), location.toLocationXR())
   }
 }

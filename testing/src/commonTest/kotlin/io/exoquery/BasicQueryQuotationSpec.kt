@@ -35,7 +35,7 @@ class BasicQueryQuotationSpec : FreeSpec({
       val cap0 = capture { Table<Person>() }
       val cap = capture { cap0.map { p -> p.name } }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
-        XR.Map(personEnt, pIdent, XR.Property(pIdent, "name")),
+        XR.Map(personEnt, pIdent, XR.Property(pIdent, "name", XR.HasRename.NotHas)),
         RuntimeSet.Empty,
         ParamSet.Empty
       )
@@ -53,7 +53,7 @@ class BasicQueryQuotationSpec : FreeSpec({
       val cap0 = capture { Table<Person>() }
       val cap = capture { cap0.filter { p -> p.age > 18 } }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
-        XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "age"), OP.Gt, XR.Const.Int(18))),
+        XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "age", XR.HasRename.NotHas), OP.Gt, XR.Const.Int(18))),
         RuntimeSet.Empty,
         ParamSet.Empty
       )
@@ -77,8 +77,8 @@ class BasicQueryQuotationSpec : FreeSpec({
         val cap = capture { capA.union(capB) }
         cap.determinizeDynamics() shouldBeEqual SqlQuery(
           XR.Union(
-            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name"), OP.EqEq, XR.Const.String("A"))),
-            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name"), OP.EqEq, XR.Const.String("B")))
+            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name", XR.HasRename.NotHas), OP.EqEq, XR.Const.String("A"))),
+            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name", XR.HasRename.NotHas), OP.EqEq, XR.Const.String("B")))
           ),
           RuntimeSet.Empty,
           ParamSet.Empty
@@ -88,8 +88,8 @@ class BasicQueryQuotationSpec : FreeSpec({
         val cap = capture { capA.unionAll(capB) }
         cap.determinizeDynamics() shouldBeEqual SqlQuery(
           XR.UnionAll(
-            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name"), OP.EqEq, XR.Const.String("A"))),
-            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name"), OP.EqEq, XR.Const.String("B")))
+            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name", XR.HasRename.NotHas), OP.EqEq, XR.Const.String("A"))),
+            XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name", XR.HasRename.NotHas), OP.EqEq, XR.Const.String("B")))
           ),
           RuntimeSet.Empty,
           ParamSet.Empty
@@ -110,7 +110,7 @@ class BasicQueryQuotationSpec : FreeSpec({
         cap0.map { p -> p.name }
       }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
-        XR.Map(XR.TagForSqlQuery(BID("0"), personTpe), pIdent, XR.Property(pIdent, "name")),
+        XR.Map(XR.TagForSqlQuery(BID("0"), personTpe), pIdent, XR.Property(pIdent, "name", XR.HasRename.NotHas)),
         RuntimeSet.of(BID("0") to SqlQuery<Person>(personEnt, RuntimeSet.Empty, ParamSet.Empty)),
         ParamSet.Empty
       )

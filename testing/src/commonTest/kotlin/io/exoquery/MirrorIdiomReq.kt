@@ -66,7 +66,7 @@ class MirrorIdiomReq: GoldenSpecDynamic(MirrorIdiomReqGoldenDynamic, Mode.ExoGol
       shouldBeGolden(XR.Block(vars, XR.Ident("baz")))
     }
     "XR.Product" {
-      shouldBeGolden(XR.Product("MyClass", listOf("foo" to XR.Ident("bar"), "baz" to XR.Ident("qux"))))
+      shouldBeGolden(XR.Product("MyClass", "foo" to XR.Ident("bar"), "baz" to XR.Ident("qux")))
     }
     "XR.Free" {
       shouldBeGolden(

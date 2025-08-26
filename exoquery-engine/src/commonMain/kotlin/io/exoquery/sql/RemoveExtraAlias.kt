@@ -21,11 +21,14 @@ class RemoveExtraAlias : StatelessQueryTransformer() {
   // will not happen so we do not force the alias to happen.
   // Note that in certain situations this will happen anyway (e.g. if the user overwrites the tokenizeFixedColumn method
   // in SqlIdiom. In those kinds of situations we allow specifying the -Dquill.query.alwaysAlias
+  // (Also note that if there is a @ExoField/@SerialName annotation on the field, it will be marked as having a rename
+  // and in that case we *always* want to keep the alias since the original property will be quoted but aliases
+  // should NEVER be quoted)
 
   private fun removeUnneededAlias(value: SelectValue): SelectValue =
     when {
       //case sv @ SelectValue(p: Property, alias :: Nil, _) && p.name == alias =>
-      value.expr is XR.Property && value.alias.size == 1 && value.expr.name == value.alias.first() -> {
+      value.expr is XR.Property && value.alias.size == 1 && value.expr.name == value.alias.first() && value.expr.hasRename.hasOrNot() == false -> {
         value.copy(alias = listOf())
       }
       else -> value

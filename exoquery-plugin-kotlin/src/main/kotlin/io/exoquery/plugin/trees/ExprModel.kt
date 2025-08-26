@@ -334,7 +334,7 @@ object ContainerExpr {
 }
 
 object SqlExpressionExpr {
-  data class Uprootable(val packedXR: String): UprootableExpr {
+  data class Uprootable(override val packedXR: String): UprootableExpr {
     // This is an expensive operation so put it behind a lazy value that the user will invoke only if needed
     fun unpackOrErrorXR(): UnpackResult<XR.Expression> =
       try {
@@ -416,6 +416,8 @@ sealed interface UnpackResult<out T> {
 }
 
 sealed interface UprootableExpr {
+  val packedXR: String
+
   context(CX.Scope, CX.Builder)
   fun replant(paramsFrom: IrExpression): IrExpression
 }
@@ -424,7 +426,7 @@ sealed interface UprootableExpr {
 // common pieces of this code into a shared Base-class or shared functions but for only two ContainerOfXR types it is
 // not worth it. Need to keep an eye on this as we add more ContainerOfXR types
 object SqlQueryExpr {
-  data class Uprootable(val packedXR: String): UprootableExpr {
+  data class Uprootable(override val packedXR: String): UprootableExpr {
 
     fun unpackOrErrorXR(): UnpackResult<XR.Query> =
       try {
@@ -477,7 +479,7 @@ object SqlQueryExpr {
 
 
 object SqlActionExpr {
-  data class Uprootable(val packedXR: String): UprootableExpr {
+  data class Uprootable(override val packedXR: String): UprootableExpr {
     fun unpackOrErrorXR(): UnpackResult<XR.Action> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Action>(packedXR))
@@ -530,7 +532,7 @@ object SqlActionExpr {
 }
 
 object SqlBatchActionExpr {
-  data class Uprootable(val packedXR: String): UprootableExpr {
+  data class Uprootable(override val packedXR: String): UprootableExpr {
     fun unpackOrErrorXR(): UnpackResult<XR.Batching> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Batching>(packedXR))

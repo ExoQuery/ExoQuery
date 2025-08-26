@@ -55,7 +55,7 @@ class RepropagateTypes(val traceConfig: TraceConfig) : StatelessTransformer {
     val newFields = linkedMapOf(*newFieldsIter.toTypedArray())
     // Note, some extra renames from properties that don't exist could make it here.
     // Need to make sure to ignore extra ones when they are actually applied.
-    return XRType.Product(q.name, newFields.toList())
+    return XRType.Product(q.name, newFields.toList(), this.meta.orThat(other.meta))
   }
 
 //  def retypeProduct(other: Quat.Product): Quat.Product = {

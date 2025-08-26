@@ -142,7 +142,7 @@ object TypeParser {
           else
             fieldName to parse(fieldType)
         }
-        XRType.Product(name, fieldTypeXRs)
+        XRType.Product(name.name, fieldTypeXRs, XRType.Product.Meta(name.isRenamed, props.filter { it.isRenamed }.map { it.name }.toSet()))
       },
 
       case(Ir.Type.Generic[Is()]).then { type ->

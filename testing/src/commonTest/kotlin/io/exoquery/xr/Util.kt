@@ -8,36 +8,32 @@ operator fun XR.Entity.Companion.invoke(id: String) = XR.Entity(id, XRType.Produ
 
 fun XR.Product.Companion.TupleN(elements: List<XR.Expression>) =
   when (elements.size) {
-    0 -> XR.Product("Empty", listOf())
-    1 -> XR.Product("Single", listOf("first" to elements[0]))
-    2 -> XR.Product("Pair", listOf("first" to elements[0], "second" to elements[1]))
-    3 -> XR.Product("Triple", listOf("first" to elements[0], "second" to elements[1], "third" to elements[2]))
+    0 -> XR.Product("Empty")
+    1 -> XR.Product("Single", "first" to elements[0])
+    2 -> XR.Product("Pair", "first" to elements[0], "second" to elements[1])
+    3 -> XR.Product("Triple", "first" to elements[0], "second" to elements[1], "third" to elements[2])
     4 -> XR.Product(
       "Tuple4",
-      listOf("first" to elements[0], "second" to elements[1], "third" to elements[2], "fourth" to elements[3])
+      "first" to elements[0], "second" to elements[1], "third" to elements[2], "fourth" to elements[3]
     )
 
     5 -> XR.Product(
       "Tuple5",
-      listOf(
-        "first" to elements[0],
-        "second" to elements[1],
-        "third" to elements[2],
-        "fourth" to elements[3],
-        "fifth" to elements[4]
-      )
+      "first" to elements[0],
+      "second" to elements[1],
+      "third" to elements[2],
+      "fourth" to elements[3],
+      "fifth" to elements[4]
     )
 
     6 -> XR.Product(
       "Tuple6",
-      listOf(
-        "first" to elements[0],
-        "second" to elements[1],
-        "third" to elements[2],
-        "fourth" to elements[3],
-        "fifth" to elements[4],
-        "sixth" to elements[5]
-      )
+      "first" to elements[0],
+      "second" to elements[1],
+      "third" to elements[2],
+      "fourth" to elements[3],
+      "fifth" to elements[4],
+      "sixth" to elements[5]
     )
 
     else -> throw IllegalArgumentException("Only up to 6 elements are supported for this operation")

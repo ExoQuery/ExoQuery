@@ -6,7 +6,7 @@ import io.exoquery.xr.BetaReduction
 import io.exoquery.xr.BetaReduction.Companion.invoke
 import io.exoquery.xr.XR
 
-class PostgresDialect(override val traceConf: TraceConfig = TraceConfig.Companion.empty) : SqlIdiom {
+class GenericDialect(override val traceConf: TraceConfig = TraceConfig.Companion.empty) : SqlIdiom {
   override val useActionTableAliasAs = SqlIdiom.ActionTableAliasBehavior.UseAs
   override val reservedKeywords: Set<String> = setOf(
     "all",
@@ -93,11 +93,4 @@ class PostgresDialect(override val traceConf: TraceConfig = TraceConfig.Companio
   )
 
   override val trace: Tracer by lazy { Tracer(traceType, traceConf, 1) }
-
-  /**
-   * For Postgres, quotation is only really needed if a quoted table or column has upper-case characters
-   * since everything is lower-cased when quotation is not done. In that case we don't need to quote.
-   */
-  override fun tokenizeTable(name: String, hasRename: XR.HasRename): Token = escapeIfNeeded(name, hasRename.hasOrNot() && name.any { it.isUpperCase() })
-  override fun tokenizeColumn(name: String, hasRename: XR.HasRename): Token = escapeIfNeeded(name, hasRename.hasOrNot() && name.any { it.isUpperCase() })
 }

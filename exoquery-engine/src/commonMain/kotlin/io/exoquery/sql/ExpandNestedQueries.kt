@@ -115,9 +115,11 @@ class ExpandNestedQueries(val pathJoinFunction: (List<String>) -> String) : Stat
 
           // If it is a sub-select do not apply the strategy to the property
           if (isSubselect)
-            XR.Property(inner, pathJoinFunction(propsPath.map { it.name }), Visibility.Visible, propsPath.last().loc)
+            // NOTE we don't care about renames (i.e. @ExoField/@SerialName) annotations since this is a property that represents a sub-query
+            XR.Property(inner, pathJoinFunction(propsPath.map { it.name }), XR.HasRename.NotHas, Visibility.Visible, propsPath.last().loc)
           else
-            XR.Property(inner, propsPath.last().name, Visibility.Visible, propsPath.last().loc)
+            // If it directly refers to a field coming from a table, then it should rename "renamed" if it was designated as such (by having @ExoField/@SerialName annotation)
+            XR.Property(inner, propsPath.last().name, propsPath.last().hasRename, Visibility.Visible, propsPath.last().loc)
         }
       ) ?: p
 

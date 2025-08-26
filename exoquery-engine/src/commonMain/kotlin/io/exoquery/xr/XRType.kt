@@ -1,6 +1,7 @@
 package io.exoquery.xr
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 // Formerly Quat
 @Serializable
@@ -39,7 +40,28 @@ sealed interface XRType {
   fun nonAbstract() = !isAbstract()
 
   @Serializable
-  data class Product(val name: String, val fields: List<Pair<String, XRType>>) : XRType {
+  data class Product(val name: String, val fields: List<Pair<String, XRType>>, val meta: Meta = Meta.Empty) : XRType {
+    @Serializable
+    data class Meta(val hasRename: kotlin.Boolean, val fieldsWithRename: Set<String>) {
+      fun fieldHasRename(field: String) =
+        XR.HasRename.hasOrNot(fieldsWithRename.contains(field))
+
+      // Incorporate another Meta (to be used with XRType.Product.leastUpperType. That means
+      // the other meta could have fewer fields but that is fine because this is just a check-list
+      // of fields that need to be renamed so extra fields here are fine.
+      fun orThat(other: Meta) =
+        Meta(this.hasRename || other.hasRename, this.fieldsWithRename + other.fieldsWithRename)
+
+      companion object {
+        val Empty = Meta(false, emptySet())
+      }
+    }
+
+    private data class Id(val name: String, val fields: List<Pair<String, XRType>>)
+
+    @Transient
+    private val id = Id(name, fields)
+
     private val fieldsHash by lazy { fields.toMap() }
 
     sealed interface Resolution {
@@ -71,9 +93,14 @@ sealed interface XRType {
       else
         fieldsHash.get(name)
 
+    override fun hashCode(): Int = id.hashCode()
+    override fun equals(other: Any?): kotlin.Boolean =
+      other is Product && this.id == other.id
+
     companion object {
-      fun of(name: String, vararg fields: Pair<String, XRType>) = Product(name, fields.toList())
-      fun leaf(name: String, vararg fieldNames: String) = Product(name, fieldNames.map { it to Value })
+      // Constructors mainly for testing purposes
+      fun of(name: String, vararg fields: Pair<String, XRType>) = Product(name, fields.toList(), Meta.Empty)
+      fun leaf(name: String, vararg fieldNames: String) = Product(name, fieldNames.map { it to Value }, Meta.Empty)
     }
   }
 
@@ -143,7 +170,8 @@ fun XRType.Product.leastUpperTypeProduct(other: XRType.Product): XRType.Product 
     }
     name to newType
   }
-  return XRType.Product(name, newFields)
+  val meta = this.meta.orThat(other.meta)
+  return XRType.Product(name, newFields, meta)
 }
 
 fun <T> List<Pair<String, T>>.zipNotNullWith(other: Map<String, T>) =

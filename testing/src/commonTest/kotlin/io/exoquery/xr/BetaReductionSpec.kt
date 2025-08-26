@@ -9,7 +9,7 @@ class BetaReductionSpec: FreeSpec({
   // TODO do properties need visible/fixed
   "simplifies the ast by applying functions" - {
     "caseclass field" {
-      val ast: XR = Property(Product("CC", listOf(("foo" to Ident("a")))), "foo")
+      val ast: XR = Property(Product("CC", ("foo" to Ident("a"))), "foo")
       BetaReduction.ofXR(ast) shouldBe Ident("a")
     }
     "functionN apply" {
@@ -72,7 +72,7 @@ class BetaReductionSpec: FreeSpec({
           Variable(b, c2),
           Variable(c, c3)
         ),
-        XR.Product("CC", listOf("foo" to aE, "bar" to bE, "baz" to cE))
+        XR.Product("CC", "foo" to aE, "bar" to bE, "baz" to cE)
       )
       val outer = Block(
         listOf(
@@ -82,7 +82,7 @@ class BetaReductionSpec: FreeSpec({
         ),
         cE
       )
-      BetaReduction.invoke(outer) shouldBe XR.Product("CC", listOf("foo" to root, "bar" to c2, "baz" to c3))
+      BetaReduction.invoke(outer) shouldBe XR.Product("CC", "foo" to root, "bar" to c2, "baz" to c3)
     }
   }
 
@@ -219,7 +219,7 @@ class BetaReductionSpec: FreeSpec({
   "reapplies the beta reduction if the structure changes caseclass" {
     val quat = XRType.LeafProduct("foo")
     val ast: XR = Property(Ident("a", quat), "foo")
-    BetaReduction.ofXR(ast, Ident("a", quat) to Product("CC", listOf(("foo" to Ident("a'"))))) shouldBe
+    BetaReduction.ofXR(ast, Ident("a", quat) to Product("CC", ("foo" to Ident("a'")))) shouldBe
         Ident("a'")
   }
 

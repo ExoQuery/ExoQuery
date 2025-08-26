@@ -456,15 +456,15 @@ interface SqlIdiom : HasPhasePrinting {
   fun tokenizeGroupBy(values: XR.Expression): Token = values.token
   fun tokenOrderBy(criteria: List<XR.OrderField>) = +"ORDER BY ${criteria.token { it.token }}"
 
-  fun escapeIfNeeded(name: String): Token =
-    if (reservedKeywords.contains(name.lowercase()))
+  fun escapeIfNeeded(name: String, forceEscape: Boolean = false): Token =
+    if (forceEscape || reservedKeywords.contains(name.lowercase()))
       "\"${name}\"".token
     else
       name.token
 
-  fun tokenizeTable(name: String): Token = escapeIfNeeded(name)
+  fun tokenizeTable(name: String, hasRename: XR.HasRename = XR.HasRename.NotHas): Token = escapeIfNeeded(name, hasRename.hasOrNot())
   fun tokenizeAlias(alias: List<String>): Token = escapeIfNeeded(this.joinAlias(alias))
-  fun tokenizeColumn(name: String): Token = escapeIfNeeded(name)
+  fun tokenizeColumn(name: String, hasRename: XR.HasRename = XR.HasRename.NotHas): Token = escapeIfNeeded(name, hasRename.hasOrNot())
 
   val SelectValue.token get(): Token = selectValueTokenImpl(this)
   fun selectValueTokenImpl(exprImpl: SelectValue): Token = with(exprImpl) {
@@ -600,7 +600,7 @@ interface SqlIdiom : HasPhasePrinting {
 
   val XR.Entity.token get(): Token = xrEntityTokenImpl(this)
   fun xrEntityTokenImpl(entityImpl: XR.Entity): Token = with(entityImpl) {
-    tokenizeTable(name)
+    tokenizeTable(name, entityImpl.hasRename)
   }
 
   val XR.OrderField.token get(): Token = xrOrderByCriteriaTokenImpl(this)
@@ -662,7 +662,7 @@ interface SqlIdiom : HasPhasePrinting {
         // SELECT /*this ->*/ foobar... FROM (SELECT foo.bar AS foobar ...)
         // When it's just a top-level select the prefix will be empty
         ast is Ident && (ast.visibility == Hidden || ast.isThisRef()) ->
-          joinAlias(prefix).token
+          tokenizeColumn(joinAlias(prefix), propertyImpl.hasRename)
 
         // This is essentially a band-aid in the situation an empty list is returned from the property name
         // if the property name actually use it but return a comment that the type is bad.
@@ -671,7 +671,7 @@ interface SqlIdiom : HasPhasePrinting {
         // See the DealiasBugSpec description for more detail.
         ast is Ident && prefix.isEmpty() -> {
           if (propertyImpl.name.isNotEmpty())
-            +"${scopedTokenizer(ast)}.${(tokenizeColumn(propertyImpl.name).token)} /*empty-prefix,type:${this.type.shortString()}*/"
+            +"${scopedTokenizer(ast)}.${(tokenizeColumn(propertyImpl.name, propertyImpl.hasRename).token)} /*empty-prefix,type:${this.type.shortString()}*/"
           else
             +"${scopedTokenizer(ast)}.* /*empty-prefix,type:${this.type.shortString()}*/"
         }
@@ -681,7 +681,7 @@ interface SqlIdiom : HasPhasePrinting {
         // SELECT /*this ->*/ (someExpression).otherStuff FROM (....)
         else -> {
           val columnName = joinAlias(prefix)
-          +"${scopedTokenizer(ast)}.${(tokenizeColumn(columnName).token)}"
+          +"${scopedTokenizer(ast)}.${(tokenizeColumn(columnName, propertyImpl.hasRename).token)}"
         }
       }
     }

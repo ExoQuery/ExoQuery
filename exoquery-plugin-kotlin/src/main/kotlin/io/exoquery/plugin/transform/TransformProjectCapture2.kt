@@ -153,6 +153,8 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
         node is OwnerChain.SourcedVariable -> {
           val uprootableParent = ascendFromRootAndProject(node.parent) ?: return null
           node.origin.replaceInitializerBodyWith(uprootableParent.expr)
+          // @CompiledQuery annotation so that if the variable is access from another file etc... it can be used
+          node.origin.annotations = node.origin.annotations + makeLifter().makeCompiledQueryAnnotation(uprootableParent.uprootable.packedXR)
           uprootableParent.replantUprootableWith(node.call)
         }
         else -> null

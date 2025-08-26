@@ -6,31 +6,60 @@ import kotlinx.serialization.SerialName
 
 class NamingAnnotationReq: GoldenSpecDynamic(NamingAnnotationReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
-  @SerialName("person_annotated")
-  data class PersonAnnotated(
-    @SerialName("first_name")
-    val firstName: String,
+  "quotation should" - {
+    @SerialName("person_annotated")
+    data class PersonAnnotated(
+      @SerialName("first_name")
+      val firstName: String,
 
-    @SerialName("last_name")
-    val lastName: String,
+      @SerialName("last_name")
+      val lastName: String,
 
-    val age: Int
-  )
+      val age: Int
+    )
 
-  @ExoEntity("PERSON_ANNOTATED")
-  @SerialName("person_annotated")
-  data class PersonAnnotatedOverride(
-    @ExoField("FIRST_NAME")
-    @SerialName("first_name")
-    val firstName: String,
+    "no apply quotes in postgres if all lower-case" {
+      val query = capture {
+        Table<PersonAnnotated>().filter { it.firstName == "Joe" && it.lastName == "Bloggs" }
+      }
+      shouldBeGolden(query.xr, "XR")
+      shouldBeGolden(query.buildFor.Postgres(), "SQL")
+    }
 
-    @SerialName("last_name")
-    val lastName: String,
-
-    val age: Int
-  )
+    "apply quotes in generic DBs if all lower-case" {
+      val query = capture {
+        Table<PersonAnnotated>().filter { it.firstName == "Joe" && it.lastName == "Bloggs" }
+      }
+      shouldBeGolden(query.xr, "XR")
+      shouldBeGolden(query.buildFor.GenericDatabase(), "SQL")
+    }
+  }
 
   "naming overrides should work in the correct order" - {
+    @SerialName("person_annotated")
+    data class PersonAnnotated(
+      @SerialName("first_name")
+      val firstName: String,
+
+      @SerialName("last_name")
+      val lastName: String,
+
+      val age: Int
+    )
+
+    @ExoEntity("PERSON_ANNOTATED")
+    @SerialName("person_annotated")
+    data class PersonAnnotatedOverride(
+      @ExoField("FIRST_NAME")
+      @SerialName("first_name")
+      val firstName: String,
+
+      @SerialName("last_name")
+      val lastName: String,
+
+      val age: Int
+    )
+
     "in a query" {
       val query = capture {
         Table<PersonAnnotated>().filter { it.firstName == "Joe" && it.lastName == "Bloggs" }

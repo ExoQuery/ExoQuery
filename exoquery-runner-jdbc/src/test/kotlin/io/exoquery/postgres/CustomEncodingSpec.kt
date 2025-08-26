@@ -81,7 +81,7 @@ class CustomEncodingSpec : FreeSpec({
       @Serializable
       data class Person(
         val id: Long,
-        @ExoField("firstName")
+        @ExoField("firstname")
         @Serializable(with = FirstNameSerializer::class)
         val firstName: FirstName,
         val lastName: String,
@@ -135,4 +135,3 @@ class CustomEncodingSpec : FreeSpec({
     }
   }
 })
-

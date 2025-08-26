@@ -44,7 +44,11 @@ sealed interface KnownSerializer {
 }
 
 object Elaborate {
-  data class Path(val path: List<String>, val invocation: IrExpression, val type: IrType, val xrType: XRType, val knownSerializer: KnownSerializer) {
+  data class Path(val path: List<Seg>, val invocation: IrExpression, val type: IrType, val xrType: XRType, val knownSerializer: KnownSerializer) {
+    data class Seg(val name: String, val isRenamed: Boolean) {
+      fun tuplize() = name to isRenamed
+    }
+
     override fun toString(): String = path.joinToString(".")
   }
 
@@ -65,7 +69,7 @@ object Elaborate {
   //  ([name, first], if (p.name == null) null else p.first), ([name, last], if (p.name == null) null else p.last), ([age], p.age)
   // Same pattern for futher nested nullables
   context(CX.Scope, CX.Builder)
-  private fun invokeRecurse(currPath: List<String>, parent: IrExpression, type: IrType, currentXrType: XRType, knownFieldSerializer: KnownSerializer): List<Path> = run {
+  private fun invokeRecurse(currPath: List<Path.Seg>, parent: IrExpression, type: IrType, currentXrType: XRType, knownFieldSerializer: KnownSerializer): List<Path> = run {
     if (currentXrType.isProduct()) {
       val cls = type.classOrNull ?: parseError("Expected a class to elaborate, got ${type} which is invalid", parent)
       val clsOwner = cls.owner
@@ -83,10 +87,10 @@ object Elaborate {
         val property = props.firstOrNull { it.name.asString() == propertyName } ?: error("Property $propertyName not found")
 
         // To get the @ExoField or @SerialName annotation we need to get the getter in case this was overridden
-        val sqlPropertyName =
-          property.getAnnotationArgs<ExoField>().firstConstStringOrNull()
-            ?: property.getAnnotationArgs<kotlinx.serialization.SerialName>().firstConstStringOrNull()
-            ?: propertyName
+        val (sqlPropertyName, isRenamed) =
+          property.getAnnotationArgs<ExoField>().firstConstStringOrNull()?.let { it to true }
+            ?: property.getAnnotationArgs<kotlinx.serialization.SerialName>().firstConstStringOrNull()?.let { it to true }
+            ?: propertyName.let { it to false }
 
         val knownFieldSerializer: KnownSerializer = run {
           val propertyOnTheField =
@@ -121,7 +125,7 @@ object Elaborate {
                 dispatchReceiver = explicitReceiver
               }
             }
-          invokeRecurse(currPath + sqlPropertyName, callNullSafe(parent, type, propertyType, call), propertyType, nextXrType, knownFieldSerializer)
+          invokeRecurse(currPath + Path.Seg(sqlPropertyName, isRenamed), callNullSafe(parent, type, propertyType, call), propertyType, nextXrType, knownFieldSerializer)
         } else {
           emptyList()
         }

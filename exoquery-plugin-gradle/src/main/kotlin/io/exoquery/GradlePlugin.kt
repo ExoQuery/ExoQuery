@@ -215,7 +215,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         SubpluginOption("outputString", outputStringValue),
         SubpluginOption("queryFilesEnabled", queryFilesEnabled.toString()),
         SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString()),
-        SubpluginOption("enableCodegenAI", enableCodegenAI.toString()),
+        SubpluginOption("enableCodegenAI", enableCodegenAI.get().toString()),
         SubpluginOption("forceRegen", forceRegen.get().toString())
       )
     }

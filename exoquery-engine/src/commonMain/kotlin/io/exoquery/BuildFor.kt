@@ -3,6 +3,7 @@ package io.exoquery
 import io.exoquery.annotation.ExoBuildDatabaseSpecific
 import io.exoquery.annotation.ExoBuildFunctionLabel
 import io.exoquery.annotation.ExoBuildRoomSpecific
+import io.exoquery.sql.GenericDialect
 import io.exoquery.sql.MySqlDialect
 import io.exoquery.sql.PostgresDialect
 import io.exoquery.sql.SqlServerDialect
@@ -43,6 +44,9 @@ interface BuildFor<T> {
 
   @ExoBuildRoomSpecific
   fun Room(@ExoBuildFunctionLabel label: String): Unit
+
+  @ExoBuildDatabaseSpecific(GenericDialect::class)
+  fun GenericDatabase(): T
 
   /**
    * When you want to specify the exact type that should come out of the

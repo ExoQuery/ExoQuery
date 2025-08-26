@@ -158,6 +158,20 @@ data class ProtractQuat(val refersToEntity: Boolean) {
               core,
               // If the quat is renamed, create a property representing the renamed field, otherwise use the quat field for the property
               name,
+              /*
+              Is the parent-XRType represents an product (i.e. an entity in this case) and the field of it has a rename (if it has a @ExoField/@SerialName annotation)
+              e.g:
+              data class Person(name: Name, ...)
+              data class Name(@SerialName("first_name") firstName: String, ...)
+              Then the Product types will be something like:
+              Person: CC(name:CC(first_name:String /*hasRename=true*/,...),..., meta=Meta(fieldsWithRename=Set("first_name")))
+
+              then we need to make sure it it is set to has-rename so that the SqlIdiom tokenizer will know to quote it
+              (note that the name of the field itself is already the renamed version, so we don't need to do anything special with it there)
+
+              Interestingly, the `name` field itself could be annotated with @SerialName too, but it would be marked Visibility.Hidden as an intermediate property
+             */
+              XR.HasRename.hasOrNot(refersToEntity && child.meta.fieldsWithRename.contains(name)),
               /* If the property represents a property of a Entity (i.e. we're selecting from an actual table,
              * then the entire projection of the XRType should be visible (since subsequent aliases will
              * be using the entire path.
@@ -185,7 +199,14 @@ data class ProtractQuat(val refersToEntity: Boolean) {
           // If the quat is renamed, create a property representing the renamed field, otherwise use the quat field for the property
           // val fieldName = quat.renames.find(_._1 == name).map(_._2).getOrElse(name)
           // The innermost entity of the quat. This is always visible since it is the actual column of the table
-          listOf((XR.Property(core, name, Visible, XR.Location.Synth) to listOf(name)))
+          listOf((
+              XR.Property(
+                core,
+                name,
+                XR.HasRename.hasOrNot(refersToEntity && quat.meta.fieldsWithRename.contains(name)),
+                Visible,
+                XR.Location.Synth
+              ) to listOf(name)))
       }.toList()
     }
   }

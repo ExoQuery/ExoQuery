@@ -165,14 +165,12 @@ object ParseAction {
         val rootTpe = TypeParser.of(param) as? XRType.Product ?: parseError("The setParams function must be called on a data-class type", param)
         val paths = Elaborate.invoke(param, rootTpe)
 
-
-
         // First of all it is more efficient to resolve types based on the root type
         // second of all, we NEED to do this in case @ExoField, or @ExoValue is used on the data-class fields and we just analyze the field
         // alone we won't know that.
         val assignments =
           paths.map { epath ->
-            val prop = XR.Property.fromCoreAndPaths(actionAlias, epath.path) as? XR.Property ?: parseError("Could not parse empty property path of the entity", epath.invocation)
+            val prop = XR.Property.fromCoreAndPaths(actionAlias, epath.path.map { it.tuplize() }) as? XR.Property ?: parseError("Could not parse empty property path of the entity", epath.invocation)
             val id = BID.new()
             val tpe = epath.xrType
             val (bind, paramType) = run {

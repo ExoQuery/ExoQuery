@@ -233,6 +233,8 @@ class Lifter(val builderCtx: CX.Builder) {
   }
 
   fun makeSeenAnnotation(): IrConstructorCall = make<Seen>()
+
+  fun makeCompiledQueryAnnotation(serializedQuery: String): IrConstructorCall = make<io.exoquery.annotation.CompiledQuery>(irBuilder.irString(serializedQuery))
 }
 
 // Some top-level lift functions to use outside of the lifter

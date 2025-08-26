@@ -1,6 +1,5 @@
 package io.exoquery.xr
 
-import io.exoquery.xr.id
 import io.exoquery.BID
 import io.exoquery.pprint.PPrinterConfig
 import io.exoquery.printing.PrintXR
@@ -9,8 +8,6 @@ import io.exoquery.sql.Renderer
 import io.exoquery.sql.Token
 import io.exoquery.util.NumbersToWords
 import io.exoquery.util.ShowTree
-import io.exoquery.util.dropLastSegment
-import io.exoquery.util.takeLastSegment
 import io.exoquery.xr.XR.U.QueryOrExpression
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -178,7 +175,7 @@ sealed interface XR {
 
   @Serializable
   @Mat
-  data class Entity(@Slot val name: String, override val type: XRType.Product, override val loc: Location = Location.Synth) : Query, PC<Entity> {
+  data class Entity(@Slot val name: String, override val type: XRType.Product, val hasRename: HasRename = HasRename.NotHas, override val loc: Location = Location.Synth) : Query, PC<Entity> {
     @Transient
     override val productComponents = productOf(this, name)
 
@@ -1068,11 +1065,22 @@ sealed interface XR {
   data class Product(val name: String, @Slot val fields: List<Pair<String, XR.Expression>>, override val loc: Location = Location.Synth) : Expression, PC<Product> {
     @Transient
     override val productComponents = productOf(this, fields)
-    override val type by lazy { XRType.Product(name, fields.map { it.first to it.second.type }) }
+
+    override val type by lazy { XRType.Product(name, fields.map { it.first to it.second.type }, XRType.Product.Meta.Empty) }
+
+    /** The type is the list of fields and their types. Since a product-type shouldn't be used as an actual
+     * entity its field should never need renames since it's properties should never be used at all except for in SQL alises
+     * (and it's own name shouldn't be used at all except in SQL aliases)
+     */
 
     companion object {
       // helper function for creation during testing
-      operator fun invoke(name: String, vararg fields: Pair<String, Expression>) = Product(name, fields.toList(), Location.Synth)
+      operator fun invoke(name: String, vararg fields: Pair<String, Expression>) = run {
+        // Normally for a product we want to be sure there's a type specified because the type could represent a
+        // class that has @ExoEntity/@SerialName annotations that make it's fields require renames (and if it is
+        // use in sub-queries these renames will be relied on)
+        Product(name, fields.toList(), Location.Synth)
+      }
 
       // helper function for creation during testing
       fun Tuple(first: XR.Expression, second: XR.Expression, loc: Location = Location.Synth) =
@@ -1091,9 +1099,9 @@ sealed interface XR {
         else
           TupleAlphabetic(values, loc = loc)
 
-
-      fun TupleAlphabetic(values: List<XR.Expression>, loc: Location = Location.Synth) =
+      fun TupleAlphabetic(values: List<XR.Expression>, loc: Location = Location.Synth) = run {
         Product("TupleA${values.size}", values.withIndex().map { (idx, v) -> NumbersToWords(idx + 1) to v }, loc)
+      }
 
       // WARNING: Use these only when you don't care about the property-values because kotlin doesn't
       // actually have _X tuples.
@@ -1111,10 +1119,11 @@ sealed interface XR {
           // tpe: XRType.Prod(a->V,b->V), id: Id("foo",tpe) ->
           //   XR.Prod(id, a->Prop(id,"a"), b->Prop(id,"b"))
           is XRType.Product ->
-            Product(identName, type.fields.map { (fieldName, _) -> fieldName to XR.Property(id, fieldName, Visibility.Visible, Location.Synth) }, Location.Synth)
-          else ->
+            Product(identName, type.fields.map { (fieldName, _) -> fieldName to XR.Property(id, fieldName, type.meta.fieldHasRename(fieldName), Visibility.Visible, Location.Synth) }, Location.Synth)
+          else -> {
             // Not sure if this case is possible
             Product("<Generated>", listOf(identName to id), Location.Synth)
+          }
         }
       }
     }
@@ -1136,6 +1145,24 @@ sealed interface XR {
     @Serializable
     object Visible : Visibility {
       override fun toString() = "Visible"
+    }
+  }
+
+  @Serializable
+  sealed interface HasRename {
+    @Serializable
+    object Has : HasRename {
+      override fun toString() = "Needs"
+    }
+    @Serializable
+    object NotHas : HasRename {
+      override fun toString() = "NotNeeds"
+    }
+
+    fun hasOrNot(): Boolean = this == Has
+
+    companion object {
+      fun hasOrNot(has: kotlin.Boolean): HasRename = if (has) Has else NotHas
     }
   }
 
@@ -1190,7 +1217,7 @@ sealed interface XR {
   // (before any phases happen) from the field annotation on the entity object.
   @Serializable
   @Mat
-  data class Property(@Slot val of: XR.Expression, @Slot val name: String, val visibility: Visibility = Visibility.Visible, override val loc: Location = Location.Synth) : XR.Expression, PC<Property> {
+  data class Property(@Slot val of: XR.Expression, @Slot val name: String, val hasRename: HasRename = HasRename.NotHas, val visibility: Visibility = Visibility.Visible, override val loc: Location = Location.Synth) : XR.Expression, PC<Property> {
     @Transient
     override val productComponents = productOf(this, of, name)
     override val type: XRType by lazy {
@@ -1204,8 +1231,8 @@ sealed interface XR {
       if (of is Property) of.core() else of
 
     companion object {
-      fun fromCoreAndPaths(core: XR.Expression, paths: List<String>, loc: Location = Location.Synth): XR.Expression =
-        paths.fold(core) { acc, path -> Property(acc, path, Visibility.Visible, loc) }
+      fun fromCoreAndPaths(core: XR.Expression, paths: List<Pair<String, Boolean>>, loc: Location = Location.Synth): XR.Expression =
+        paths.fold(core) { acc, path -> Property(acc, path.first, HasRename.hasOrNot(path.second), Visibility.Visible, loc) }
     }
 
     override fun toString() = show()
