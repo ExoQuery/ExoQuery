@@ -41,10 +41,10 @@ class CodeEmitter(
 
     override val code: String
       get() =
-        if (caseClassName != databaseName) {
-          "@Serializable\n$annotation\n$dataClassCode"
-        } else {
+        if (caseClassName == databaseName && caseClassName.none { it.isUpperCase() }) {
           "@Serializable\n$dataClassCode"
+        } else {
+          "@Serializable\n$annotation\n$dataClassCode"
         }
 
     inner class MemberGen(val column: ColumnPrepared): AbstractMemberGen() {
@@ -67,11 +67,17 @@ class CodeEmitter(
           is NamingAnnotationType.SerialName -> "@SerialName(\"$databaseName\")"
         }
 
+      /**
+       * Do not add the annotation if the field name matches the database name and is all lowercase
+       * (if there are uppercase letters, it may be a camelCase name in the DB,
+       * e.g. we would do `SELECT person.orgName` instead of `SELECT person."orgName"` which would fail
+       * so we still need the annotation even if the data-class field name is `orgName`)
+       */
       override val code: String
-        get() = if (fieldName != databaseName) {
-          "$annotation val $fieldName: $actualType"
-        } else {
+        get() = if (fieldName == databaseName && fieldName.none { it.isUpperCase() }) {
           "val $fieldName: $actualType"
+        } else {
+          "$annotation val $fieldName: $actualType"
         }
     }
   }

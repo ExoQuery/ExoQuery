@@ -40,9 +40,10 @@ class GenerationSpec: FreeSpec({
             "foo.bar.purposely_inconsistent",
             """
               @Serializable
+              @SerialName("UserProfile")
               data class UserProfile(
-                val userId: Int,
-                val firstName: String,
+                @SerialName("userId") val userId: Int,
+                @SerialName("firstName") val firstName: String,
                 val last_name: String,
                 val updated_at: kotlinx.datetime.LocalDateTime?
               )

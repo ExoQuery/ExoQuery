@@ -47,7 +47,8 @@ class TypeMapSpec: FreeSpec({
             "foo.bar.myschema",
             """
             @Serializable
-            data class TestTable(val id: Long, val firstName: Double?)
+            @SerialName("TestTable")
+            data class TestTable(val id: Long, @SerialName("firstName") val firstName: Double?)
             """.trimIndent()
           )
     }
@@ -65,7 +66,8 @@ class TypeMapSpec: FreeSpec({
             "foo.bar.myschema",
             """
             @Serializable
-            data class TestTable(val id: Long, val firstName: Double?)
+            @SerialName("TestTable")
+            data class TestTable(val id: Long, @SerialName("firstName") val firstName: Double?)
             """.trimIndent()
           )
     }
@@ -84,7 +86,8 @@ class TypeMapSpec: FreeSpec({
             "foo.bar.myschema",
             """
             @Serializable
-            data class TestTable(val id: Long, val firstName: Double?)
+            @SerialName("TestTable")
+            data class TestTable(val id: Long, @SerialName("firstName") val firstName: Double?)
             """.trimIndent()
           )
     }
@@ -115,7 +118,8 @@ class TypeMapSpec: FreeSpec({
             "foo.bar.myschema",
             """
             @Serializable
-            data class TestTable(val id: Long, val firstName: Double?, val firstName: Long)
+            @SerialName("TestTable")
+            data class TestTable(val id: Long, @SerialName("firstName") val firstName: Double?, @SerialName("firstName") val firstName: Long)
             """.trimIndent()
           )
     }
@@ -154,7 +158,8 @@ class TypeMapSpec: FreeSpec({
               "foo.bar.myschema",
               """
               @Serializable
-              data class TestTable(val id: Long, val firstName: Double?)
+              @SerialName("TestTable")
+              data class TestTable(val id: Long, @SerialName("firstName") val firstName: Double?)
               """.trimIndent()
             ),
             CodeFileContent(
@@ -162,7 +167,8 @@ class TypeMapSpec: FreeSpec({
               "foo.bar.myschema",
               """
               @Serializable
-              data class AnotherTestTable(val id: Long, val firstName: String?)
+              @SerialName("AnotherTestTable")
+              data class AnotherTestTable(val id: Long, @SerialName("firstName") val firstName: String?)
               """.trimIndent()
             )
           )
@@ -203,7 +209,8 @@ class TypeMapSpec: FreeSpec({
               "foo.bar.myschema",
               """
               @Serializable
-              data class TestTable(val id: Long, val firstName: Double?)
+              @SerialName("TestTable")
+              data class TestTable(val id: Long, @SerialName("firstName") val firstName: Double?)
               """.trimIndent()
             ),
             CodeFileContent(
@@ -211,7 +218,8 @@ class TypeMapSpec: FreeSpec({
               "foo.bar.another_schema",
               """
               @Serializable
-              data class TestTable(val id: Long, val firstName: String?)
+              @SerialName("TestTable")
+              data class TestTable(val id: Long, @SerialName("firstName") val firstName: String?)
               """.trimIndent()
             )
           )
