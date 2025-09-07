@@ -21,12 +21,10 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
-import org.jetbrains.kotlin.ir.util.hasAnnotation
-import org.jetbrains.kotlin.ir.util.isSubclassOf
 import org.jetbrains.kotlin.ir.util.isTypeParameter
 import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -1041,15 +1039,32 @@ object Ir {
   }
 
   object SimpleFunction {
-    operator fun <AP : Pattern<A>, BP : Pattern<B>, A : List<IrValueParameter>, B : IrBlockBody> get(args: AP, body: BP): Pattern2<AP, BP, A, B, IrSimpleFunction> =
+
+    sealed interface FunBody {
+      // Describes a situation where there is an IrBlockBody with multiple statements and possibly a return at the end
+      data class Complex(val statements: List<IrStatement>, val returnExpr: IrExpression?): FunBody
+      // Describes a situation where there is an IrExpressionBody or an IrBlockBody with one single return
+      data class Simple(val expr: IrExpression): FunBody
+    }
+
+    operator fun <AP : Pattern<A>, BP : Pattern<B>, A : List<IrValueParameter>, B : FunBody> get(args: AP, body: BP): Pattern2<AP, BP, A, B, IrSimpleFunction> =
       customPattern2("Ir.SimpleFunction", args, body) { it: IrSimpleFunction ->
         it.body?.let { bodyVal ->
-          when (val body = it.body) {
-            // Ignore context-parameters here
-            is IrBlockBody -> Components2(it.regularParams, body)
+          when {
+            bodyVal.statements.size == 1 && bodyVal.statements.first() is IrExpression -> {
+              when (val singleVal = bodyVal.statements.first()) {
+                is IrReturn -> Components2(it.regularParams, FunBody.Simple(singleVal.value))
+                else -> Components2(it.regularParams, FunBody.Simple(singleVal as IrExpression))
+              }
+            }
+            bodyVal.statements.size > 1 -> {
+              when (val lastVal = bodyVal.statements.last()) {
+                is IrReturn -> Components2(it.regularParams, FunBody.Complex(bodyVal.statements.dropLast(1), lastVal.value))
+                else -> Components2(it.regularParams, FunBody.Complex(bodyVal.statements, null))
+              }
+            }
             else -> parseError("The function ${it.name} body was not a blockBody")
           }
-
         }
       }
 
@@ -1057,10 +1072,21 @@ object Ir {
       operator fun <AP : Pattern<A>, A : IrExpression> get(body: AP) =
         customPattern1("Ir.SimpleFunction.withReturnOnlyExpression", body) { it: IrSimpleFunction ->
           on(it).match(
-            case(SimpleFunction[Is(), BlockBody.ReturnOnly[Is()]]).then { _, (b) ->
-              Components1(b)
+            case(SimpleFunction[Is(), Is()]).then { _, b ->
+              when (b) {
+                is FunBody.Simple -> Components1(b.expr)
+                else -> null
+              }
             }
           )
+        }
+    }
+
+    // Matches any kind of IrSimpleFunction including the kind that is a declaration-stub
+    object anyKind {
+      operator fun <AP : Pattern<A>, A : IrSimpleFunction> get(body: AP) =
+        customPattern1("Ir.SimpleFunction.anyKind", body) { it: IrSimpleFunction ->
+          Components1(it)
         }
     }
 
@@ -1068,19 +1094,8 @@ object Ir {
       operator fun <AP : Pattern<List<IrValueParameter>>, BP : Pattern<B>, B : IrExpression> get(args: AP, body: BP) =
         customPattern2("Ir.SimpleFunction.withReturnOnlyExpressionAndArgs", args, body) { it: IrSimpleFunction ->
           on(it).match(
-            case(SimpleFunction[Is(), BlockBody.ReturnOnly[Is()]]).then { args, (b) ->
-              Components2(args, b)
-            }
-          )
-        }
-    }
-
-    object withReturnExpression {
-      operator fun <AP : Pattern<A>, A : IrExpression> get(body: AP) =
-        customPattern1("Ir.SimpleFunction.withReturnExpression", body) { it: IrSimpleFunction ->
-          on(it).match(
-            case(SimpleFunction[Is(), BlockBody.Return[Is()]]).then { _, (b) ->
-              Components1(b)
+            case(SimpleFunction[Is(), Is<FunBody.Simple>()]).then { args, b ->
+              Components2(args, b.expr)
             }
           )
         }
@@ -1089,22 +1104,24 @@ object Ir {
     object withBlock {
       operator fun <AP : Pattern<List<IrValueParameter>>, BP : Pattern<IrBlockBody>> get(params: AP, body: BP) =
         customPattern2("Ir.SimpleFunction.withBlock", params, body) { it: IrSimpleFunction ->
-          on(it).match(
-            case(SimpleFunction[Is(), Is()]).then { params, blockBody ->
-              Components2(params, blockBody)
+          it.body?.let { bodyVal ->
+            when (bodyVal) {
+              is IrBlockBody -> Components2(it.regularParams, bodyVal)
+              else -> null
             }
-          )
+          }
         }
     }
 
     object withBlockStatements {
       operator fun <AP : Pattern<List<IrValueParameter>>, BP : Pattern<List<IrStatement>>> get(params: AP, body: BP) =
         customPattern2("Ir.SimpleFunction.withBlockStatements", params, body) { it: IrSimpleFunction ->
-          on(it).match(
-            case(SimpleFunction[Is(), BlockBody.Statements[Is()]]).then { params, (b) ->
-              Components2(params, b)
+          it.body?.let { bodyVal ->
+            when (bodyVal) {
+              is IrBlockBody -> Components2(it.regularParams, bodyVal.statements)
+              else -> null
             }
-          )
+          }
         }
     }
   }

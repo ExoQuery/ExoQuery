@@ -5,18 +5,41 @@ import io.exoquery.plugin.dataClassProperties
 import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.source
+import io.exoquery.plugin.stableIdentifier
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.dumpKotlinLikePretty
+import io.exoquery.plugin.transform.prepareForPrintingAdHoc
 import io.exoquery.plugin.trees.showLineage
 import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.symbols.IrSymbol
+import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.util.render
 
 // @formatter:off
 object Messages {
+
+fun LineageElementDescription(heading: String, elem: IrElement) =
+"""
+============================ $heading ============================
+${(elem as? IrExpression)?.let {it.type.dumpKotlinLike() + " - "} ?: (elem as? IrFunction)?.let {it.returnType.dumpKotlinLike() + " - "} ?: ""}${elem.dumpKotlinLike().prepareForPrintingAdHoc()}
+------------------------------- Id -----------------------------------
+${(elem as? IrFunction)?.let { it.stableIdentifier() }}
+${(elem as? IrFunction)?.let { ((it.returnType as? IrSimpleType)?.classifier as? IrSymbol)?.signature }}
+------------------------------- Args -----------------------------------
+${(elem as? IrFunction)?.parameters?.map { it.type.dumpKotlinLike() + " - " + it.dumpKotlinLike().prepareForPrintingAdHoc() } ?: "<NOT A FUNCTION>"}
+------------------------------- Annotations -----------------------------------
+Signature:
+${(elem as? IrSimpleFunction)?.let { simpleFun -> simpleFun.symbol.signature?.render() ?: "<NOT A PUBLIC FIELD>" } ?: "<NOT A SIMPLE FUNCTION>"}
+""".trimIndent()
+
+
 
 fun AttemptingToUseLLMWhenDisabled(dbUrl: String, usingLlm: NameParser.UsingLLM) =
 """

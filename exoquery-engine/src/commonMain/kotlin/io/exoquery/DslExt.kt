@@ -3,6 +3,12 @@ package io.exoquery
 import io.exoquery.annotation.ExoExtras
 
 @ExoExtras
+fun printStoredXRs(): String = errorCap("Compile time plugin did not transform the tree")
+
+@ExoExtras
+fun printLineage(arg: Any): String = errorCap("Compile time plugin did not transform the tree")
+
+@ExoExtras
 fun <R> printSource(f: () -> R): String = errorCap("Compile time plugin did not transform the tree")
 fun printSourceExpr(input: String): String = input
 

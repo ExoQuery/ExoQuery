@@ -4,8 +4,11 @@ import io.exoquery.SqlAction
 import io.exoquery.SqlBatchAction
 import io.exoquery.SqlExpression
 import io.exoquery.SqlQuery
+import io.exoquery.annotation.ExoCapture
+import io.exoquery.annotation.ExoCaptureSelect
 import io.exoquery.plugin.isCapturedFunction
 import io.exoquery.plugin.isClass
+import io.exoquery.plugin.ownerHasAnnotation
 import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.trees.*
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -20,13 +23,23 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
 
   context(CX.Scope, CX.Builder, CX.Symbology)
   override fun transform(expression: IrExpression): IrExpression? = run {
-      val ownershipChain = TransformProjectCapture2.buildOwnerChain(expression)
-      if (ownershipChain.root == OwnerChain.Root.Unknown)
-      // If there's a Unknown in the ownership chain we can't transform/project anything and whatever is going on must be dynamic or invalid
-        null
-      else {
-        TransformProjectCapture2.processOwnerChain(ownershipChain, superTransformer, false)
-      }
+    val ownershipChain = TransformProjectCapture2.buildOwnerChain(expression)
+    val output = TransformProjectCapture2.processOwnerChain(ownershipChain, superTransformer, false)
+    // TODO can we just return null here if hte root is unknown like before since we're not using a null-root in the case that it is a function loaded from StoredXRs.kt. Need to look into it
+
+    //logger.warn("TRANSFORMING Captured call ${expression.dumpKotlinLike()}\n=================== Ownership Chain ===================\n${ownershipChain.show()}\n====================== Output =======================\n${output?.dumpKotlinLike()?.prepareForPrintingAdHoc()}", expression)
+
+    output
+
+//      if (ownershipChain.root is OwnerChain.Root.Unknown) {
+//        val expr = ownershipChain.root.irElement
+//        logger.warn("WARNING: Could not process owner for the expression\n=================== Expr ===================\n${expr.dumpKotlinLike()}", expr)
+//        // If there's a Unknown in the ownership chain we can't transform/project anything and whatever is going on must be dynamic or invalid
+//        null
+//      }
+//      else {
+//        TransformProjectCapture2.processOwnerChain(ownershipChain, superTransformer, false)
+//      }
   }
 
   // Diagnostic error for debugging uproot failure of a particular clause
@@ -79,6 +92,8 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
       // if we're not not the root recurse further up the chain
       return when {
         // Do not process captured functions here
+
+        //  TODO why aren't we processing captured functions here? Don't we need to project them too?
         node is OwnerChain.SourcedFunction && node.origin.isCapturedFunction() && !allowProcessCapturedFunction -> null
 
         // ================ If we're at the root (i.e. the element is of type OwnerChain.Root) we need to determine what to do based on the type of the root element ================
@@ -89,7 +104,8 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
         // and returning `null` effectively tells the upstream "nothing has happened".
         node is OwnerChain.Root -> {
           when (node) {
-            is OwnerChain.Root.Unknown -> null
+            is OwnerChain.Root.Unknown ->
+              null
 
             is OwnerChain.Root.UprootableAction -> node
             is OwnerChain.Root.UprootableActionBatch -> node
@@ -99,8 +115,16 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
             // If the expression inside is a virgin transform, we try to transform it i.e. give it a chance to become an uprootable
             // if the transform doesn't match the expression we return null and the entire chain passes it down
             is OwnerChain.Root.VirginQuery -> {
-              val transformer = TransformCapturedQuery(superTransformer, "<Project>")
-              if (transformer.matches(node.call)) transformer.transform(node.call).withUprootableQueryOrNull()?.let { (expr, uproot) -> OwnerChain.Root.UprootableQuery(expr, uproot) } else null
+              if (node.call.ownerHasAnnotation<ExoCapture>()) {
+                val transformer = TransformCapturedQuery(superTransformer, "<Project>")
+                if (transformer.matches(node.call)) transformer.transform(node.call).withUprootableQueryOrNull()?.let { (expr, uproot) -> OwnerChain.Root.UprootableQuery(expr, uproot) } else null
+              } else if (node.call.ownerHasAnnotation<ExoCaptureSelect>()) {
+                val transformer = TransformSelectClause(superTransformer)
+                if (transformer.matches(node.call)) transformer.transform(node.call).withUprootableQueryOrNull()?.let { (expr, uproot) -> OwnerChain.Root.UprootableQuery(expr, uproot) } else null
+              } else {
+                //logger.warn("Error projecting the SqlQuery expression. It was not a @CaptureQuery or @CaptureSelect container", node.call)
+                null
+              }
             }
             is OwnerChain.Root.VirginExpr -> {
               val transformer = TransformCapturedExpression(superTransformer)
@@ -114,8 +138,15 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
               val transformer = TransformCapturedBatchAction(superTransformer)
               if (transformer.matches(node.call)) transformer.transform(node.call).withUprootableBatchActionOrNull()?.let { (expr, uproot) -> OwnerChain.Root.UprootableActionBatch(expr, uproot) } else null
             }
+            is OwnerChain.Root.SourcedPreviouslyCompiledFunction -> {
+              // Since we got it from from StoredXRs.kt we don't need to put it there again. We also don't need to ascend to the root since we know we're already there
+              node.parent.replantUprootableWith(node.call)
+            }
           }
         }
+
+        // TODO need to create a putUprootableIfCrossFile call in the primary traverser in order to put XRs of functions being compiled
+        //      that were never called yet.
 
         // ================ If we're not a Root that means some previous root up the chain succeeded (either doing #1 or #2 above) do we capture-projection and go up the chain ================
         // Instructions: say we've got a case of:
@@ -130,19 +161,17 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
         //
         // Note that ironically, as we ascend up the chain, we make every step of the chain into an root (all uprootables are roots) which is exactly as intended.
         node is OwnerChain.SourcedFunction -> {
-          val uprootableParent = ascendFromRootAndProject(node.parent) ?: return null
+          val uprootableParent =
+            // ======= SPECIAL CASE: In the specific case that the captured-function is being compiled right now, we need to add the uprootable to the store =========
+            ascendFromRootAndProject(node.parent) /*?.let { CrossFile.putUprootableIfCrossFile(node.origin, node.containerType, it.uprootable); it }*/ ?: return null
           // 1. Replace the `fun foo()` body with the parent SqlQuery/SqlExpression,... container
           // It could either have already been an uprootable (so it's a no-op) or it could be a virgin that we made into an uprootable
-          val nodeOriginBefore = node.origin.dumpKotlinLike()
-
           node.origin.replaceSingleReturnBodyWith(uprootableParent.expr)
-
-          val nodeOriginAfter = node.origin.dumpKotlinLike()
-
           // 2. Replace the `foo()` invocation with `SqlQuery(..., params=params + foo().params)` projection (i.e. replant the uprootable parent expression)
           // (also does) 3. Return this replaced invocation to the next call up
           uprootableParent.replantUprootableWith(node.call)
         }
+
         // Follow the same instructions as above, but for a field
         node is OwnerChain.SourcedField -> {
           val uprootableParent = ascendFromRootAndProject(node.parent) ?: return null
@@ -153,11 +182,13 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
         node is OwnerChain.SourcedVariable -> {
           val uprootableParent = ascendFromRootAndProject(node.parent) ?: return null
           node.origin.replaceInitializerBodyWith(uprootableParent.expr)
-          // @CompiledQuery annotation so that if the variable is access from another file etc... it can be used
-          node.origin.annotations = node.origin.annotations + makeLifter().makeCompiledQueryAnnotation(uprootableParent.uprootable.packedXR)
           uprootableParent.replantUprootableWith(node.call)
         }
-        else -> null
+        else -> {
+          //val expr = node.irElement
+          //logger.warn("WARNING: Could not process owner for the expression\n=================== Expr (${node::class.simpleName}) ===================\n${expr.dumpKotlinLike()}", expr)
+          null
+        }
       }
     }
 

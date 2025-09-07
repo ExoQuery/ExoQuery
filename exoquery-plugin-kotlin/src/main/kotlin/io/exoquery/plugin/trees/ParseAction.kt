@@ -134,6 +134,10 @@ object ParseAction {
         val bid = BID.Companion.new()
         binds.addRuntime(bid, expr)
         XR.TagForSqlAction(bid, TypeParser.of(expr), expr.loc)
+      },
+      // In some cases the action returns a single value in a return, in that case just go inside of it
+      case(Ir.Return[Is()]).thenThis { retExpr ->
+        parse(retExpr)
       }
     ) ?: parseError("Could not parse the action", expr)
 

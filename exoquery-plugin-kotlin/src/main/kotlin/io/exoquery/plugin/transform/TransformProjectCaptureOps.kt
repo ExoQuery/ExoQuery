@@ -3,38 +3,30 @@ package io.exoquery.plugin.transform
 import io.decomat.Is
 import io.decomat.case
 import io.decomat.match
-import io.exoquery.annotation.Seen
+import io.exoquery.annotation.WasSterilizedAdHoc
 import io.exoquery.parseError
 import io.exoquery.plugin.hasAnnotation
-import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.trees.*
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.expressions.IrGetField
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 context(CX.Scope, CX.Builder)
-fun IrSimpleFunction.setSeen() {
-  this.annotations = this.annotations + makeLifter().makeSeenAnnotation()
-}
-context(CX.Scope, CX.Builder)
-fun IrField.setSeen() {
+fun IrSimpleFunction.markSterilizedAdHoc() {
   this.annotations = this.annotations + makeLifter().makeSeenAnnotation()
 }
 
-context(CX.Scope, CX.Builder)
-fun IrSimpleFunction.wasSeen(): Boolean =
-  this.hasAnnotation<Seen>()
 
 context(CX.Scope, CX.Builder)
-fun IrField.wasSeen(): Boolean =
-  this.hasAnnotation<Seen>()
+fun IrSimpleFunction.wasSterilizedAdHoc(): Boolean =
+  this.hasAnnotation<WasSterilizedAdHoc>()
 
 context(CX.Scope)
 fun IrCall.replaceSingleReturnBodyWith(newReturn: IrExpression) {
@@ -45,10 +37,15 @@ fun IrCall.replaceSingleReturnBodyWith(newReturn: IrExpression) {
 context(CX.Scope)
 fun IrSimpleFunction.replaceSingleReturnBodyWith(newReturn: IrExpression) {
   val nonNullBody = body ?: parseError("The function body is null. This should not be possible here:\n${this.symbol.owner.dumpKotlinLike()}", this)
-  val blockBody = ((nonNullBody as? IrBlockBody) ?: parseError("The function body is not a block body. This should not be possible here:\n${this.symbol.owner.dumpKotlinLike()}", this))
-  val functionReturn = (blockBody.statements[0] as IrReturn)
-  functionReturn.value = newReturn
-  //blockBody.statements[0] = functionReturn
+
+  if (nonNullBody is IrBlockBody) {
+    val functionReturn = (nonNullBody.statements[0] as IrReturn)
+    functionReturn.value = newReturn
+  } else if (nonNullBody is IrExpressionBody) {
+    nonNullBody.expression = newReturn
+  } else {
+    parseError("The function body is not a block or expression body. This should not be possible here:\n${this.symbol.owner.dumpKotlinLike()}", this)
+  }
 }
 
 context(CX.Scope)
@@ -69,12 +66,6 @@ context(CX.Scope)
 fun IrVariable.replaceInitializerBodyWith(newReturn: IrExpression) {
   initializer = newReturn
 }
-
-context(CX.Scope)
-fun IrBody.findSingleReturnBodyExpression() =
-  this.match(
-    case(Ir.BlockBody.ReturnOnly[Ir.Call[Is()]]).then { (retExpr) -> retExpr }
-  )
 
 context(CX.Scope)
 fun IrField.findInitializerExpression() =

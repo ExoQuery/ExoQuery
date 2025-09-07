@@ -6,6 +6,7 @@ import io.exoquery.sql.SqlQueryModel
 import io.exoquery.xr.EncodingXR
 import io.exoquery.xr.XR
 import kotlinx.serialization.decodeFromHexString
+import kotlinx.serialization.encodeToHexString
 
 @ExoInternal
 fun unpackCodeEntities(expr: String): Code.Entities =
@@ -26,6 +27,29 @@ fun unpackQueryModelLazy(query: String): () -> SqlQueryModel =
 @ExoInternal
 fun unpackQuery(query: String): XR.Query =
   EncodingXR.protoBuf.decodeFromHexString<XR.Query>(query)
+
+@ExoInternal
+fun unpackXR(xr: String): XR =
+  EncodingXR.protoBuf.decodeFromHexString<XR>(xr)
+
+@ExoInternal
+fun XR.packXR(): String =
+  EncodingXR.protoBuf.encodeToHexString(this)
+
+@ExoInternal
+fun XR.Query.packQuery(): String =
+  EncodingXR.protoBuf.encodeToHexString(this)
+
+fun XR.Expression.packExpression(): String =
+  EncodingXR.protoBuf.encodeToHexString(this)
+
+@ExoInternal
+fun XR.Action.packAction(): String =
+  EncodingXR.protoBuf.encodeToHexString(this)
+
+@ExoInternal
+fun XR.Batching.packBatchAction(): String =
+  EncodingXR.protoBuf.encodeToHexString(this)
 
 @ExoInternal
 fun unpackQueryLazy(query: String): () -> XR.Query =

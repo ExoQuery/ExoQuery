@@ -158,6 +158,52 @@ fun IrDeclarationReference.showLineage(): String {
 }
 
 context(CX.Scope)
+fun IrDeclarationReference.showLineageAdvanced(): List<Pair<String, IrElement>> {
+  val collect = mutableListOf<Pair<String, IrElement>>()
+  fun IrVariable.declSymbol(): String = if (this.isVar) "var" else "val"
+
+  tailrec fun rec(elem: IrElement, recurseCount: Int): Unit {
+    val prefix =
+      "${
+        (elem as? IrFunction)?.let { "fun " + it.symbol.safeName + "(...)" }
+          ?: (elem as? IrVariable)?.let { "${it.declSymbol()} " + it.symbol.safeName }
+          ?: (elem as? IrValueParameter)?.let { "param " + it.symbol.safeName }
+          ?: (elem as? IrFile)?.let { "File(${it.nameWithPackage})" }
+          ?: (elem::class.simpleName ?: "Unknown")
+      }"
+
+    when {
+      recurseCount == 0 -> {
+        collect.add("${prefix}->RECURSION LIMIT HIT" to elem)
+        Unit
+      }
+      elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> {
+        collect.add("${prefix}->${elem.symbol.safeName}-in CapturedBlock" to elem)
+        Unit
+      }
+      elem is IrFunction -> {
+        collect.add("${prefix}->fun.Owner" to elem)
+        rec(elem.symbol.owner.parent, recurseCount - 1)
+      }
+      elem is IrValueParameter -> {
+        collect.add("${prefix}->param.Owner" to elem)
+        rec(elem.symbol.owner.parent, recurseCount - 1)
+      }
+      elem is IrVariable -> {
+        collect.add("${prefix}->${elem.declSymbol()}.Owner" to elem)
+        rec(elem.symbol.owner.parent, recurseCount - 1)
+      }
+      else ->
+        collect.add(prefix to elem)
+    }
+  }
+
+  rec(this.symbol.owner, 100)
+  return collect
+}
+
+
+context(CX.Scope)
 fun getSerializerForValueClass(type: IrType, location: CompilerMessageSourceLocation) =
   if (type.classOrNull?.owner?.isValue ?: false) {
     with (makeBuilderCtx()) {

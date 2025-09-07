@@ -37,6 +37,7 @@ dependencies {
 kotlin {
   compilerOptions {
     freeCompilerArgs.add("-Xwhen-guards")
+    optIn.add("io.exoquery.annotation.ExoInternal")
   }
 
   jvm()
@@ -101,6 +102,9 @@ if (kspEnabled)
     if (name != "kspCommonMainKotlinMetadata") {
       dependsOn("kspCommonMainKotlinMetadata")
     }
+    compilerOptions {
+      optIn.add("io.exoquery.annotation.ExoInternal")
+    }
   }
 
 // Add explicit dependency for KSP JVM tasks if they exist
@@ -112,7 +116,7 @@ if (kspEnabled)
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
   compilerOptions {
     freeCompilerArgs.add("-Xwhen-guards")
-    freeCompilerArgs.add("-opt-in=io.exoquery.annotation.ExoInternal")
+    optIn.add("io.exoquery.annotation.ExoInternal")
 
     // DOesn't work in KMP
     //freeCompilerArgs.add("-Xcontext-receivers")

@@ -44,10 +44,24 @@ enum class ExoCliOption(
     false
   ),
 
+  PARENT_SOURCE_SET_NAMES_OPTION(
+    "parentSourceSetNames",
+    "<parentSourceSetNames>",
+    "Comma-separated names of parent source sets",
+    false
+  ),
+
   QUERIES_BASE_DIR_OPTION(
     "queriesBaseDir",
     "<queriesBaseDir>",
     "path to sql queries base directory",
+    false
+  ),
+
+  STORED_BASE_DIR_OPTION(
+    "storedBaseDir",
+    "<storedBaseDir>",
+    "root path to StoredXRs.db files tree (containing subdirectories for each compiler target)",
     false
   ),
 
@@ -91,5 +105,12 @@ enum class ExoCliOption(
     "<true|false>",
     "Forces regeneration of all entities, even if they are up-to-date",
     false
-  )
+  ),
+
+  ENABLE_CROSS_FILE_STORE(
+    "enableCrossFileStore",
+    "<true|false>",
+    "Enables/disables compile-time queries across multiple files. SqlQuery/SqlExpression/SqlAction/SqlBatchAction instances used across files must be inline. They take advantage of a compile-time store called StoredXRs.db.",
+    false
+  ),
 }

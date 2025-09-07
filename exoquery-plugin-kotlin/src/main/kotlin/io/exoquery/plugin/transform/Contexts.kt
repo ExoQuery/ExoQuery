@@ -30,6 +30,8 @@ object CX {
 
   data class DebugDataConfig(val addParamDescriptions: Boolean = true)
 
+  data class StoredXRsScope(val storedXRs: CompileTimeStoredXRs)
+
   data class Scope(
     val currentExpr: IrElement,
     val logger: CompileLogger,
@@ -38,6 +40,7 @@ object CX {
     val compilerConfig: CompilerConfiguration,
     val options: ExoCompileOptions?,
     val scopeOwner: IrSymbol,
+    val storedXRsScope: CompileTimeStoredXRsScope,
     val currentDeclarationParent: IrDeclarationParent?,
     val debugDataConfig: DebugDataConfig = DebugDataConfig()
   ) {

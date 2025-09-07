@@ -1,6 +1,8 @@
 package io.exoquery
 
+import io.exoquery.annotation.CapturedDynamic
 import io.exoquery.annotation.ExoBuildFunctionLabel
+import io.exoquery.annotation.ExoInternal
 import io.exoquery.norm.NormalizeCustomQueries
 import io.exoquery.printing.PrintMisc
 import io.exoquery.sql.SqlIdiom
@@ -8,6 +10,7 @@ import io.exoquery.xr.RuntimeBuilder
 import io.exoquery.xr.XR
 
 data class SqlQuery<T>(override val xr: XR.Query, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfFunXR {
+  @ExoInternal
   fun determinizeDynamics(): SqlQuery<T> = DeterminizeDynamics().ofQuery(this)
 
   // Don't need to do anything special in order to convert runtime, just call a function that the TransformProjectCapture can't see through
@@ -34,7 +37,6 @@ data class SqlQuery<T>(override val xr: XR.Query, override val runtimes: Runtime
       SqlCompiledQuery.DebugData(Phase.Runtime, { this.xr }, { containerBuild.queryModel })
     )
   }
-
 
   fun <Dialect : SqlIdiom> build(): SqlCompiledQuery<T> = errorCap("The build function body was not inlined")
   fun <Dialect : SqlIdiom> build(@ExoBuildFunctionLabel label: String): SqlCompiledQuery<T> = errorCap("The build function body was not inlined")

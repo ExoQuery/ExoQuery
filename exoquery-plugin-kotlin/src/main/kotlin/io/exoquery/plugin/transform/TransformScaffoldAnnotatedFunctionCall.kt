@@ -1,33 +1,32 @@
 package io.exoquery.plugin.transform
 
-import io.decomat.Is
 import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.CapturedFunctionSketch
+import io.exoquery.annotation.paramKindParsed
 import io.exoquery.fansi.nullableAsList
 import io.exoquery.parseError
-import io.exoquery.plugin.extensionArgWithParamKinds
+import io.exoquery.plugin.findExtensionArgBasedOnParamKinds
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.logging.Messages
-import io.exoquery.plugin.printing.dumpSimple
+import io.exoquery.plugin.ownerFunction
+import io.exoquery.plugin.refinedStableIdentifier
 import io.exoquery.plugin.regularArgsWithParamKinds
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.source
-import io.exoquery.plugin.trees.ExtractorsDomain
+import io.exoquery.plugin.stableIdentifier
+import io.exoquery.plugin.trees.CrossFile
 import io.exoquery.plugin.trees.OwnerChain
 import io.exoquery.plugin.trees.PT.io_exoquery_util_scaffoldCapFunctionQuery
-import io.exoquery.plugin.trees.SqlQueryExpr
-import io.exoquery.plugin.trees.extractCapturedFunctionParamKinds
+import io.exoquery.plugin.trees.extractCapturedFunctionParamSketches
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
-import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
-import org.jetbrains.kotlin.ir.util.statements
 
 
 context(CX.Scope, CX.Builder)
@@ -62,34 +61,39 @@ class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransfor
 
   context(CX.Scope, CX.Builder, CX.Symbology)
   override fun transform(call: IrCall): IrExpression {
-
-    val paramKinds =
+    val paramSketches =
       // if we can get the param-kinds then return it, otherwise try to parse the parent captured-function
-      call.extractCapturedFunctionParamKinds() ?: run {
+      call.extractCapturedFunctionParamSketches() ?: run {
         val owner = call.symbol.owner
 
+        // =========== 9/7/2025 Since we're replacing the output with just a IrExpression (not something with a body) we don't care about the scope ===========
         // Need to keep track of the previous scope which is something like:
         // 'public final fun people (filter: kotlin.String): @[Captured] io.exoquery.SqlQuery<io.exoquery.MyPerson> declared in io.exoquery.MyCaptureAheadObject'
-        val prevScope = ((call.symbol.owner.body!!.statements[0]) as IrReturn).returnTargetSymbol
+        // val prevScope = ((call.symbol.owner.body!!.statements[0]) as IrReturn).returnTargetSymbol
+
+
         val transformer = TransformAnnotatedFunction(superTransformer)
         //logger.error("------------------ Going Into Owner (${sourceLabel}) ------------------\n${owner.dumpKotlinLike().prepareForPrintingAdHoc()}")
         transformer.transform(owner)
         //logger.error("------------------ Completed Owner (${sourceLabel}) ------------------\n${owner.dumpKotlinLike().prepareForPrintingAdHoc()}")
+
         // Then set back the scope since now it will be the wrong one (based on the current scope of the transformer)
         // which would be: 'local final fun <anonymous> ($this$select: io.exoquery.SelectClauseCapturedBlock): io.exoquery.MyPerson declared in io.exoquery.q'
         // This would compile just fine but at runtime yield the error: Exception in thread "main" java.lang.ClassFormatError: Illegal method name "<anonymous>" in class io/exoquery/MyCaptureAheadObject
-        ((call.symbol.owner.body!!.statements[0]) as IrReturn).returnTargetSymbol = prevScope
+
+        // =========== 9/7/2025 Since we're replacing the output with just a IrExpression (not something with a body) we don't care about the scope ===========
+        //((call.symbol.owner.body!!.statements[0]) as IrReturn).returnTargetSymbol = prevScope
 
         // TODO Maybe we should do this automatically in all situations in the TransformAnnotatedFunction
 
-
         // Transform the owner, then try getting the catpuredFunctionParamKinds again
-        call.extractCapturedFunctionParamKinds()
+        call.extractCapturedFunctionParamSketches()
       } ?: run {
         // Otherwise we attempted to transform the parent captured function but could not to throw an error
         parseError(Messages.cannotUseForwardReferenceCapturedFunction(call.symbol.safeName, call.symbol.owner.source() ?: call.symbol.owner.dumpKotlinLike()), call)
       }
 
+    val paramKinds = paramSketches.map { it.paramKindParsed() ?: parseError("Could not parse the param-kind '${it}' in captured-function `${call.symbol.safeName}`", call) }
 
     // CANNOT invoke call.regularArgs here because we have blanked-out the arguments in the TransformAnnotationFunction stage. That is why we saved
     // the original arguments a CapturedFunctionParamKinds annotation that we then use to infer the original argument types.
@@ -109,7 +113,7 @@ class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransfor
     //  }
     //""".trimMargin())
 
-    val extensionReceiverArg = call.extensionArgWithParamKinds(paramKinds)
+    val extensionReceiverArg = call.findExtensionArgBasedOnParamKinds(paramKinds)
 
     val zeroizedCallRaw = call.zeroisedArgs()
 
@@ -150,16 +154,61 @@ class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransfor
     // we need the scaffold to have the receiver-position element i.e. `a` to be the 1st argument
     // p.e. scaffoldCapFunctionQuery((Person, String) -> SqlQuery<Address> i.e. joinAddresses, args=[a, "123 someplace"])
 
+    fun makeTag() =
+      if (CrossFile.isCrossFile(zeroizedCallRaw.ownerFunction)) {
+        run {
+          val presentTag = run {
+            OwnerChain.ContainerType.identify(zeroizedCallRaw.ownerFunction.returnType)?.let { containerType ->
+              if (CrossFile.hasUprootableInStoreIndependent(zeroizedCallRaw.ownerFunction, containerType)) "present" else "absent"
+            } ?: "unknown-type"
+          }
+          " (cross-file/${presentTag})"
+        }
+      } else ""
+
     val zeroizedCall = run {
       //TransformProjectCapture(superTransformer).transform(zeroizedCallRaw)
       val ownershipChain = TransformProjectCapture2.buildOwnerChain(zeroizedCallRaw)
 
-      val ownershipRoot = ownershipChain.root
-      if (ownershipRoot == OwnerChain.Root.Unknown)
-        parseError("Invalid ownership chain constructed when attempting to scaffold the captured-function call of ${call.symbol.safeName} (source was Unknown).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}", zeroizedCallRaw)
-      if (ownershipRoot is OwnerChain.Root.Virgin)
-        parseError("Invalid ownership chain constructed when attempting to scaffold the captured-function call of ${call.symbol.safeName} (source was a Unprocessed Captured Expression).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}", zeroizedCallRaw)
+      if (ownershipChain.root is OwnerChain.Root.Unknown)
+        parseError("Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was Unknown).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifier()}", zeroizedCallRaw, true)
+      if (ownershipChain.root is OwnerChain.Root.Virgin)
+        parseError(
+          "Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was a Unprocessed Captured Expression).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifier()}",
+          zeroizedCallRaw,
+          true
+        )
 
+      when (val rootNode = ownershipChain.root) {
+        is OwnerChain.Root.SourcedPreviouslyCompiledFunction -> {
+          // If we're in the case where the captured function was compiled in a previous compilation-unit (i.e. cross-file) then the TransformAnnotatedFunction
+          // phase has not been applied to it hence it's inputs have not been removed (a.k.a. sterilized yet). This is a function of the fact that
+          // the backend IR is ephemeral and each time gets reconstructed directly from the frontend-IR. That means that if the captured function is coming from an IrExternalPackageFragment
+          // then it has not been transformed yet. So we need to sterilize the inputs here. This is called "Ad-Hoc serialization" because we are sterilizing the captured-function not
+          // when we visit it in a transformer but rather when we see a call-site of it.
+          // (Note that if the TransformScaffoldAnnotatedFunctionCall is being called on multiple call-sites of the captured-function then we need to make sure that we do not
+          // ad-hoc serialize it multiple times hence the check for wasSterilizedAdHoc)
+          val wasSterilizedAdHoc = rootNode.origin.wasSterilizedAdHoc()
+          val hasSketch = rootNode.origin.hasAnnotation<CapturedFunctionSketch>()
+          when {
+            !wasSterilizedAdHoc && hasSketch ->
+              // In some odd incremental-recompile cases the input-sketch has already been added but the function arguments have not been removed (`sterilizeInputs` is done in the TransformAnnotatedFunction phase)
+              // then we remove them here i.e. sterilize the function. We add the annotation @WasSterilizedAdHoc to indicate that we processed the function this way.
+              // This is indeed an odd situations because nowhere in the TransformAnnotatedFunction phase do we add the sketch without also sterilizing the inputs. My guess is that during some incremental recompile
+              // situations, the TransformAnnotatedFunction is called on a function adding the CapturedFunctionSketch but the original arguments are being read in from the IR.
+              TransformAnnotatedFunction.sterilizeInputs(rootNode.origin)
+            !wasSterilizedAdHoc -> {
+              TransformAnnotatedFunction.addInputSketch(rootNode.origin)
+              TransformAnnotatedFunction.sterilizeInputs(rootNode.origin)
+            }
+            else -> {} // No need to do anything, it was already sterilized and has a sketch
+          }
+          rootNode.origin.markSterilizedAdHoc()
+        }
+        else -> {}
+      }
+
+      // Continue to process the rest of the chain i.e. all child calls that happened to the annotated function
       TransformProjectCapture2.processOwnerChain(ownershipChain, superTransformer, true)
         ?: parseError("Could not process the ownership chain of the captured-function call of ${call.symbol.safeName}.\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}", zeroizedCallRaw)
     }

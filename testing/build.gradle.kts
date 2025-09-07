@@ -10,6 +10,10 @@ plugins {
 }
 
 kotlin {
+  compilerOptions {
+    optIn.add("io.exoquery.annotation.ExoInternal")
+  }
+
   jvm()
   linuxX64()
   //@OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
@@ -76,6 +80,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
       "-P",
       "plugin:io.exoquery.terpal-plugin:traceWrappers=true"
     )
+    optIn.add("io.exoquery.annotation.ExoInternal")
+
     // Otherwise will have: Could not resolve io.exoquery:pprint-kotlin:2.0.1.
     // Incompatible because this component declares a component, compatible with Java 11 and the consumer needed a component, compatible with Java 8
     java {
@@ -95,6 +101,7 @@ exoQuery {
 //  outputString.set("%{br}==== Compiled %{kind} in %{total}ms: ====%{br}%{sql}")
   codegenDrivers.add("org.postgresql:postgresql:42.7.3")
   this.enableCodegenAI = true
+  //enableCrossFileStore = false // uncomment to disable cross-file storage (enabled by default)
 }
 
 

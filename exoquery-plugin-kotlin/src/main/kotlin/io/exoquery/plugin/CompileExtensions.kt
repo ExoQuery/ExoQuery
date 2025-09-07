@@ -5,13 +5,13 @@ import io.decomat.case
 import io.decomat.match
 import io.exoquery.*
 import io.exoquery.annotation.CapturedFunction
-import io.exoquery.annotation.CapturedFunctionParamKinds
+import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.annotation.ChangeReciever
+import io.exoquery.annotation.ParamKind
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.Caller
 import io.exoquery.plugin.transform.createLambda0
 import io.exoquery.plugin.trees.Ir
-import io.exoquery.plugin.trees.ParamKind
 import io.exoquery.plugin.trees.fullPathOfBasic
 import io.exoquery.plugin.trees.simpleTypeArgs
 import io.exoquery.xr.XR
@@ -99,7 +99,7 @@ val IrCall.argumentsWithParameters get() = run {
 
 fun IrCall.regularArgsWithParamKinds(paramKinds: List<ParamKind>) =
   (arguments zip paramKinds).filter { (arg, kind) -> kind == ParamKind.Regular }.map { (arg, _) -> arg }
-fun IrCall.extensionArgWithParamKinds(paramKinds: List<ParamKind>): IrExpression? =
+fun IrCall.findExtensionArgBasedOnParamKinds(paramKinds: List<ParamKind>): IrExpression? =
   (arguments zip paramKinds).find { (arg, kind) -> kind == ParamKind.Extension }?.first
 
 
@@ -384,7 +384,7 @@ fun IrFunction.isCapturedFunction() =
   this.hasAnnotation<CapturedFunction>()
 
 fun IrFunction.isVirginCapturedFunction() =
-  this.hasAnnotation<CapturedFunction>() && !this.hasAnnotation<CapturedFunctionParamKinds>()
+  this.hasAnnotation<CapturedFunction>() && !this.hasAnnotation<CapturedFunctionSketch>()
 
 inline fun IrElement.hasAnnotation(fqName: FqName) =
   when (this) {
@@ -500,25 +500,29 @@ fun IrElement.sourceOrDump() =
 
 // Best-effort to get the source of the file
 context(CX.Scope) fun IrElement.source(): String? = run {
-  val range = TextRange(this.startOffset, this.endOffset)
+  try {
+    val range = TextRange(this.startOffset, this.endOffset)
 
-  fun getFromFirSource() =
-    (currentFile.metadata as? FirMetadataSource.File)
-      ?.fir
-      ?.source
-      ?.getElementTextInContextForDebug()
-      ?.let { range.substring(it) }
+    fun getFromFirSource() =
+      (currentFile.metadata as? FirMetadataSource.File)
+        ?.fir
+        ?.source
+        ?.getElementTextInContextForDebug()
+        ?.let { range.substring(it) }
 
-  fun getFromKtFile() =
-    currentFile.getKtFile()?.let { ktFile ->
-      ktFile.textRange.cutOut(range).let { cutOut ->
-        ktFile.text.let { textValue ->
-          cutOut.substring(textValue)
+    fun getFromKtFile() =
+      currentFile.getKtFile()?.let { ktFile ->
+        ktFile.textRange.cutOut(range).let { cutOut ->
+          ktFile.text.let { textValue ->
+            cutOut.substring(textValue)
+          }
         }
       }
-    }
 
-  getFromFirSource() ?: getFromKtFile()
+    getFromFirSource() ?: getFromKtFile()
+  } catch (e: Throwable) {
+    null
+  }
 }
 
 context(CX.Scope)

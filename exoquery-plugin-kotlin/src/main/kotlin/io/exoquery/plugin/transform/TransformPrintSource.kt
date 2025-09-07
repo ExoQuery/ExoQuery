@@ -5,22 +5,38 @@ import io.decomat.case
 import io.decomat.on
 import io.exoquery.annotation.ExoExtras
 import io.exoquery.parseError
+import io.exoquery.plugin.fullName
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.location
 import io.exoquery.plugin.logging.Messages
+import io.exoquery.plugin.ownerFunction
 import io.exoquery.plugin.printing.dumpSimple
+import io.exoquery.plugin.safeName
+import io.exoquery.plugin.source
 import io.exoquery.plugin.trees.Elaborate
 import io.exoquery.plugin.trees.Ir
 import io.exoquery.plugin.trees.Parser
 import io.exoquery.plugin.trees.TypeParser
+import io.exoquery.plugin.trees.showLineageAdvanced
 import io.exoquery.xr.XRType
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.IrSymbolOwner
 import org.jetbrains.kotlin.ir.declarations.path
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrDeclarationReference
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.types.IrSimpleType
+import org.jetbrains.kotlin.ir.types.addAnnotations
+import org.jetbrains.kotlin.ir.types.impl.toBuilder
+import org.jetbrains.kotlin.ir.types.removeAnnotations
+import org.jetbrains.kotlin.ir.util.IdSignatureRenderer
+import org.jetbrains.kotlin.ir.util.allParameters
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
@@ -41,6 +57,21 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
     with(compileLogger) {
       with(makeLifter()) {
         on(expression).match(
+          case(Ir.Call.FunctionUntethered1[Is("io.exoquery.printLineage"), Is()]).then { _, expr ->
+            (expr as? IrDeclarationReference)?.let { declRef ->
+              val line = expr.showLineageAdvanced().map { (heading, elem) ->  Messages.LineageElementDescription(heading, elem) }.joinToString("\n\n")
+              compileLogger.warn("========== Printing Lineage of ${expression.source()}\n$line")
+              val output = line.lift()
+
+              output
+            } ?: parseError("printLineage(..) only works on direct references to declarations, not expressions like:\n${expr.dumpKotlinLike()}\n================ IR ================\n${expr.dumpSimple()}", expr)
+          },
+
+          case(Ir.Call.FunctionUntethered0[Is("io.exoquery.printStoredXRs")]).then { _ ->
+            val printedScope = storedXRsScope.scoped { storedXRs.printStored() }
+            builder.irString(printedScope)
+          },
+
           case(Ir.Call.FunctionUntethered1[Is("io.exoquery.printSource"), Ir.FunctionExpression.withReturnOnlyBlock[Is()]]).then { _, (ret) ->
             transformPrintSource(MatchedType.Single(ret))
           },

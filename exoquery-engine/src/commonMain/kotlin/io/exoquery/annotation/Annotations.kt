@@ -5,29 +5,18 @@ import io.exoquery.sql.SqlIdiom
 import io.exoquery.util.TraceType
 import kotlin.reflect.KClass
 
-/**
- * This annotation means that the construct e.g. the SqlQuery represents a value captured during compile-time by the
- * ExoQuery system (via the parser and transformers). It cannot be specified by the user.
- */
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.BINARY)
-annotation class CapturedFunction
-
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class WindowFun(val name: String)
 
 // Internal. Identifies which functions ExoQuery transformations have seen already
+@ExoInternal
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.BINARY)
-annotation class Seen
+annotation class WasSterilizedAdHoc
 
-@Retention(AnnotationRetention.BINARY)
-annotation class CompiledQuery(val value: String)
-
-@Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.LOCAL_VARIABLE)
-@Retention(AnnotationRetention.BINARY)
-annotation class CapturedDynamic
-
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER)
 @Retention(AnnotationRetention.BINARY)
 annotation class Dsl
@@ -35,12 +24,6 @@ annotation class Dsl
 @Target(AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoGoldenTest
-
-// TODO annotate build and other build functions with this. (maybe even have a BuildPretty?). Make a warning
-//      if a build function is called from a capture function that this is invalid
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.BINARY)
-annotation class ExoBuildFunction
 
 /**
  * Use it to trace query compilation like this:
@@ -56,6 +39,7 @@ annotation class TracesEnabled(vararg val traceType: KClass<out TraceType>)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoGoldenOverride
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoExtras
@@ -67,164 +51,168 @@ sealed interface DslFunctionCallType {
   object QueryAggregator : DslFunctionCallType
 }
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class DslFunctionCall(val type: KClass<out DslFunctionCallType>, val name: String = "")
 
+@ExoInternal
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER)
 @Retention(AnnotationRetention.BINARY)
 annotation class DslNestingIgnore
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class DslBooleanExpression
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ParamStatic(val type: KClass<out ParamSerializer<out Any>>)
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ParamCtx
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ParamPrimitive
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ParamCustom
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ParamCustomValue
 
 // Used internally
-annotation class CapturedFunctionParamKinds(vararg val types: String)
+@ExoInternal
+annotation class CapturedFunctionSketch(vararg val sketch: ParamSketch) {
+  @ExoInternal
+  companion object {
+  }
+}
+@ExoInternal
+annotation class ParamSketch(val paramKind: String, val stableIdent: String) {
+  @ExoInternal
+  companion object {
+    @ExoInternal
+    fun from(paramKind: ParamKind, stableIdent: String) =
+      ParamSketch(paramKind.name, stableIdent)
+  }
+}
 
-/**
- * Used to annotate a type so that the ExoQuery system knows that it is a value (i.e. a value-XRType)
- * that needs to be encoded/decoded itself and not further broken down into its components during
- * select-query expasion. For example given something like this:
- * ```
- * data class MyDate(val year: Int, val month: Int, val day: Int)
- * data class Customer(name: String, lastOrder: MyDate)
- * capture { Table<Customer>() }
- * // Would be broken down into something like:
- * // SELECT name, lastOrder_year, lastOrder_month, lastOrder_day FROM Customer
- * // However, if we annotate MyDate with ExoValue i.e. data class `Customer(name: String, lastOrder: @ExoValue MyDate)`
- * // then the query will be:
- * // SELECT name, lastOrder FROM Customer
- * ```
- * During deserialization the system will expect to have a serializer dynamcially configured for MyDate (NOT an encoder
- * since ExoValue does not imply the value in encoding is contextual). In order to both mark the property as a ExoQuery value
- * and mark it as Contextual (telling the system to expect a direct decoder for MyValue) annotate the type as @Contextual instead
- * i.e. `data class Customer(name: String, lastOrder: @Contextual MyDate)`
- *
- * Alternatively, it can be specified on the property itself e.g. `data class Customer(name: String, @ExoValue lastOrder: MyDate)`
- */
-@Target(AnnotationTarget.TYPE, AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
-@Retention(AnnotationRetention.BINARY)
-annotation class ExoValue
+fun ParamSketch.paramKindParsed(): ParamKind? =
+  ParamKind.fromString(paramKind)
 
 
-/**
- * Use this to change the name of a column in a query if you do not want to use
- * `@SerialName` from kotlinx.serialization. This is useful if you want to reuse
- * the same generated class serializer for other situations (e.g. JSON serialization).
- * Use it like this:
- * ```
- * data class Person(@ExoField("first_name") val firstName: String, @ExoField("last_name") val lastName: String)
- * // Then when you capture a query like:
- * capture { Table<Person>().filter { it.firstName == "Joe" }
- * // It will come out as:
- * // SELECT first_name, last_name FROM Person WHERE first_name = 'Joe'
- * ```
- * INTERNAL NOTE:
- * Using a Target of AnnotationTarget.FIELD will place this on the backing field and it will need to be retrieved as:
- *  `irCall.symbol.owner.correspondingPropertySymbol?.owner?.backingField?.annotations`
- *  Instead of just:
- *  `irCall .symbol.owner.correspondingPropertySymbol?.owner?.annotations`
- */
-@Target(AnnotationTarget.PROPERTY)
-@Retention(AnnotationRetention.BINARY)
-annotation class ExoField(val name: String)
+@ExoInternal
+sealed interface ParamKind {
+  val name: String
 
-@Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.BINARY)
-annotation class ExoEntity(val name: String)
+  data object Dispatch : ParamKind { override val name = "Dispatch" }
+  data object Context : ParamKind { override val name = "Context" }
+  data object Extension : ParamKind { override val name = "Extension" }
+  data object Regular : ParamKind { override val name = "Regular" }
+
+  companion object {
+    fun fromString(name: String): ParamKind? =
+      when (name) {
+        Dispatch.name -> Dispatch
+        Context.name -> Context
+        Extension.name -> Extension
+        Regular.name -> Regular
+        else -> null
+      }
+
+    val values = listOf(Dispatch, Context, Extension, Regular)
+  }
+}
 
 // Using annotations to identify what functions capture queries/expressions/etc...
 // instead of parsing them by name is a more flexible approach.
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCapture
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCodegenFunction
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCodegenReturnFunction
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCodegenJustReturnFunction
 
+@ExoInternal
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoBuildFunctionLabel
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoBuildDatabaseSpecific(val dialect: KClass<out SqlIdiom>)
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoBuildRoomSpecific
 
-@Target(AnnotationTarget.FILE)
-@Retention(AnnotationRetention.BINARY)
-annotation class ExoRoomInterface
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.BINARY)
-annotation class ExoBuildDatabaseSpecificParent
-
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCaptureSelect
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCaptureBatch
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoCaptureExpression
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoUseExpression
 
-
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class FlatJoin
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class FlatJoinLeft
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoInsert
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoUpdate
 
+@ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoDelete

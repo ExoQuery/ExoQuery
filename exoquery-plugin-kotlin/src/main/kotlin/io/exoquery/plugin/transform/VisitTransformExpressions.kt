@@ -1,6 +1,6 @@
 package io.exoquery.plugin.transform
 
-import io.decomat.Is
+import io.decomat.*
 import io.exoquery.ParseError
 import io.exoquery.TransformXrError
 import io.exoquery.config.ExoCompileOptions
@@ -8,6 +8,9 @@ import io.exoquery.generation.Code
 import io.exoquery.plugin.location
 import io.exoquery.plugin.logging.CompileLogger
 import io.exoquery.plugin.trees.ContainerExpr
+import io.exoquery.plugin.trees.CrossFile
+import io.exoquery.plugin.trees.OwnerChain
+import io.exoquery.plugin.trees.SqlQueryExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocationWithRange
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
@@ -18,10 +21,12 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.statements
 
 typealias FileQueryAccum = FileAccum<PrintableQuery>
 typealias FileCodegenAccum = FileAccum<Code.Entities>
@@ -38,13 +43,14 @@ data class VisitorContext(val symbolSet: SymbolSet, val queriesAccum: FileQueryA
 class VisitTransformExpressions(
   private val context: IrPluginContext,
   private val config: CompilerConfiguration,
+  private val storedXRsScope: CompileTimeStoredXRsScope,
   private val exoOptions: ExoCompileOptions?
 ) : IrElementTransformerWithContext<VisitorContext>() {
 
   fun makeCompileLogger(currentExpr: IrElement) =
     CompileLogger.invoke(config, currentFile, currentExpr)
 
-  fun makeScope(currentExpr: IrElement, scopeOwner: IrSymbol, currentDeclarationParent: IrDeclarationParent?) = CX.Scope(
+  fun makeScope(currentExpr: IrElement, scopeOwner: IrSymbol, currentDeclarationParent: IrDeclarationParent?, storedXRsScope: CompileTimeStoredXRsScope) = CX.Scope(
     currentExpr = currentExpr,
     logger = makeCompileLogger(currentExpr),
     currentFile = currentFile,
@@ -52,7 +58,8 @@ class VisitTransformExpressions(
     compilerConfig = config,
     options = exoOptions,
     scopeOwner = scopeOwner,
-    currentDeclarationParent = currentDeclarationParent
+    currentDeclarationParent = currentDeclarationParent,
+    storedXRsScope = storedXRsScope,
   )
 
   context (CX.Symbology, CX.QueryAccum)
@@ -118,7 +125,7 @@ class VisitTransformExpressions(
     // of the compilation phases).
     //if (file.hasAnnotation<ExoGoldenTest>())
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scope = makeScope(file, scopeOwner, currentDeclarationParent)
+    val scope = makeScope(file, scopeOwner, currentDeclarationParent, storedXRsScope)
 
     val sanityCheck = currentFile.path == file.path
     if (!sanityCheck) {
@@ -148,7 +155,7 @@ class VisitTransformExpressions(
 
   override fun visitFunctionNew(declaration: IrFunction, data: VisitorContext): IrStatement {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scopeContext = makeScope(declaration, scopeOwner, currentDeclarationParent)
+    val scopeContext = makeScope(declaration, scopeOwner, currentDeclarationParent, storedXRsScope)
     val builderContext = CX.Builder(scopeContext)
     val runner = ScopedRunner(scopeContext, builderContext, data)
 
@@ -157,7 +164,12 @@ class VisitTransformExpressions(
       runInContext(scopeContext, builderContext, data) {
         when {
           transformAnnotatedFunction.matches(declaration) -> transformAnnotatedFunction.transform(declaration)
-          else -> super.visitFunctionNew(declaration, data)
+          else -> {
+            super.visitFunctionNew(declaration, data).also {
+              // If it is an inline function that returns a SqlQueryExpr.Uprootable then we need to store it as a cross-file function
+              VisitCrossFileFunctionHelper.putUprootableIfCrossFile(it)
+            }
+          }
         }
       }
     }
@@ -185,7 +197,7 @@ class VisitTransformExpressions(
   // TODO move this to visitGetValue? That would be more efficient but what other things might we wnat to transform?
   override fun visitExpression(expression: IrExpression, data: VisitorContext): IrExpression {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scopeContext = makeScope(expression, scopeOwner, currentDeclarationParent)
+    val scopeContext = makeScope(expression, scopeOwner, currentDeclarationParent, storedXRsScope)
 
     // We should not be transforming containers that have already been transformed. TODO make them all in to one check and don't check if they're case-class-constructor multiple times!
     with (scopeContext) {
@@ -218,7 +230,7 @@ class VisitTransformExpressions(
 
   override fun visitCall(expression: IrCall, data: VisitorContext): IrElement {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scopeCtx = makeScope(expression, scopeOwner, currentDeclarationParent)
+    val scopeCtx = makeScope(expression, scopeOwner, currentDeclarationParent, storedXRsScope)
     val stack = RuntimeException()
 
 

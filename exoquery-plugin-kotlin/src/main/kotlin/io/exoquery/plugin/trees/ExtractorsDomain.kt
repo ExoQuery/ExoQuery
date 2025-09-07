@@ -5,7 +5,6 @@ import io.exoquery.*
 import io.exoquery.annotation.*
 import io.exoquery.generation.Code
 import io.exoquery.plugin.*
-import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.transform.BinaryOperators
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.ReceiverCaller
@@ -21,7 +20,6 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.isString
 import org.jetbrains.kotlin.ir.types.isUnit
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
-
 
 object ExtractorsDomain {
   context(CX.Scope)
@@ -102,7 +100,7 @@ object ExtractorsDomain {
           // (allow un-annotated calls with zero-args to go through because frequently things like case-class fields will show up as args)
           case(Ir.Call[Is()]).thenIf { call ->
             call.isExternal() && expr.isSqlQuery() &&
-                (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedFunction>()
+                (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) //|| call.someOwnerHasAnnotation<CapturedDynamic>() <- not currently supported
           }.then { _ -> true },
           case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true },
           case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true }
@@ -301,11 +299,22 @@ object ExtractorsDomain {
       }
     }
 
+    object CaptureQueryOrSelect {
+      context(CX.Scope) operator fun <AP : Pattern<IrCall>> get(call: AP) =
+        customPattern1("Call.CaptureQuery", call) { it: IrCall ->
+          if ((it.ownerHasAnnotation<ExoCapture>() || it.ownerHasAnnotation<ExoCaptureSelect>()) && it.type.isClass<SqlQuery<*>>()) {
+            Components1(it)
+          } else {
+            null
+          }
+        }
+    }
+
     object CaptureQuery {
       object LambdaBody {
         context(CX.Scope) operator fun <AP : Pattern<IrBlockBody>> get(call: AP) =
           customPattern1("Call.CaptureQuery.LambdaBody", call) { it: IrCall ->
-            if (it.ownerHasAnnotation<ExoCapture>() && it.type.isClass<SqlQuery<*>>()) {
+            if ((it.ownerHasAnnotation<ExoCapture>()) && it.type.isClass<SqlQuery<*>>()) {
               val arg = it.regularArgs.first() ?: parseError("CaptureQuery must have a single argument but was: ${it.regularArgs.map { it?.dumpKotlinLike() }}", it)
               arg.match(
                 // printExpr(.. { stuff }: IrFunctionExpression  ..): FunctionCall
@@ -321,7 +330,7 @@ object ExtractorsDomain {
 
       context(CX.Scope) operator fun <AP : Pattern<IrCall>> get(call: AP) =
         customPattern1("Call.CaptureQuery", call) { it: IrCall ->
-          if (it.ownerHasAnnotation<ExoCapture>() && it.type.isClass<SqlQuery<*>>()) {
+          if ((it.ownerHasAnnotation<ExoCapture>()) && it.type.isClass<SqlQuery<*>>()) {
             Components1(it)
           } else {
             null
@@ -613,21 +622,7 @@ sealed interface CallData {
 }
 
 context(CX.Scope)
-fun IrCall.extractCapturedFunctionParamKinds(): List<ParamKind>? =
-  this.symbol.owner.getAnnotationArgsIfExists<CapturedFunctionParamKinds>()?.let { constructorArgs ->
-    constructorArgs.first().let { arg ->
-      val vararg =
-        arg as? IrVararg ?: parseError(
-          "CapturedFunctionArgTypes annotation must have a single argument that is a vararg of ArgType but instead it was: ${arg?.dumpSimple()}. This is a bug in the plugin, please report it.",
-          this
-        )
-      vararg.elements.map { elem ->
-        val str = (elem as? IrConst ?: parseError("CapturedFunctionArgTypes Element ${elem.dumpKotlinLike()} was not a const string"))
-          .value.toString()
-        ParamKind.fromString(str) ?: parseError(
-          "CapturedFunctionArgTypes Element ${elem.dumpKotlinLike()} was not a valid ArgType, expected one of: ${ParamKind.values.joinToString(", ")}",
-          this
-        )
-      }
-    }
+fun IrCall.extractCapturedFunctionParamSketches(): List<ParamSketch>? =
+  this.symbol.owner.getAnnotation<CapturedFunctionSketch>()?.let { constructor ->
+    Unlifter.unliftCapturedFunctionSketch(constructor).sketch.toList()
   }

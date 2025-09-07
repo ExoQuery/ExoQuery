@@ -63,4 +63,9 @@ class GeneratedEntitiesDirConventions(val ext: ExoQueryGradlePluginExtension, va
 
   fun generatedEntitiesKotlin(project: Project, sourceSetName: String, target: String) =
     generatedEntitiesSubdir(project, sourceSetName, target).let { (dir, type) -> dir.map { it.dir("kotlin") } to type }
+
+  val storedDir = project.generatedRootDir.map { it.dir("stored") }
+
+  fun storedSubdir(targetName: String) =
+    storedDir.map { it.dirIfNonEmpty(targetName) }
 }

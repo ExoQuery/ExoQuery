@@ -11,20 +11,31 @@ import io.exoquery.SqlBatchAction
 import io.exoquery.SqlExpression
 import io.exoquery.SqlQuery
 import io.exoquery.annotation.CapturedFunction
+import io.exoquery.config.enableCrossFileStoreOrDefault
 import io.exoquery.parseError
+import io.exoquery.plugin.fullName
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.isClass
 import io.exoquery.plugin.printing.dumpSimple
+import io.exoquery.plugin.safeName
 import io.exoquery.plugin.transform.CX
 import io.exoquery.pprint.PPrinterConfig
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationBase
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
+import org.jetbrains.kotlin.ir.declarations.IrExternalPackageFragment
 import org.jetbrains.kotlin.ir.declarations.IrField
+import org.jetbrains.kotlin.ir.declarations.IrFile
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetField
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
-import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.util.kotlinFqName
 
 
 // In situations where you've got
@@ -63,6 +74,23 @@ sealed interface OwnerChain {
     is SourcedField -> parent.root
     is SourcedVariable -> parent.root
   }
+
+  val irElement get() =
+    when (this) {
+      is SourcedFunction -> call
+      is SourcedField -> call
+      is SourcedVariable -> call
+      is Root.VirginQuery -> call
+      is Root.VirginExpr -> call
+      is Root.VirginAction -> call
+      is Root.VirginActionBatch -> call
+      is Root.UprootableQuery -> expr
+      is Root.UprootableExpr -> expr
+      is Root.UprootableAction -> expr
+      is Root.UprootableActionBatch -> expr
+      is Root.SourcedPreviouslyCompiledFunction -> call
+      is Root.Unknown -> expr
+    }
 
   fun show(config: PPrinterConfig = PPrinterConfig()) = CaptureOwnerPrint(config).invoke(this)
 
@@ -110,7 +138,33 @@ sealed interface OwnerChain {
     data class VirginActionBatch(val call: IrCall) : Virgin, Root
 
     // I.e. a dynamic query or otherwise unknown-at-runtime element
-    data object Unknown : Root
+    data class Unknown(val expr: IrExpression) : Root
+
+    /**
+     * A function call referring to a SqlQuery/SqlExpression/SqlAction/SqlBatchAction function that was compiled in a previous compilation.
+     * It's only .parent property will actually be a IrExternalPackageFragment. Everything else is just scaffolding to keep the types straight.
+     * For example.
+     * ```
+     * ModuleA: foo.kt
+     * inline fun getPeopleQuery(): SqlQuery<Person> = capture { Table<Person>() }
+     *
+     * ModuleB: bar.kt
+     * fun getPeopleNamedJoe(): SqlQuery<Person> = capture { getPeopleQuery().filter { it.name == "Joe" } }
+     *
+     * Note that cross-file functions MUST be inline functions the reason for this is the following. The backend IR is ephemeral
+     * therefore we cannot stored any kind of compile-time extracted IR in a persistent way inside of it. Normally that is okay
+     * since Kotlin compiles a whole file at a time so we can just store it in the IR of the function body itself. However, when crossing file boundaries
+     * we cannot do that because the other file might not be compiled at the same time. Therefore we need to store it in some
+     * kind of persistent store which is the StoredXRs.db. However, if we were to allow non-inline functions to be cross-file then we would have no way
+     * of updating a call-site of function (i.e. the `getPeopleQuery()` call in `getPeopleNamedJoe()`) to have the new version for the `getPeopleQuery()` function.
+     * Therefore we force the user to make `getPeopleQuery()` an inline function which will (firstly update the StoredXRs.db with the new version)
+     * and then use this StoreXRs.db in the same-time compilation of `getPeopleNamedJoe()`.
+     *
+     * Also note that it is okay of `getPeopleNamedJoe()` is compiled before `getPeopleQuery()` in subsequent compilations. The CaptureOwner pipeline
+     * will travel up the `getPeopleQuery()` call and find the `inline fun getPeopleQuery()` declaration and reprocess it normally. In that situation
+     * the StoredXRs.db will not be used at all! (It will only be updated with the new value of the XR coming from `inline fun getPeopleQuery()`)
+     */
+    data class SourcedPreviouslyCompiledFunction(val call: IrCall, val origin: IrSimpleFunction, val isCaptured: Boolean, val containerType: ContainerType, val parent: OwnerChain.Root.Uprootable): Root
   }
 
   sealed interface ContainerType {
@@ -122,6 +176,10 @@ sealed interface OwnerChain {
     companion object {
       context(CX.Scope)
       fun identify(expr: IrExpression): ContainerType? =
+        identify(expr.type)
+
+      context(CX.Scope)
+      fun identify(expr: IrType): ContainerType? =
         when {
           expr.isClass<SqlExpression<*>>() -> ContainerType.Expr
           expr.isClass<SqlQuery<*>>() -> ContainerType.Query
@@ -140,48 +198,102 @@ sealed interface OwnerChain {
     private fun IrExpression.isContainerOfXR(): Boolean =
       this.type.isClass<SqlExpression<*>>() || this.type.isClass<SqlQuery<*>>() || this.type.isClass<SqlAction<*, *>>() || this.type.isClass<SqlBatchAction<*, *, *>>()
 
+
     context(CX.Scope)
     fun buildFrom(expression: IrExpression): OwnerChain {
-      val exprType = ContainerType.identify(expression) ?: return Root.Unknown
+      val exprType = ContainerType.identify(expression) ?: return run {
+        logger.warn("------------- Early Exit for -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpKotlinLike() } ?: "<NOT A CALL>"}\n------------- No Match -------------")
+        Root.Unknown(expression)
+      }
       return expression.match(
         // Bubble up to the owner call, make sure to skip captured-functions for now since they need to be handled slightly differently (i.e. the call needs to be scaffolded)
         case(Ir.Call[Is()]).thenIf { call -> expression.isContainerOfXR() && call.symbol.owner is IrSimpleFunction }.then { call ->
           val owner = call.symbol.owner
+          // TODO what about a class-member? (need to check the parent's parent?) Also need to do this for an IrField
+          // ===== SPECIAL CASE: Specifically for IrFunctions and IrFields, need to check that if it is a cross-file-compatible function (i.e. it's an inline function) if not immediately need to throw an error =====
+          CrossFile.validatePossibleCrossFileFunction(owner, expression)
+          // ===== Continue with the normal processing =====
           val isCap = owner.hasAnnotation<CapturedFunction>()
-          owner.match(
-            caseEarly(exprType == ContainerType.Query)(Ir.SimpleFunction.withReturnExpression[Is()]).then { nextStep ->
+
+          //logger.warn("------------- IN OUTER MATCH FOR -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpKotlinLike() } ?: "<NOT A CALL>"}")
+          val out = owner.match(
+            caseEarly(exprType == ContainerType.Query)(Ir.SimpleFunction.withReturnOnlyExpression[Is()]).then { nextStep ->
+              //logger.warn("----------------------- OWNER CHAIN STEP for ${call.symbol.safeName} -----------------------\nCALL IS:\n${call.dumpKotlinLike()}\nCALL OWNER IS:\n${owner.dumpKotlinLike()}")
               nextStep.match(
-                case (SqlQueryExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.UprootableQuery(nextStep, it)) },
-                case (ExtractorsDomain.Call.CaptureQuery[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.VirginQuery(it)) }
+                case (SqlQueryExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, it.withReplantExpr(nextStep)) },
+                case (ExtractorsDomain.Call.CaptureQueryOrSelect[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.VirginQuery(it)) }
               )
               ?: SourcedFunction(call, owner, isCap, exprType, buildFrom(nextStep))
             },
-            caseEarly(exprType == ContainerType.Expr)(Ir.SimpleFunction.withReturnExpression[Is()]).then { nextStep ->
+            caseEarly(exprType == ContainerType.Expr)(Ir.SimpleFunction.withReturnOnlyExpression[Is()]).then { nextStep ->
               nextStep.match(
-                case (SqlExpressionExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.UprootableExpr(nextStep, it)) },
+                case (SqlExpressionExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, it.withReplantExpr(nextStep)) },
                 case (ExtractorsDomain.Call.CaptureExpression[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.VirginExpr(it)) }
               )
               ?: SourcedFunction(call, owner, isCap, exprType, buildFrom(nextStep))
             },
-            caseEarly(exprType == ContainerType.Action)(Ir.SimpleFunction.withReturnExpression[Is()]).then { nextStep ->
+            caseEarly(exprType == ContainerType.Action)(Ir.SimpleFunction.withReturnOnlyExpression[Is()]).then { nextStep ->
               nextStep.match(
-                case (SqlActionExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.UprootableAction(nextStep, it)) },
+                case (SqlActionExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, it.withReplantExpr(nextStep)) },
                 case (ExtractorsDomain.Call.CaptureAction[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.VirginAction(it)) }
               )
               ?: SourcedFunction(call, owner, isCap, exprType, buildFrom(nextStep))
             },
-            caseEarly(exprType == ContainerType.ActionBatch)(Ir.SimpleFunction.withReturnExpression[Is()]).then { nextStep ->
+            caseEarly(exprType == ContainerType.ActionBatch)(Ir.SimpleFunction.withReturnOnlyExpression[Is()]).then { nextStep ->
               nextStep.match(
-                case (SqlBatchActionExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.UprootableActionBatch(nextStep, it)) },
+                case (SqlBatchActionExpr.Uprootable[Is()]).then { SourcedFunction(call, owner, isCap, exprType, it.withReplantExpr(nextStep)) },
                 case (ExtractorsDomain.Call.CaptureBatchAction[Is()]).then { SourcedFunction(call, owner, isCap, exprType, Root.VirginActionBatch(it)) }
               )
               ?: SourcedFunction(call, owner, isCap, exprType, buildFrom(nextStep))
-            }
+            },
+            // If a "real" function could not be found (i.e. one in the current set of files being compiled) take a look if there is something in the store
+            // that was put there from previous compiles. (This is intentionally last because we could have a new version of a function that is currently being stored
+            caseEarly(options.enableCrossFileStoreOrDefault)(Ir.SimpleFunction.anyKind[Is()]).thenIf { func -> CrossFile.isCrossFile(func) }.then { function ->
+              val outStored =
+                storedXRsScope.scoped {
+                  when (exprType) {
+                    is ContainerType.Query -> {
+                      CrossFile.getUprootableFromStore(function, exprType)?.let { uprootable ->
+                        Root.SourcedPreviouslyCompiledFunction(call, owner, isCap, exprType, Root.UprootableQuery(expression, uprootable))
+                      }
+                    }
+                    is ContainerType.Expr -> {
+                      CrossFile.getUprootableFromStore(function, exprType)?.let { uprootable ->
+                        Root.SourcedPreviouslyCompiledFunction(call, owner, isCap, exprType, Root.UprootableExpr(expression, uprootable))
+                      }
+                    }
+                    is ContainerType.Action -> {
+                      CrossFile.getUprootableFromStore(function, exprType)?.let { uprootable ->
+                        Root.SourcedPreviouslyCompiledFunction(call, owner, isCap, exprType, Root.UprootableAction(expression, uprootable))
+                      }
+                    }
+                    is ContainerType.ActionBatch -> {
+                      CrossFile.getUprootableFromStore(function, exprType)?.let { uprootable ->
+                        Root.SourcedPreviouslyCompiledFunction(call, owner, isCap, exprType, Root.UprootableActionBatch(expression, uprootable))
+                      }
+                    }
+                  }
+                }
+
+              if (outStored != null) {
+                //logger.warn("------------- YAY Getting Stored Return For -------------\n${expression.dumpKotlinLike()}\nValue is: ${outStored.show() ?: "<NOT A CALL>"}")
+              } else {
+                //logger.warn("------------- NO STORED Return For -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpSimple() } ?: "<NOT A CALL>"}\n---------------- Values are --------------\n${CrossFile.printStoredValues()}}")
+              }
+              outStored
+            },
           )
+          if (out == null) {
+            //logger.warn("------------- NULL OUTER MATCH FOR -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpSimple() } ?: "<NOT A CALL>"}")
+          }
+          out
         },
         case(Ir.GetField[Is()]).thenIf { expression.isContainerOfXR() }.thenThis { field ->
           //val newRecieiver = superTransformer.visitExpression(this.receiver)
           val owner = field.symbol.owner
+          // ===== SPECIAL CASE: check if the field shares an SqlQuery/SqlExpression/SqlAction/SqlBatchAction across files and tell the user it needs to be changed to an inline function =====
+          CrossFile.validatePossibleCrossFileField(owner, expression)
+          // ===== Continue with the normal processing =====
           owner.match(
             // E.g. a class field used in a lift
             //   class Foo { val x = capture { 123 } } which should have become:
@@ -191,39 +303,28 @@ sealed interface OwnerChain {
             //   SqlExpression(Int(2) + Int(123), lifts=foo.x.lifts)
             caseEarly(exprType == ContainerType.Query)(Ir.Field[Is(), Is()]).then { _, nextStep ->
               nextStep.match(
-                case(SqlQueryExpr.Uprootable[Is()]).then {
-                  //if (owner.dumpSimple(false).contains("[IrField] PROPERTY_BACKING_FIELD name:people type:@[Captured] io.exoquery.SqlQuery<io.exoquery.LimitedContainer.Person>"))
-                  //  parseError(
-                  //    """|----------------------- GOOOOOOOOOOOOOOOOT HERE -----------------------
-                  //       |${owner.dumpSimple()}
-                  //       |---------------------------- Match Field ----------------------------
-                  //       |${Ir.Field[Is(), Is()].matchesAny(owner)}
-                  //       |---------------------------- Expr Type ----------------------------
-                  //       |${exprType}
-                  //       |-----------------------""".trimMargin(), expression)
-                  SourcedField(field, owner, exprType, Root.UprootableQuery(nextStep, it))
-                },
-                case(ExtractorsDomain.Call.CaptureQuery[Is()]).then { SourcedField(field, owner, exprType, Root.VirginQuery(it)) }
+                case(SqlQueryExpr.Uprootable[Is()]).then { SourcedField(field, owner, exprType, it.withReplantExpr(nextStep)) },
+                case(ExtractorsDomain.Call.CaptureQueryOrSelect[Is()]).then { SourcedField(field, owner, exprType, Root.VirginQuery(it)) }
               )
                 ?: SourcedField(field, owner, exprType, buildFrom(nextStep))
             },
             caseEarly(exprType == ContainerType.Expr)(Ir.Field[Is(), Is()]).then { _, nextStep ->
               nextStep.match(
-                case(SqlExpressionExpr.Uprootable[Is()]).then { SourcedField(field, owner, exprType, Root.UprootableExpr(nextStep, it)) },
+                case(SqlExpressionExpr.Uprootable[Is()]).then { SourcedField(field, owner, exprType, it.withReplantExpr(nextStep)) },
                 case(ExtractorsDomain.Call.CaptureExpression[Is()]).then { SourcedField(field, owner, exprType, Root.VirginExpr(it)) }
               )
                 ?: SourcedField(field, owner, exprType, buildFrom(nextStep))
             },
             caseEarly(exprType == ContainerType.Action)(Ir.Field[Is(), Is()]).then { _, nextStep ->
               nextStep.match(
-                case(SqlActionExpr.Uprootable[Is()]).then { SourcedField(field, owner, exprType, Root.UprootableAction(nextStep, it)) },
+                case(SqlActionExpr.Uprootable[Is()]).then { SourcedField(field, owner, exprType,  it.withReplantExpr(nextStep)) },
                 case(ExtractorsDomain.Call.CaptureAction[Is()]).then { SourcedField(field, owner, exprType, Root.VirginAction(it)) }
               )
                 ?: SourcedField(field, owner, exprType, buildFrom(nextStep))
             },
             caseEarly(exprType == ContainerType.ActionBatch)(Ir.Field[Is(), Is()]).then { _, nextStep ->
               nextStep.match(
-                case(SqlBatchActionExpr.Uprootable[Is()]).then { SourcedField(field, owner, exprType, Root.UprootableActionBatch(nextStep, it)) },
+                case(SqlBatchActionExpr.Uprootable[Is()]).then { SourcedField(field, owner, exprType,  it.withReplantExpr(nextStep)) },
                 case(ExtractorsDomain.Call.CaptureBatchAction[Is()]).then { SourcedField(field, owner, exprType, Root.VirginActionBatch(it)) }
               )
                 ?: SourcedField(field, owner, exprType, buildFrom(nextStep))
@@ -249,15 +350,15 @@ sealed interface OwnerChain {
             caseEarly(exprType == ContainerType.Query)(Ir.Variable[Is(), Is()]).thenThis { _, nextStep ->
               val owner = this
               nextStep.match(
-                case(SqlQueryExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, Root.UprootableQuery(nextStep, it)) },
-                case(ExtractorsDomain.Call.CaptureQuery[Is()]).then { SourcedVariable(field, owner, exprType, Root.VirginQuery(it)) }
+                case(SqlQueryExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, it.withReplantExpr(nextStep)) },
+                case(ExtractorsDomain.Call.CaptureQueryOrSelect[Is()]).then { SourcedVariable(field, owner, exprType, Root.VirginQuery(it)) }
               )
               ?: SourcedVariable(field, owner, exprType, buildFrom(nextStep))
             },
             caseEarly(exprType == ContainerType.Expr)(Ir.Variable[Is(), Is()]).thenThis { _, nextStep ->
               val owner = this
               nextStep.match(
-                case(SqlExpressionExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, Root.UprootableExpr(nextStep, it)) },
+                case(SqlExpressionExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, it.withReplantExpr(nextStep)) },
                 case(ExtractorsDomain.Call.CaptureExpression[Is()]).then { SourcedVariable(field, owner, exprType, Root.VirginExpr(it)) }
               )
               ?: SourcedVariable(field, owner, exprType, buildFrom(nextStep))
@@ -265,7 +366,7 @@ sealed interface OwnerChain {
             caseEarly(exprType == ContainerType.Action)(Ir.Variable[Is(), Is()]).thenThis { _, nextStep ->
               val owner = this
               nextStep.match(
-                case(SqlActionExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, Root.UprootableAction(nextStep, it)) },
+                case(SqlActionExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, it.withReplantExpr(nextStep)) },
                 case(ExtractorsDomain.Call.CaptureAction[Is()]).then { SourcedVariable(field, owner, exprType, Root.VirginAction(it)) }
               )
               ?: SourcedVariable(field, owner, exprType, buildFrom(nextStep))
@@ -273,7 +374,7 @@ sealed interface OwnerChain {
             caseEarly(exprType == ContainerType.ActionBatch)(Ir.Variable[Is(), Is()]).thenThis { _, nextStep ->
               val owner = this
               nextStep.match(
-                case(SqlBatchActionExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, Root.UprootableActionBatch(nextStep, it)) },
+                case(SqlBatchActionExpr.Uprootable[Is()]).then { SourcedVariable(field, owner, exprType, it.withReplantExpr(nextStep)) },
                 case(ExtractorsDomain.Call.CaptureBatchAction[Is()]).then { SourcedVariable(field, owner, exprType, Root.VirginActionBatch(it)) }
               )
               ?: SourcedVariable(field, owner, exprType, buildFrom(nextStep))
@@ -296,20 +397,27 @@ sealed interface OwnerChain {
 //               |-----------------------""", expression)
 //        }
 
-        Root.Unknown
+        //logger.warn("------------- Late Exit for -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpKotlinLike() } ?: "<NOT A CALL>"}\n------------- No Match -------------")
+        Root.Unknown(expression)
       }
     }
   }
 }
 
+// Root.UprootableQuery(nextStep, it)
+fun SqlQueryExpr.Uprootable.withReplantExpr(newExpr: IrExpression): OwnerChain.Root.UprootableQuery =
+  OwnerChain.Root.UprootableQuery(newExpr, this)
+fun SqlExpressionExpr.Uprootable.withReplantExpr(newExpr: IrExpression): OwnerChain.Root.UprootableExpr =
+  OwnerChain.Root.UprootableExpr(newExpr, this)
+fun SqlActionExpr.Uprootable.withReplantExpr(newExpr: IrExpression): OwnerChain.Root.UprootableAction =
+  OwnerChain.Root.UprootableAction(newExpr, this)
+fun SqlBatchActionExpr.Uprootable.withReplantExpr(newExpr: IrExpression): OwnerChain.Root.UprootableActionBatch =
+  OwnerChain.Root.UprootableActionBatch(newExpr, this)
 
-object UprootableContainer {
-
-
-  context(CX.Scope) operator fun <AP : Pattern<IrExpression>> get(x: AP) =
-    customPattern1("CaptureOwner", x) { expression: IrExpression ->
-      expression.match(
-
-      )
-    }
-}
+fun UprootableExpr.withReplantExprAny(newExpr: IrExpression) =
+  when (this) {
+    is SqlQueryExpr.Uprootable -> this.withReplantExpr(newExpr)
+    is SqlExpressionExpr.Uprootable -> this.withReplantExpr(newExpr)
+    is SqlActionExpr.Uprootable -> this.withReplantExpr(newExpr)
+    is SqlBatchActionExpr.Uprootable -> this.withReplantExpr(newExpr)
+  }

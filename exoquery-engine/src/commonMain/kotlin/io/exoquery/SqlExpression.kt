@@ -1,5 +1,7 @@
 package io.exoquery
 
+import io.exoquery.annotation.CapturedDynamic
+import io.exoquery.annotation.ExoInternal
 import io.exoquery.printing.PrintMisc
 import io.exoquery.xr.XR
 import io.exoquery.xr.swapTags
@@ -31,12 +33,16 @@ sealed interface ContainerOfFunXR : ContainerOfXR {
 }
 
 data class SqlExpression<T>(override val xr: XR.Expression, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfFunXR {
+  @ExoInternal
   fun determinizeDynamics(): SqlExpression<T> = DeterminizeDynamics().ofExpression(this)
 
   fun show() = PrintMisc().invoke(this)
+
+  @ExoInternal
   override fun rebuild(xr: XR, runtimes: RuntimeSet, params: ParamSet): SqlExpression<T> =
     copy(xr = xr as? XR.Expression ?: xrError("Failed to rebuild SqlExpression with XR of type ${xr::class} which was: ${xr.show()}"), runtimes = runtimes, params = params)
 
+  @ExoInternal
   override fun withNonStrictEquality(): SqlExpression<T> =
     copy(params = params.withNonStrictEquality())
 }
@@ -53,7 +59,7 @@ internal class DeterminizeDynamics() {
       else -> error("Unknown container type: ${expr::class} of ${expr}")
     }
 
-  fun ContainerOfXR.walkParams() =
+  private fun ContainerOfXR.walkParams() =
     params.lifts.map { param ->
       val newBid = BID(nextId())
       val newParam = when (param) {
@@ -64,7 +70,7 @@ internal class DeterminizeDynamics() {
       Triple(param.id, newBid, newParam)
     }
 
-  fun ContainerOfXR.walkRuntimes() =
+  private fun ContainerOfXR.walkRuntimes() =
     runtimes.runtimes.map { (bid, container) ->
       val newContainer = recContainer(container)
       val newBid = BID(nextId())
@@ -112,7 +118,3 @@ internal class DeterminizeDynamics() {
   fun <T> ofExpression(expr: SqlExpression<T>): SqlExpression<T> = recExpr(expr)
   fun <T> ofQuery(query: SqlQuery<T>): SqlQuery<T> = recQuery(query)
 }
-
-
-//fun <T> SqlExpression<T>.convertToQuery(): Query<T> = QueryContainer<T>(io.exoquery.xr.XR.ExprToQuery(xr), binds)
-//fun <T> Query<T>.convertToSqlExpression(): SqlExpression<T> = SqlExpressionContainer<T>(io.exoquery.xr.XR.QueryToExpr(xr), binds)

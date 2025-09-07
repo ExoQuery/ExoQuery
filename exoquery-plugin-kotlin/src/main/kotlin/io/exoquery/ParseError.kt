@@ -18,7 +18,7 @@ fun liftingError(msg: String): Nothing = throw LiftingError(msg)
 class ParseError(val msg: String, val location: CompilerMessageSourceLocation?) : Exception(msg) {
   companion object {
     context(CX.Scope)
-    fun withFullMsg(msg: String, element: IrElement, file: IrFile, location: CompilerMessageSourceLocation): ParseError {
+    fun withFullMsg(msg: String, element: IrElement, file: IrFile, location: CompilerMessageSourceLocation, showCrossFile: Boolean = false): ParseError {
       val fullMsg: String = run {
         val expressionPart =
           element.source()?.let { src ->
@@ -49,12 +49,19 @@ class ParseError(val msg: String, val location: CompilerMessageSourceLocation?) 
             }
           }
 
+        val crossFileContent =
+          if (showCrossFile) {
+            "\n" + storedXRsScope.scoped { storedXRs.printStored() }
+          } else {
+            ""
+          }
+
         """|[ExoQuery] Could not understand an expression or query due to an error: ${msg}.${expressionPart}
            |------------ Raw Expression ------------
            |${rawExpression}
            |------------ Raw Expression Tree ------------
            |${rawExpressionTree}
-           |""".trimMargin()
+           |""".trimMargin() + crossFileContent
       }
       return ParseError(fullMsg, location)
     }
@@ -78,7 +85,8 @@ fun parseErrorFromType(msg: String, e: Throwable, location: CompilerMessageSourc
 context(CX.Scope)
 fun parseErrorFromType(msg: String, expr: IrElement): Nothing = throw throw ParseError.withFullMsg(io.exoquery.plugin.logging.Messages.TypeParseErrorMsg(msg), expr, currentFile, expr.location())
 
-context(CX.Scope) fun parseError(msg: String, expr: IrElement): Nothing = throw ParseError.withFullMsg(msg, expr, currentFile, expr.location())
+context(CX.Scope) fun parseError(msg: String, expr: IrElement, showCrossFile: Boolean = false): Nothing =
+  throw ParseError.withFullMsg(msg, expr, currentFile, expr.location(), showCrossFile)
 
 context(CX.Scope) fun parseErrorSimple(msg: String, expr: IrElement): Nothing = throw ParseError(msg, expr.location())
 

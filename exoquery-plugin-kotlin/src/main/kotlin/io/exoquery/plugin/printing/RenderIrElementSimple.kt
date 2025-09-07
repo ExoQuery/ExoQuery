@@ -635,19 +635,19 @@ open class RenderIrElementVisitorSimple(
     }
 
   override fun visitFunctionExpression(expression: IrFunctionExpression, data: Nothing?): String =
-    "FUN_EXPR${expression.renderOffsets(options)} type=${expression.type.render()} origin=${expression.origin}"
+    "[IrFunctionExpression] ${expression.renderOffsets(options)} type=${expression.type.render()} origin=${expression.origin}"
 
   override fun visitClassReference(expression: IrClassReference, data: Nothing?): String =
-    "CLASS_REFERENCE${expression.renderOffsets(options)} '${expression.symbol.renderReference()}' type=${expression.type.render()}"
+    "[IrClassReference] ${expression.renderOffsets(options)} '${expression.symbol.renderReference()}' type=${expression.type.render()}"
 
   override fun visitGetClass(expression: IrGetClass, data: Nothing?): String =
-    "GET_CLASS${expression.renderOffsets(options)} type=${expression.type.render()}"
+    "[IrGetClass] ${expression.renderOffsets(options)} type=${expression.type.render()}"
 
   override fun visitTry(aTry: IrTry, data: Nothing?): String =
-    "TRY${aTry.renderOffsets(options)} type=${aTry.type.render()}"
+    "[IrTry] ${aTry.renderOffsets(options)} type=${aTry.type.render()}"
 
   override fun visitCatch(aCatch: IrCatch, data: Nothing?): String =
-    "CATCH${aCatch.renderOffsets(options)} parameter=${aCatch.catchParameter.symbol.renderReference()}"
+    "[IrCatch] ${aCatch.renderOffsets(options)} parameter=${aCatch.catchParameter.symbol.renderReference()}"
 
   override fun visitDynamicOperatorExpression(expression: IrDynamicOperatorExpression, data: Nothing?): String =
     "DYN_OP${expression.renderOffsets(options)} operator=${expression.operator} type=${expression.type.render()}"
@@ -662,13 +662,13 @@ open class RenderIrElementVisitorSimple(
     "ERROR_CALL${expression.renderOffsets(options)} '${expression.description}' type=${expression.type.render()}"
 
   override fun visitConstantArray(expression: IrConstantArray, data: Nothing?): String =
-    "CONSTANT_ARRAY${expression.renderOffsets(options)} type=${expression.type.render()}"
+    "[IrConstantArray] ${expression.renderOffsets(options)} type=${expression.type.render()}"
 
   override fun visitConstantObject(expression: IrConstantObject, data: Nothing?): String =
-    "CONSTANT_OBJECT${expression.renderOffsets(options)} type=${expression.type.render()} constructor=${expression.constructor.renderReference()}"
+    "[IrConstantObject] ${expression.renderOffsets(options)} type=${expression.type.render()} constructor=${expression.constructor.renderReference()}"
 
   override fun visitConstantPrimitive(expression: IrConstantPrimitive, data: Nothing?): String =
-    "CONSTANT_PRIMITIVE${expression.renderOffsets(options)} type=${expression.type.render()}"
+    "[IrConstantPrimitive] ${expression.renderOffsets(options)} type=${expression.type.render()}"
 }
 
 private fun IrValueParameter.renderValueParameterType(options: DumpIrTreeOptions): String {

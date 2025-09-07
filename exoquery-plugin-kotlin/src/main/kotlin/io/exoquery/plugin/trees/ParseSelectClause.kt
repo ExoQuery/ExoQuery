@@ -19,6 +19,7 @@ import io.exoquery.xr.of
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.util.statements
 
 object ParseSelectClause {
 
@@ -41,11 +42,12 @@ object ParseSelectClause {
       case(Ir.FunctionExpression.withBlockStatements[Is(), Is()]).thenThis { _, statementsFromRet ->
         processSelectLambda(statementsFromRet, lambda.location())
       },
-      // this typiclally happens when select inside of a CapturedBlock
-      case(Ir.SimpleFunction[Is(), Is()]).thenThis { _, body ->
-        processSelectLambda(body.statements, lambda.location())
+      // this typiclally happens when select is inside of a CapturedBlock (I.e. there's no IrFunctionExpression
+      // call only a IrSimpleFunction defined there directly)
+      case(Ir.SimpleFunction.anyKind[Is()]).thenThis { functionDef ->
+        processSelectLambda(body?.statements ?: listOf(), lambda.location())
       }
-    ) ?: parseError("Could not parse Select Clause from: ${lambda.dumpSimple()}", lambda)
+    ) ?: parseError("Could not parse Select Clause from lambda", lambda)
 
   // need to test case of `select { from(x.map(select { ... })) }` to see how nested recursion works
   // also test case of `select { from(select { ... } }` to see how nested recursion works
@@ -111,6 +113,6 @@ object ParseSelectClause {
         val clausesRaw = argValues.map { ParseOrder.parseOrdTuple(it) }
         SX.SortBy(clausesRaw.map { (expr, ord) -> XR.OrderField.By(expr, ord) }, this.loc)
       },
-    ) ?: parseError("Could not parse Select Clause from: ${expr.dumpSimple()}", expr)
+    ) ?: parseError("Could not parse Select Clause from lambda", expr)
 
 }

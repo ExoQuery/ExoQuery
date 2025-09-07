@@ -439,6 +439,14 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
               trace("base| Flattening Empty-Sources $query") andReturn { flatten(sources, query, alias, nestNextMap) }
 
             else -> trace("base| Nesting 'other' $query") andReturn {
+              /*
+               * One of the these rare scenarios is where there's a flat-join
+               * in the 1st part of the query e.g.
+               * ```
+               * FlatMap(FlatJoin(...), ...)
+               * or FlatMap(Map(FlatJoin(...), ...), ...)
+               * ```
+               */
               sourceSpecific(query, alias.name)?.let { nest(it) } ?: xrError("Cannot compute base for the query: ${query.showRaw()}")
             }
           }

@@ -9,6 +9,9 @@ fun unpackOptions(str: String) =
   EncodingXR.protoBuf.decodeFromHexString<ExoCompileOptions>(ExoCompileOptions.serializer(), str)
 
 
+val ExoCompileOptions?.enableCrossFileStoreOrDefault get() =
+  this?.enableCrossFileStore ?: ExoCompileOptions.EnableCrossFileStore
+
 @Serializable
 class ExoCompileOptions(
   val entitiesBaseDir: String,
@@ -16,13 +19,16 @@ class ExoCompileOptions(
   val projectSrcDir: String,
   val sourceSetName: String,
   val targetName: String,
+  val parentSourceSetNames: List<String>,
   val queriesBaseDir: String,
+  val storedBaseDir: String,
   val projectDir: String,
   val outputString: String = DefaultOutputString,
   val queryFilesEnabled: Boolean = DefaultQueryFilesEnabled,
   val queryPrintingEnabled: Boolean = DefaultQueryPrintingEnabled,
   val enableCodegenAI: Boolean = DefaultEnabledCodegenAI,
-  val forceRegen: Boolean = DefaultForceRegen
+  val forceRegen: Boolean = DefaultForceRegen,
+  val enableCrossFileStore: Boolean = EnableCrossFileStore,
 ) {
   fun encode(): String {
     return EncodingXR.protoBuf.encodeToHexString(ExoCompileOptions.serializer(), this)
@@ -34,6 +40,7 @@ class ExoCompileOptions(
     val DefaultJdbcDrivers = emptyList<String>()
     val DefaultEnabledCodegenAI = false
     val DefaultForceRegen = false
+    val EnableCrossFileStore = true
   }
 
   val outputStringMaker: OutputStringMaker = OutputStringMaker(outputString)

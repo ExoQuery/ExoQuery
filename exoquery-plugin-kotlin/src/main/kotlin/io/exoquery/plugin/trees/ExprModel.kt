@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
@@ -336,7 +337,7 @@ object ContainerExpr {
 object SqlExpressionExpr {
   data class Uprootable(override val packedXR: String): UprootableExpr {
     // This is an expensive operation so put it behind a lazy value that the user will invoke only if needed
-    fun unpackOrErrorXR(): UnpackResult<XR.Expression> =
+    override fun unpackOrErrorXR(): UnpackResult<XR.Expression> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Expression>(packedXR))
       } catch (e: Throwable) {
@@ -387,12 +388,14 @@ object SqlExpressionExpr {
           )
         }
 
-      context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Expression, params: ParamsExpr): IrExpression {
+      context(CX.Scope, CX.Builder) fun plantNewUprootableWithPacked(xr: XR.Expression, params: ParamsExpr): Pair<IrConstructorCall, SqlExpressionExpr.Uprootable> {
         val packedXR = xr.encode()
         val strExpr = call(PT.io_exoquery_unpackExpr).invoke(builder.irString(packedXR))
         val make = makeClassFromString(PT.io_exoquery_SqlExpression, listOf(strExpr, RuntimeEmpty(), params.lift()))
-        return make
+        return make to SqlExpressionExpr.Uprootable(packedXR)
       }
+      context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Expression, params: ParamsExpr): IrExpression =
+        plantNewUprootableWithPacked(xr, params).first
 
       context(CX.Scope, CX.Builder) fun plantNewPluckable(xr: XR.Expression, runtimes: RuntimesExpr, params: ParamsExpr): IrExpression {
         val packedXR = xr.encode()
@@ -418,6 +421,8 @@ sealed interface UnpackResult<out T> {
 sealed interface UprootableExpr {
   val packedXR: String
 
+  fun unpackOrErrorXR(): UnpackResult<XR>
+
   context(CX.Scope, CX.Builder)
   fun replant(paramsFrom: IrExpression): IrExpression
 }
@@ -428,7 +433,7 @@ sealed interface UprootableExpr {
 object SqlQueryExpr {
   data class Uprootable(override val packedXR: String): UprootableExpr {
 
-    fun unpackOrErrorXR(): UnpackResult<XR.Query> =
+    override fun unpackOrErrorXR(): UnpackResult<XR.Query> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Query>(packedXR))
       } catch (e: Throwable) {
@@ -458,13 +463,16 @@ object SqlQueryExpr {
           )
         }
 
-      context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Query, params: ParamsExpr): IrExpression {
+      context(CX.Scope, CX.Builder) fun plantNewUprootableWithPacked(xr: XR.Query, params: ParamsExpr): Pair<IrConstructorCall, SqlQueryExpr.Uprootable> {
         val packedXR = xr.encode()
         val strExpr = call(PT.io_exoquery_unpackQuery).invoke(builder.irString(packedXR))
         // TODO cache the class types using the pattern in Types.kt so the class-id doesn't need to be looked up over and over again
         val make = makeClassFromString(PT.io_exoquery_SqlQuery, listOf(strExpr, RuntimeEmpty(), params.lift()))
-        return make
+        return make to SqlQueryExpr.Uprootable(packedXR)
       }
+      context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Query, params: ParamsExpr): IrExpression =
+        plantNewUprootableWithPacked(xr, params).first
+
 
       context(CX.Scope, CX.Builder) fun plantNewPluckable(xr: XR.Query, runtimes: RuntimesExpr, params: ParamsExpr): IrExpression {
         val packedXR = xr.encode()
@@ -480,7 +488,7 @@ object SqlQueryExpr {
 
 object SqlActionExpr {
   data class Uprootable(override val packedXR: String): UprootableExpr {
-    fun unpackOrErrorXR(): UnpackResult<XR.Action> =
+    override fun unpackOrErrorXR(): UnpackResult<XR.Action> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Action>(packedXR))
       } catch (e: Throwable) {
@@ -533,7 +541,7 @@ object SqlActionExpr {
 
 object SqlBatchActionExpr {
   data class Uprootable(override val packedXR: String): UprootableExpr {
-    fun unpackOrErrorXR(): UnpackResult<XR.Batching> =
+    override fun unpackOrErrorXR(): UnpackResult<XR.Batching> =
       try {
         UnpackResult.Success(EncodingXR.protoBuf.decodeFromHexString<XR.Batching>(packedXR))
       } catch (e: Throwable) {

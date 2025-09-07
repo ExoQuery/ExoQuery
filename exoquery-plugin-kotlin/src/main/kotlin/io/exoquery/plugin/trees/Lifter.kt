@@ -3,9 +3,12 @@ package io.exoquery.plugin.trees
 //import io.exoquery.xr.XR.Query
 
 import io.exoquery.*
-import io.exoquery.annotation.CapturedFunctionParamKinds
-import io.exoquery.annotation.Seen
+import io.exoquery.annotation.CapturedFunctionSketch
+import io.exoquery.annotation.ParamKind
+import io.exoquery.annotation.ParamSketch
+import io.exoquery.annotation.WasSterilizedAdHoc
 import io.exoquery.plugin.regularParams
+import io.exoquery.plugin.stableIdentifier
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.call
 import io.exoquery.plugin.transform.callDispatch
@@ -218,45 +221,25 @@ class Lifter(val builderCtx: CX.Builder) {
     }
 
 
-
-  fun makeCapturedFunctionParamKinds(params: List<IrValueParameter>): IrConstructorCall {
+  // TOOD need to add argument types here so that we can reconstruct a stable identifier
+  fun makeCapturedFunctionParamSketches(params: List<IrValueParameter>): IrConstructorCall {
     val types = params.map {
-      when (it.kind) {
-        IrParameterKind.DispatchReceiver -> ParamKind.Dispatch
-        IrParameterKind.Context -> ParamKind.Context
-        IrParameterKind.ExtensionReceiver -> ParamKind.Extension
-        IrParameterKind.Regular -> ParamKind.Regular
-      }
-    }.map { irBuilder.irString(it.toString()) }
+      val paramKind =
+        when (it.kind) {
+          IrParameterKind.DispatchReceiver -> ParamKind.Dispatch
+          IrParameterKind.Context -> ParamKind.Context
+          IrParameterKind.ExtensionReceiver -> ParamKind.Extension
+          IrParameterKind.Regular -> ParamKind.Regular
+        }
+      val typeIdentifier = it.type.stableIdentifier()
+      make<ParamSketch>(irBuilder.irString(paramKind.name), irBuilder.irString(typeIdentifier))
+    }
+
     val variadic = irBuilder.irVararg(context.symbols.string.defaultType, types)
-    return make<CapturedFunctionParamKinds>(variadic)
+    return make<CapturedFunctionSketch>(variadic)
   }
 
-  fun makeSeenAnnotation(): IrConstructorCall = make<Seen>()
-
-  fun makeCompiledQueryAnnotation(serializedQuery: String): IrConstructorCall = make<io.exoquery.annotation.CompiledQuery>(irBuilder.irString(serializedQuery))
+  fun makeSeenAnnotation(): IrConstructorCall = make<WasSterilizedAdHoc>()
 }
 
 // Some top-level lift functions to use outside of the lifter
-
-sealed interface ParamKind {
-  val name: String
-
-  data object Dispatch : ParamKind { override val name = "Dispatch" }
-  data object Context : ParamKind { override val name = "Context" }
-  data object Extension : ParamKind { override val name = "Extension" }
-  data object Regular : ParamKind { override val name = "Regular" }
-
-  companion object {
-    fun fromString(name: String): ParamKind? =
-      when (name) {
-        Dispatch.name -> Dispatch
-        Context.name -> Context
-        Extension.name -> Extension
-        Regular.name -> Regular
-        else -> null
-      }
-
-    val values = listOf(Dispatch, Context, Extension, Regular)
-  }
-}

@@ -12,17 +12,19 @@ import org.jetbrains.kotlin.gradle.plugin.*
 
 
 interface ExoQueryGradlePluginExtension {
-    /** Override the string printed when a static query is executed use %total and %sql switches to specify */
-    val outputString: Property<String>
-    /** Whether to create target/generated/exo/.../_.queries.sql files or not */
-    val queryFilesEnabled: Property<Boolean>
-    /** Whether to print queries at compile-time or not (per the outputString syntax) */
-    val queryPrintingEnabled: Property<Boolean>
+  /** Override the string printed when a static query is executed use %total and %sql switches to specify */
+  val outputString: Property<String>
+  /** Whether to create target/generated/exo/.../_.queries.sql files or not */
+  val queryFilesEnabled: Property<Boolean>
+  /** Whether to print queries at compile-time or not (per the outputString syntax) */
+  val queryPrintingEnabled: Property<Boolean>
 
-    /** If you want to use code generation for entities (at compile-time), you need to specify the JDBC drivers here.
-     * This is a list of gradle dependency strings, e.g. "org.postgresql:postgresql:42.7.3"
-     */
-    val codegenDrivers: ListProperty<String>
+  /** If you want to use code generation for entities (at compile-time), you need to specify the JDBC drivers here.
+   * This is a list of gradle dependency strings, e.g. "org.postgresql:postgresql:42.7.3"
+   */
+  val codegenDrivers: ListProperty<String>
+
+  val enableCrossFileStore: Property<Boolean>
 
   /**
    * If you want to use NameParser.UsingLLM for code generation (at compile-time), you need to enable this property.
@@ -105,6 +107,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         codegenDrivers.convention(ExoCompileOptions.DefaultJdbcDrivers)
         enableCodegenAI.convention(ExoCompileOptions.DefaultEnabledCodegenAI)
         forceRegen.convention(ExoCompileOptions.DefaultForceRegen)
+        enableCrossFileStore.convention(ExoCompileOptions.EnableCrossFileStore)
       }
 
     val isMultiplatform = target.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
@@ -133,6 +136,15 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       // Since this is compiler-plugin it works in the compiler which is written in Java so we use JVM dependencies
       target.addCompilerDependency("io.exoquery:decomat-core-jvm:${BuildConfig.DECOMAT_VERSION}")
 
+      target.addCompilerDependency("org.mapdb:mapdb:3.1.0")
+      target.addCompilerDependency("org.eclipse.collections:eclipse-collections-api:10.4.0")
+      target.addCompilerDependency("org.eclipse.collections:eclipse-collections:10.4.0")
+      target.addCompilerDependency("org.eclipse.collections:eclipse-collections-forkjoin:10.4.0")
+      target.addCompilerDependency("com.google.guava:guava:31.0.1-jre")
+      target.addCompilerDependency("net.jpountz.lz4:lz4:1.3.0")
+      target.addCompilerDependency("org.mapdb:elsa:3.0.0-M5")
+
+
       //target.addCompilerDependency(BuildConfig.COROUTINES_LIBRARY)
     }
 
@@ -141,7 +153,6 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
   fun Project.addCompilerDependency(dependency: String) =
     dependencies.add("kotlinNativeCompilerPluginClasspath", dependency)
-
 
   override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
     val project = kotlinCompilation.target.project
@@ -185,7 +196,27 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     val target = kotlinCompilation.target.name
     // This will always be the platform name e.g. jvm/linuxX64 etc... even if the files are in commonMain
     // because the builds don't actually build commonMain as a compile-target, only the actual platforms
-    val sourceSetName = kotlinCompilation.defaultSourceSet.name
+    val sourceSetName =
+      kotlinCompilation.defaultSourceSet.name
+
+    // unlike the following function this doesn't really need `setOf(start)` but adding it just for consistency. We remove the `curr` source-set later
+    fun transitiveUpstream(start: KotlinSourceSet): List<KotlinSourceSet> =
+      start.dependsOn.flatMap { transitiveUpstream(it) + listOf(it) } + listOf(start)
+
+    fun transitiveAssociated(compilation: KotlinCompilation<*>): List<KotlinCompilation<*>> =
+      compilation.associatedCompilations.flatMap { transitiveAssociated(it) + listOf(it) } + listOf(compilation)
+
+
+    val parentSourceSetNamesProvider: Provider<List<String>> = project.provider {
+      val curr = kotlinCompilation.defaultSourceSet
+      val associatedCompilations = transitiveAssociated(kotlinCompilation).flatMap { it.kotlinSourceSets }
+
+      (associatedCompilations.distinct().flatMap { transitiveUpstream(it) } + transitiveUpstream(curr))
+        .distinct()
+        .filterNot { it == curr }
+        .map { it.name }
+
+    }
 
     val outputStringValue = ext.outputString.convention(ExoCompileOptions.DefaultOutputString).get()
     val queryFilesEnabled = ext.queryFilesEnabled.convention(ExoCompileOptions.DefaultQueryFilesEnabled).get()
@@ -203,20 +234,31 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
       kotlinExtension?.let { decorateKotlinProject(it, DecorationContext(kotlinExtension, project, conventions, entitiesBaseDir, entitiesDirType, autoCreateDirs, debugGeneratedDirConventions)) }
     }
 
+    val storedBaseDir = conventions.storedSubdir(target).get().asFile.absolutePath // legacy name
+
     return project.provider {
+      val parentSourceSetNames = parentSourceSetNamesProvider.get()
+
       listOf(
         SubpluginOption("entitiesBaseDir",entitiesBaseDir.get().asFile.absolutePath),
         SubpluginOption("generationDir", project.generatedRootDir.get().asFile.absolutePath),
         SubpluginOption("projectSrcDir", project.projectDir.toPath().resolve("src").toAbsolutePath().toString()),
         SubpluginOption("sourceSetName", sourceSetName),
         SubpluginOption("targetName", target),
+        CompositeSubpluginOption(
+          "parentSourceSetNames",
+          lazy { parentSourceSetNames.joinToString(";") },
+          parentSourceSetNames.map { SubpluginOption("parentSourceSetNames", it) }
+        ),
         SubpluginOption("projectDir", project.projectDir.path),
         SubpluginOption("queriesBaseDir", queriesBaseDir),
+        SubpluginOption("storedBaseDir", storedBaseDir),
         SubpluginOption("outputString", outputStringValue),
         SubpluginOption("queryFilesEnabled", queryFilesEnabled.toString()),
         SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString()),
         SubpluginOption("enableCodegenAI", enableCodegenAI.get().toString()),
-        SubpluginOption("forceRegen", forceRegen.get().toString())
+        SubpluginOption("forceRegen", forceRegen.get().toString()),
+        SubpluginOption("enableCrossFileStore", ext.enableCrossFileStore.convention(ExoCompileOptions.EnableCrossFileStore).getOrElse(ExoCompileOptions.EnableCrossFileStore).toString())
       )
     }
   }

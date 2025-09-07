@@ -41,7 +41,7 @@ class TransformCapturedAction(val superTransformer: VisitTransformExpressions) :
       val bodyExpr =
         on(expression).match(
           // printExpr(.. { stuff }: IrFunctionExpression  ..): FunctionCall
-          case(ExtractorsDomain.Call.CaptureAction.LambdaOutput[Is.Companion()]).then { expr ->
+          case(ExtractorsDomain.Call.CaptureAction.LambdaOutput[Is()]).then { expr ->
             expr
           }
         )

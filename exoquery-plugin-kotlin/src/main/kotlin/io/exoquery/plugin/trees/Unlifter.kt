@@ -1,7 +1,9 @@
 package io.exoquery.plugin.trees
 
 import io.decomat.*
+import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.annotation.ExoInternal
+import io.exoquery.annotation.ParamSketch
 import io.exoquery.codegen.model.LLM
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.NameProcessorLLM
@@ -363,4 +365,22 @@ object Unlifter {
   }
   fun Ir.ConstructorCallNullableN.Args.withIndexAndLookup() =
     ArgsWithIndexAndLookup(this)
+
+  context(CX.Scope)
+  fun ParamSketch.Companion.unlift(expr: IrExpression): ParamSketch =
+    on(expr).match(
+      case(Ir.ConstructorCall2.of<ParamSketch>()[Is(), Is()]).then { a, b -> ParamSketch(unliftString(a), unliftString(b)) }
+    ) ?: orFail(expr, "The expression was not a simple ParamSketch(...) call with zero variables or substitutions.")
+
+  context(CX.Scope)
+  fun CapturedFunctionSketch.Companion.unlift(expr: IrExpression): CapturedFunctionSketch =
+    on(expr).match(
+      case(Ir.ConstructorCall1.of<CapturedFunctionSketch>()[Ir.Vararg[Is()]]).then { (args) ->
+        CapturedFunctionSketch(*args.map { ParamSketch.unlift(it) }.toTypedArray())
+      }
+    ) ?: orFail(expr, "Invalid CapturedFunctionSketch(...). This is an internal ExoQuery assigned property. Please report a bug.")
+
+  context(CX.Scope)
+  fun unliftCapturedFunctionSketch(expr: IrExpression): CapturedFunctionSketch =
+    CapturedFunctionSketch.unlift(expr)
 }
