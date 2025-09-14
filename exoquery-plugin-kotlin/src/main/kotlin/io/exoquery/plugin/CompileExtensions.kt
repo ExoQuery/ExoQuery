@@ -103,6 +103,14 @@ fun IrCall.findExtensionArgBasedOnParamKinds(paramKinds: List<ParamKind>): IrExp
   (arguments zip paramKinds).find { (arg, kind) -> kind == ParamKind.Extension }?.first
 
 
+val IrCall.regularArgsOrExtension get() = run {
+  // TODO optimize to return a iterator
+  val params = this.symbol.owner.parameters
+  val args = this.arguments
+  params.filter { param -> param.kind == IrParameterKind.Regular || param.kind == IrParameterKind.ExtensionReceiver }.map { args[it] }
+}
+
+
 val IrCall.regularArgs get() = run {
   // TODO optimize to return a iterator
   val params = this.symbol.owner.parameters

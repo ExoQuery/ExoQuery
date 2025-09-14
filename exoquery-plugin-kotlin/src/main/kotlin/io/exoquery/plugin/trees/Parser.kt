@@ -90,8 +90,16 @@ object CallParser {
     val reciever = expr.extensionArg ?: expr.dispatchArg
 
     return when {
-      // for things like string.sql.left(...) ignore the "sql" part
-      reciever != null && reciever is IrCall && reciever.ownerHasAnnotation<DslNestingIgnore>() && reciever.extensionOrDispatch() is IrCall -> {
+      //reciever != null && reciever is IrCall && reciever.symbol.safeName == "sql" -> {
+      //  parseError("""
+      //  ================== SQL FOUND ==================
+      //  Has Annotation: ${reciever.someOwnerHasAnnotation<DslNestingIgnore>()}
+      //  ExtensionOrDispatch: ${reciever.extensionOrDispatch()}
+      //  ExtensionOrDispatch Is IrCall: ${reciever.extensionOrDispatch() is IrCall}
+      //  """.trimIndent())
+      //}
+        // for things like string.sql.left(...) ignore the "sql" part
+      reciever != null && reciever is IrCall && reciever.someOwnerHasAnnotation<DslNestingIgnore>() && reciever.extensionOrDispatch().let { it is IrCall || it is IrGetValue } -> {
         parseCall(reciever.extensionOrDispatch(), expr)
       }
       else -> parseCall(reciever, expr)

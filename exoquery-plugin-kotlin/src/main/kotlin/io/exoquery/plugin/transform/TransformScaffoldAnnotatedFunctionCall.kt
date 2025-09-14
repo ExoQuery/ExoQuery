@@ -171,12 +171,12 @@ class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransfor
       val ownershipChain = TransformProjectCapture2.buildOwnerChain(zeroizedCallRaw)
 
       if (ownershipChain.root is OwnerChain.Root.Unknown)
-        parseError("Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was Unknown).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifier()}", zeroizedCallRaw, true)
+        parseError("Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was Unknown).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifier()}", zeroizedCallRaw, showCrossFile = true)
       if (ownershipChain.root is OwnerChain.Root.Virgin)
         parseError(
           "Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was a Unprocessed Captured Expression).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifier()}",
           zeroizedCallRaw,
-          true
+          showCrossFile = true
         )
 
       when (val rootNode = ownershipChain.root) {

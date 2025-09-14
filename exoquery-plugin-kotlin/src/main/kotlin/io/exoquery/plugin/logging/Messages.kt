@@ -5,6 +5,7 @@ import io.exoquery.plugin.dataClassProperties
 import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.source
+import io.exoquery.plugin.sourceOrDump
 import io.exoquery.plugin.stableIdentifier
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.dumpKotlinLikePretty
@@ -22,8 +23,44 @@ import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.render
 
+
 // @formatter:off
 object Messages {
+
+context(CX.Scope)
+fun InvalidCapturedDynamicArgument(arg: IrExpression) =
+"""
+Argument `${arg.sourceOrDump()}` (whose type was: ${arg.type.dumpKotlinLike()}) of a @CapturedDynamic function must be a constant value, a captured query i.e. capture { ... } or capture.select { ... } or capture.expression { ... }.
+=============== For example ===============
+
+// Say that you have a captured-function that looks like this:
+val state: State = getSomeRuntimeValue()
+
+@CapturedDynamic
+fun canDrive(age: Int) = if (state == SD) age >= 16 else age >= 18
+
+// and you are trying to use it like this:
+val query = capture {
+  Table<Person>().filter { p -> canDrive(p.age) }
+}
+
+// You cannot mix runtime values and types (like State) with captured-functions. So instead you need to do this:
+val state: State = getSomeRuntimeValue()
+
+// Use an if-expression inside the capture block to select the right captured-function:
+@CapturedDynamic
+fun canDrive(age: SqlExpression<Int>) = 
+  if (state == SD) capture.expression { age >= 16 } else capture.expression { age >= 18 }
+
+// Then make sure to pass captured-expression clause to the function, not just a raw variable:
+val query = capture {
+  Table<Person>().filter { p -> canDrive(capture.expression{ p.age }.use) }
+}
+""".trimIndent()
+
+
+
+
 
 fun LineageElementDescription(heading: String, elem: IrElement) =
 """
@@ -38,6 +75,8 @@ ${(elem as? IrFunction)?.parameters?.map { it.type.dumpKotlinLike() + " - " + it
 Signature:
 ${(elem as? IrSimpleFunction)?.let { simpleFun -> simpleFun.symbol.signature?.render() ?: "<NOT A PUBLIC FIELD>" } ?: "<NOT A SIMPLE FUNCTION>"}
 """.trimIndent()
+
+
 
 
 
@@ -191,7 +230,7 @@ val insertPerson = capture {
 
 fun CannotCallUseOnAnArbitraryDynamic() =
 """
-Could not understand the SqlExpression (from the scaffold-call) that you are attempting to call `.use` on. You can only call `.use` on a variable type as SqlExpression.
+Could not understand the SqlExpression (from the scaffold-call) that you are attempting to call `.use` on. You can only call `.use` on a variable whose type is SqlExpression.
 If you are attempting to use an expression here, it is best practice to write it into a variable outside the capture-block and then call `.use` on that variable. If
 this is a function that you are sure can be safely spliced (e.g. it is a pure-function that does not have side-effects) then you can use the @CapturedDynamic annotation
 on the function to allow it to be used in this context.

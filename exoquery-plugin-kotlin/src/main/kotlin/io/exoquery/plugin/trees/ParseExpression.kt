@@ -1,9 +1,6 @@
 package io.exoquery.plugin.trees
 
-import io.decomat.Is
-import io.decomat.case
-import io.decomat.match
-import io.decomat.on
+import io.decomat.*
 import io.exoquery.*
 import io.exoquery.annotation.*
 import io.exoquery.plugin.*
@@ -85,10 +82,6 @@ object ParseExpression {
         is Expr -> this
       }
   }
-
-  context(CX.Scope, CX.Parsing, CX.Symbology)
-  private fun IrGetValue.isCurrentlyActiveBatchParam() =
-    batchAlias != null && this.isBatchParam()
 
   context(CX.Scope, CX.Parsing, CX.Symbology) fun parseBlockStatement(expr: IrStatement): XR.Variable =
     on(expr).match(
@@ -241,28 +234,15 @@ object ParseExpression {
         val bid = BID.new()
 
         val varsUsed = IrTraversals.collectGetValue(paramValue)
+
+        //val (varsUsed, callsUsed) = IrTraversals.collectGetValuesAndCalls(paramValue)
+        //callsUsed.forEach {
+        //  if (it.ownerFunction.hasAnnotation<Dsl>())
+        //    parseError("Cannot use an ExoQuery DSL function `${it.symbol.safeName}` inside of a param(...) call. The `param` construct is meant to bring external (i.e. runtime) varaibles into the capture expression", it)
+        //}
+
         varsUsed.forEach { varUsed ->
-          varUsed.isInternal()
-
-          val (isCapturedVariable, isCapturedVariableReason) = varUsed.isCapturedVariable() to "The variable is captured"
-          // TODO slight improvement just use the 'find' and based the result from that
-          val (isCapturedFunctionArgument, isCapturedFunctionArgumentReason) = varUsed.isCapturedFunctionArgument() to "The variable is a captured function argument (owned by ${varUsed.findCapturedFunctionArgument()?.symbol?.safeName})"
-          val isBatchParam = varUsed.isCurrentlyActiveBatchParam()
-
-          val reason =
-            if (isCapturedVariable) isCapturedVariableReason
-            else if (isCapturedFunctionArgument) isCapturedFunctionArgumentReason
-            else null
-
-          if (!isBatchParam && (isCapturedVariable || isCapturedFunctionArgument)) {
-            parseError(
-              """Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the capture-block. 
-                |The `param` function is only used to bring external variables into the capture (i.e. runtime-variables that are defined outside of it). 
-                |If you want to use the `${varUsed.symbol.safeName}` symbol inside this captured block, you should be able to use it directly.
-                |(reason: ${reason})""".trimMargin(),
-              varUsed
-            )
-          }
+          validateNotInternal(varUsed)
         }
 
         val (paramBind, paramType) =
@@ -335,19 +315,7 @@ object ParseExpression {
 
         val varsUsed = IrTraversals.collectGetValue(paramValue)
         varsUsed.forEach { varUsed ->
-          if (varUsed.isCurrentlyActiveBatchParam()) {
-            parseError(
-              "Cannot use the batch-parameter `${varUsed.symbol.safeName}` with multi-parameter functions (i.e. params, paramsCtx, paramsCustom, etc.). The batch-parameter is only used for single-parameter functions (i.e. param, paramCtx, paramCustom, etc.).",
-              varUsed
-            )
-          }
-          if (varUsed.isInternal())
-            parseError(
-              """Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the capture-block. 
-                |The `param` function is only used to bring external variables into the capture (i.e. runtime-variables that are defined outside of it). 
-                |If you want to use the `${varUsed.symbol.safeName}` symbol inside this captured block, you should be able to use it directly.""".trimMargin(),
-              varUsed
-            )
+          validateNotInternal(varUsed)
         }
 
         val bid = BID.Companion.new()
@@ -399,6 +367,8 @@ object ParseExpression {
             uprootable.unpackOrErrorXR().successOrParseError(sqlExprIr)
           },
           case(ExtractorsDomain.DynamicExprCall[Is()]).then { call ->
+            if (call is IrCall && call.ownerHasAnnotation<CapturedDynamic>())
+              call.regularArgsOrExtension.forEach { validateDynamicArg(it) }
             val bid = BID.Companion.new()
             binds.addRuntime(bid, sqlExprIr)
             XR.TagForSqlExpression(bid, TypeParser.of(sqlExprIr), sqlExprIr.loc)
@@ -542,6 +512,7 @@ object ParseExpression {
     ) ?: run {
       val additionalHelp =
         when {
+          // all arguments to the call must be valid dynamic arguments (i.e. constants, captured queries, captured expressions)
           expr is IrGetValue && expr.isExternal() -> ValueLookupComingFromExternalInExpression(expr, "expression")
           expr is IrCall && expr.isExternal() && expr.symbol.owner is IrSimpleFunction ->
             """|It looks like you are attempting to call the external function `${expr.symbol.safeName}` in a captured block
@@ -569,7 +540,6 @@ object ParseExpression {
         // It is possible to capture a SqlQuery<*> value inside an capture.expression. Handle that case.
         // The actual type of the expression in this case will be SqlExpression<SqlQuery<T>> so that's what we need to check for
         case(Ir.Expr.ClassOf<SqlExpression<*>>()).thenIf { sqlExprArg.type.simpleTypeArgs.firstOrNull()?.isClass<SqlQuery<*>>() ?: false }.then {
-
           ParseQuery.parse(sqlExprArg)
         },
         case(SqlExpressionExpr.Uprootable[Is()]).then { uprootable ->
@@ -578,6 +548,7 @@ object ParseExpression {
           // Then unpack and return the XR
           uprootable.unpackOrErrorXR().successOrParseError(sqlExprArg)
         },
+        // TODO need to explore in which situation this happens
         case(ExtractorsDomain.DynamicExprCall[Is()]).then { call ->
           val bid = BID.Companion.new()
           binds.addRuntime(bid, sqlExprArg)
@@ -605,5 +576,49 @@ object ParseExpression {
       else -> parseError("Unknown IrConstKind: ${irConst.kind}")
     }
 
+  context(CX.Scope)
+  fun validateDynamicArg(arg: IrExpression?) {
+    if (arg == null) parseError("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)", arg)
+    on(arg).match(
+      case (SqlQueryExpr.Uprootable[Is()]).then { _ -> /* ok */ },
+      case (ExtractorsDomain.Call.CaptureQueryOrSelect[Is()]).then { _ -> /* ok */ },
+      case (SqlExpressionExpr.Uprootable[Is()]).then { _ -> /* ok */ },
+      case (ExtractorsDomain.Call.CaptureExpression[Is()]).then { _ -> /* ok */ },
+      case (Ir.Const[Is()]).then { _ -> /* ok */ }
+    ) ?: parseError(Messages.InvalidCapturedDynamicArgument(arg), arg)
+  }
 
 }
+
+context(CX.Scope, CX.Parsing)
+fun validateNotInternal(varUsed: IrGetValue) {
+  val errorReason: String? =
+  when (val externalBecause = varUsed.isInternalVariableBecause()) {
+    is IsInternalReason.CapturedDynamicFunctionVariable if !varUsed.isAllowedInParam() ->
+      "Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it is an argument of the dynamic-function `${externalBecause.ownerFunction.symbol.safeName}`."
+    is IsInternalReason.CapturedFunctionVariable if !varUsed.isAllowedInParam() ->
+      "Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it is an argument of the captured-function `${externalBecause.ownerFunction.symbol.safeName}`."
+    is IsInternalReason.CapturedBlock if !varUsed.isAllowedInParam() ->
+      "Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the capture-block."
+    else ->
+      null // the InvalidReason.None case is covered here (and batch params)
+  }
+
+  if (errorReason != null)
+    parseError(
+      """${errorReason} 
+         |The `param` function is only used to bring external variables into the capture (i.e. runtime-variables that are defined outside of it). 
+         |If you want to use the `${varUsed.symbol.safeName}` symbol inside this captured block, you should be able to use it directly.
+         |""".trimMargin(),
+      varUsed
+    )
+}
+
+context(CX.Scope, CX.Parsing)
+private fun IrGetValue.isAllowedInParam() =
+  this.isCurrentlyActiveBatchParam() || this.symbol.safeName == "<this>"
+
+
+context(CX.Scope, CX.Parsing)
+private fun IrGetValue.isCurrentlyActiveBatchParam() =
+  batchAlias != null && this.isBatchParam()

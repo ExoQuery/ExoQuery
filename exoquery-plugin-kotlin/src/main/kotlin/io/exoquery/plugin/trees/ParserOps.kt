@@ -4,6 +4,8 @@ import io.decomat.Is
 import io.exoquery.CapturedBlock
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
+import io.exoquery.annotation.CapturedDynamic
+import io.exoquery.annotation.CapturedFunction
 import io.exoquery.parseError
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX
@@ -60,6 +62,10 @@ fun IrExpression.humanSymbolOrNull() =
     else -> null
   }
 
+context(CX.Scope)
+fun IrDeclarationReference.isCapturedVariable(): Boolean =
+  this.isInternalVariableBecause().isExternal
+
 context(CX.Symbology)
 fun IrDeclarationReference.isCapturedFunctionArgument(): Boolean = run {
   val gv = this
@@ -72,25 +78,34 @@ fun IrDeclarationReference.findCapturedFunctionArgument() = run {
   symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it }
 }
 
+sealed interface IsInternalReason {
+  val isExternal: Boolean
+
+  data class CapturedFunctionVariable(val ownerFunction: IrFunction) : IsInternalReason { override val isExternal: Boolean = true }
+  data class CapturedDynamicFunctionVariable(val ownerFunction: IrFunction) : IsInternalReason { override val isExternal: Boolean = true }
+  data object CapturedBlock : IsInternalReason { override val isExternal: Boolean = true }
+  data object None : IsInternalReason { override val isExternal: Boolean = false }
+}
+
 // To be used with IrGetValue and IrGetField
 context(CX.Scope)
-fun IrDeclarationReference.isCapturedVariable(): Boolean {
-  tailrec fun rec(elem: IrElement, recurseCount: Int): Boolean =
+fun IrDeclarationReference.isInternalVariableBecause(): IsInternalReason {
+  tailrec fun rec(elem: IrElement, recurseCount: Int): IsInternalReason =
     when {
-      recurseCount == 0 -> false
-      // TODO if we want to not need captured-function-variables tracking in our symbology we can just check it here. Should think about whether to do it like this
-      //      note that every identifier needs to be checked this way already so I don't think this is a big performance hit
+      recurseCount == 0 -> IsInternalReason.None
       // If the owner is a captured-function then we immediately know it's a captured variable
       //elem is IrFunction && elem.isCapturedFunction() -> true
+      elem is IrFunction && elem.hasAnnotation<CapturedFunction>() -> IsInternalReason.CapturedFunctionVariable(elem)
+      elem is IrFunction && elem.hasAnnotation<CapturedDynamic>() -> IsInternalReason.CapturedDynamicFunctionVariable(elem)
 
-      // If the owner of the function is a ExoQuery captured-block (i.e. inside of a capture { ... } function of some sort) we immediately
+          // If the owner of the function is a ExoQuery captured-block (i.e. inside of a capture { ... } function of some sort) we immediately
       // know the parent function was defined inside of the capture and is therefore a "captured variable"
-      elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> true
+      elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> IsInternalReason.CapturedBlock
       // Otherwise we need to keep recursing up to the owner
       elem is IrFunction -> rec(elem.symbol.owner.parent, recurseCount - 1)
       elem is IrValueParameter -> rec(elem.symbol.owner.parent, recurseCount - 1)
       elem is IrVariable -> rec(elem.symbol.owner.parent, recurseCount - 1)
-      else -> false
+      else -> IsInternalReason.None
     }
 
   return rec(this.symbol.owner, 100)
@@ -98,7 +113,16 @@ fun IrDeclarationReference.isCapturedVariable(): Boolean {
 
 context(CX.Scope, CX.Symbology)
 fun IrDeclarationReference.isExternal(): Boolean =
-  !isCapturedFunctionArgument() && !isCapturedVariable()
+  !isCapturedFunctionArgument() && !isInternalVariableBecause().isExternal
+
+context(CX.Scope, CX.Symbology)
+fun IrDeclarationReference.isExternalOrDynamicArg(): Boolean =
+  when (isInternalVariableBecause()) {
+    is IsInternalReason.None -> true
+    is IsInternalReason.CapturedBlock -> false
+    is IsInternalReason.CapturedDynamicFunctionVariable -> true
+    is IsInternalReason.CapturedFunctionVariable -> false
+  }
 
 context(CX.Scope, CX.Symbology)
 fun IrDeclarationReference.isInternal(): Boolean = !isExternal()

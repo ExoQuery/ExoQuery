@@ -102,8 +102,8 @@ object ExtractorsDomain {
             call.isExternal() && expr.isSqlQuery() &&
                 (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) //|| call.someOwnerHasAnnotation<CapturedDynamic>() <- not currently supported
           }.then { _ -> true },
-          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true },
-          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlQuery() }.then { _ -> true }
+          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternalOrDynamicArg() && expr.isSqlQuery() }.then { _ -> true },
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternalOrDynamicArg() && expr.isSqlQuery() }.then { _ -> true }
         ) ?: false
         if (matches)
           Components1(expr)
@@ -117,8 +117,8 @@ object ExtractorsDomain {
     operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("DynamicExprCall", x) { expr: IrExpression ->
         val matches = expr.match(
-          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
-          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
+          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternalOrDynamicArg() && expr.isSqlExpression() }.then { _ -> true },
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternalOrDynamicArg() && expr.isSqlExpression() }.then { _ -> true },
           case(Ir.Call[Is()]).thenIf { call ->
             (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedDynamic>()
           }.then { _ -> true }
@@ -135,8 +135,8 @@ object ExtractorsDomain {
     operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("DynamicActionCall", x) { expr: IrExpression ->
         val matches = expr.match(
-          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
-          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
+          case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternalOrDynamicArg() && expr.isSqlAction() }.then { _ -> true },
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternalOrDynamicArg() && expr.isSqlAction() }.then { _ -> true },
           case(Ir.Call[Is()]).thenIf { call ->
             (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedDynamic>()
           }.then { _ -> true }

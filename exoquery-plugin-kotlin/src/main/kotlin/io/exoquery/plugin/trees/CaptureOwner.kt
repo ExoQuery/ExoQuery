@@ -10,6 +10,7 @@ import io.exoquery.SqlAction
 import io.exoquery.SqlBatchAction
 import io.exoquery.SqlExpression
 import io.exoquery.SqlQuery
+import io.exoquery.annotation.CapturedDynamic
 import io.exoquery.annotation.CapturedFunction
 import io.exoquery.config.enableCrossFileStoreOrDefault
 import io.exoquery.parseError
@@ -207,13 +208,14 @@ sealed interface OwnerChain {
       }
       return expression.match(
         // Bubble up to the owner call, make sure to skip captured-functions for now since they need to be handled slightly differently (i.e. the call needs to be scaffolded)
-        case(Ir.Call[Is()]).thenIf { call -> expression.isContainerOfXR() && call.symbol.owner is IrSimpleFunction }.then { call ->
+        case(Ir.Call[Is()]).thenIf { call -> expression.isContainerOfXR() && call.symbol.owner is IrSimpleFunction && !call.symbol.owner.hasAnnotation<CapturedDynamic>() }.then { call ->
           val owner = call.symbol.owner
           // TODO what about a class-member? (need to check the parent's parent?) Also need to do this for an IrField
           // ===== SPECIAL CASE: Specifically for IrFunctions and IrFields, need to check that if it is a cross-file-compatible function (i.e. it's an inline function) if not immediately need to throw an error =====
           CrossFile.validatePossibleCrossFileFunction(owner, expression)
           // ===== Continue with the normal processing =====
           val isCap = owner.hasAnnotation<CapturedFunction>()
+
 
           //logger.warn("------------- IN OUTER MATCH FOR -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpKotlinLike() } ?: "<NOT A CALL>"}")
           val out = owner.match(
