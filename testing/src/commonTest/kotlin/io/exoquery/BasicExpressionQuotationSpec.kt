@@ -146,21 +146,29 @@ class BasicExpressionQuotationSpec : FreeSpec({
 
       class Foo {
         @CapturedDynamic
-        fun cap0(input: Int) =
-          if (v) capture.expression { 456 + param(input) } else capture.expression { 456 + param(999) }
+        fun cap0(input: SqlExpression<Int>) =
+          if (v) capture.expression { 101112 + input.use } else capture.expression { 456 + param(999) }
       }
 
       val f = Foo()
-      val cap = capture.expression { 789 + f.cap0(456).use }
+      val cap = capture.expression { 789 + f.cap0(capture.expression { 456 }).use }
+
+      println(cap.determinizeDynamics().show())
 
       cap.determinizeDynamics() shouldBeEqual SqlExpression(
         XR.Const.Int(789) `+++` XR.TagForSqlExpression(BID("1"), XRType.Value),
         RuntimeSet.of(
           BID("1") to
               SqlExpression<Any>(
-                XR.Const.Int(456) `+++` XR.TagForParam.Minimal(BID("0"), XR.ParamType.Single, XRType.Value),
-                RuntimeSet.of(),
-                ParamSet(listOf(ParamSingle(BID("0"), 456, ParamSerializer.Int)))
+                XR.Const.Int(101112) `+++` XR.TagForSqlExpression(BID("0"), XRType.Value),
+                RuntimeSet.of(
+                  BID("0") to SqlExpression<Any>(
+                    XR.Const.Int(456),
+                    RuntimeSet.of(),
+                    ParamSet.of()
+                  )
+                ),
+                ParamSet.Empty
               )
         ),
         ParamSet.of()

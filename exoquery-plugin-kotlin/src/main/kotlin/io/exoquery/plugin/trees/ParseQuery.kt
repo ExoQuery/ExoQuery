@@ -101,7 +101,7 @@ object ParseQuery {
             XR.FunctionApply(warppedQueryCall, parsedArgs, expr.loc)
           },
 
-          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isCapturedVariable() || this.isCapturedFunctionArgument() }.thenThis { sym ->
+          case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isCapturedVariable() }.thenThis { sym ->
             val elem = this.symbol.owner
             if (elem is IrFunction && elem.isVirginCapturedFunction())
               parseError("The function `${elem.symbol.safeName}` is a captured function that has not been transformed:\n${elem.dumpKotlinLike()}", this)

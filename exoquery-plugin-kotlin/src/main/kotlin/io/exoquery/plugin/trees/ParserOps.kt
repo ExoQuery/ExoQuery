@@ -4,10 +4,13 @@ import io.decomat.Is
 import io.exoquery.CapturedBlock
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
+import io.exoquery.annotation.CapturedDynamic
+import io.exoquery.annotation.CapturedFunction
 import io.exoquery.parseError
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.trees.ParseExpression.Seg
+import io.exoquery.plugin.trees.RealOwner.VarType
 import io.exoquery.serial.ParamSerializer
 import io.exoquery.terpal.UnzipPartsParams
 import io.exoquery.xr.XR
@@ -60,11 +63,15 @@ fun IrExpression.humanSymbolOrNull() =
     else -> null
   }
 
-context(CX.Symbology)
-fun IrDeclarationReference.isCapturedFunctionArgument(): Boolean = run {
-  val gv = this
-  symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it } != null
-}
+context(CX.Scope)
+fun IrDeclarationReference.isCapturedVariable(): Boolean =
+  this.realOwner().capturesVariables
+
+//context(CX.Symbology)
+//fun IrDeclarationReference.isCapturedFunctionArgument(): Boolean = run {
+//  val gv = this
+//  symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it } != null
+//}
 
 context(CX.Symbology)
 fun IrDeclarationReference.findCapturedFunctionArgument() = run {
@@ -72,33 +79,73 @@ fun IrDeclarationReference.findCapturedFunctionArgument() = run {
   symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it }
 }
 
+sealed interface RealOwner {
+  val capturesVariables: Boolean
+
+  data class CapturedFunctionVariable(val ownerFunction: IrFunction, val varType: VarType) : RealOwner {
+    override val capturesVariables: Boolean = true
+  }
+  data class CapturedDynamicFunctionVariable(val ownerFunction: IrFunction, val varType: VarType) : RealOwner {
+    override val capturesVariables: Boolean = false
+  }
+  data object CapturedBlock : RealOwner {
+    override val capturesVariables: Boolean = true
+  }
+  data object External : RealOwner {
+    override val capturesVariables: Boolean = false
+  }
+
+  sealed interface VarType {
+    data object LocalVar : VarType
+    data object ParamVar : VarType
+    data object Unknown : VarType
+  }
+}
+
+
+
 // To be used with IrGetValue and IrGetField
 context(CX.Scope)
-fun IrDeclarationReference.isCapturedVariable(): Boolean {
-  tailrec fun rec(elem: IrElement, recurseCount: Int): Boolean =
+fun IrDeclarationReference.realOwner(): RealOwner {
+  tailrec fun rec(elem: IrElement, varType: VarType, recurseCount: Int): RealOwner =
     when {
-      recurseCount == 0 -> false
-      // TODO if we want to not need captured-function-variables tracking in our symbology we can just check it here. Should think about whether to do it like this
-      //      note that every identifier needs to be checked this way already so I don't think this is a big performance hit
+      recurseCount == 0 -> RealOwner.External
       // If the owner is a captured-function then we immediately know it's a captured variable
       //elem is IrFunction && elem.isCapturedFunction() -> true
+      elem is IrFunction && elem.hasAnnotation<CapturedFunction>() -> RealOwner.CapturedFunctionVariable(elem, varType)
+      // the variables of a CapturedDynamic function are NOT captured variables, they are just normal variables. You can put them into a param
+      // but normally they will be SqlQuery/SqlExpression instances
+      elem is IrFunction && elem.hasAnnotation<CapturedDynamic>() -> RealOwner.CapturedDynamicFunctionVariable(elem, varType)
 
-      // If the owner of the function is a ExoQuery captured-block (i.e. inside of a capture { ... } function of some sort) we immediately
+          // If the owner of the function is a ExoQuery captured-block (i.e. inside of a capture { ... } function of some sort) we immediately
       // know the parent function was defined inside of the capture and is therefore a "captured variable"
-      elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> true
+      elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> RealOwner.CapturedBlock
       // Otherwise we need to keep recursing up to the owner
-      elem is IrFunction -> rec(elem.symbol.owner.parent, recurseCount - 1)
-      elem is IrValueParameter -> rec(elem.symbol.owner.parent, recurseCount - 1)
-      elem is IrVariable -> rec(elem.symbol.owner.parent, recurseCount - 1)
-      else -> false
+      elem is IrFunction -> rec(elem.symbol.owner.parent, varType, recurseCount - 1)
+
+      // If it is a value-parameter, check to see if it's parent is a captured-function or captured-dynamic function
+      // otherwise it is a parameter of some intermediate function inside (e.g. a function used in a map{} or let{} or something
+      // that is completely inside the capture { ... } block but not actually a parameter of the capture itself)
+      elem is IrValueParameter ->
+        when (val parent = elem.symbol.owner.parent) {
+          is IrFunction if parent.hasAnnotation<CapturedFunction>() ->
+            RealOwner.CapturedFunctionVariable(parent, VarType.ParamVar)
+          is IrFunction if parent.hasAnnotation<CapturedDynamic>() ->
+            RealOwner.CapturedDynamicFunctionVariable(parent, VarType.ParamVar)
+          else ->
+            rec(elem.symbol.owner.parent, varType, recurseCount - 1)
+        }
+
+      elem is IrVariable -> rec(elem.symbol.owner.parent, VarType.LocalVar, recurseCount - 1)
+      else -> RealOwner.External
     }
 
-  return rec(this.symbol.owner, 100)
+  return rec(this.symbol.owner, VarType.Unknown, 100)
 }
 
 context(CX.Scope, CX.Symbology)
 fun IrDeclarationReference.isExternal(): Boolean =
-  !isCapturedFunctionArgument() && !isCapturedVariable()
+  !realOwner().capturesVariables
 
 context(CX.Scope, CX.Symbology)
 fun IrDeclarationReference.isInternal(): Boolean = !isExternal()
