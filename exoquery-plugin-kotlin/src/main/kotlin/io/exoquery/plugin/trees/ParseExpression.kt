@@ -233,16 +233,16 @@ object ParseExpression {
 
         val bid = BID.new()
 
-        val varsUsed = IrTraversals.collectGetValue(paramValue)
+        //val varsUsed = IrTraversals.collectGetValue(paramValue)
 
-        //val (varsUsed, callsUsed) = IrTraversals.collectGetValuesAndCalls(paramValue)
-        //callsUsed.forEach {
-        //  if (it.ownerFunction.hasAnnotation<Dsl>())
-        //    parseError("Cannot use an ExoQuery DSL function `${it.symbol.safeName}` inside of a param(...) call. The `param` construct is meant to bring external (i.e. runtime) varaibles into the capture expression", it)
-        //}
+        val (varsUsed, callsUsed) = IrTraversals.collectGetValuesAndCalls(paramValue)
+        callsUsed.forEach {
+          if (it.ownerFunction.hasAnnotation<Dsl>())
+            parseError("Cannot use an ExoQuery DSL function `${it.symbol.safeName}` inside of a param(...) call. The `param` construct is meant to bring external (i.e. runtime) varaibles into the capture expression", it)
+        }
 
         varsUsed.forEach { varUsed ->
-          validateNotInternal(varUsed)
+          validateCanUseInParam(varUsed)
         }
 
         val (paramBind, paramType) =
@@ -315,7 +315,7 @@ object ParseExpression {
 
         val varsUsed = IrTraversals.collectGetValue(paramValue)
         varsUsed.forEach { varUsed ->
-          validateNotInternal(varUsed)
+          validateCanUseInParam(varUsed)
         }
 
         val bid = BID.Companion.new()
@@ -513,7 +513,7 @@ object ParseExpression {
       val additionalHelp =
         when {
           // all arguments to the call must be valid dynamic arguments (i.e. constants, captured queries, captured expressions)
-          expr is IrGetValue && expr.isExternal() -> ValueLookupComingFromExternalInExpression(expr, "expression")
+          expr is IrGetValue && expr.isExternal() -> ValueLookupComingFromExternalInExpression(expr)
           expr is IrCall && expr.isExternal() && expr.symbol.owner is IrSimpleFunction ->
             """|It looks like you are attempting to call the external function `${expr.symbol.safeName}` in a captured block
                |only functions specifically made to be interpreted by the ExoQuery system are allowed inside
@@ -575,36 +575,21 @@ object ParseExpression {
       IrConstKind.Double -> XR.Const.Double(irConst.value as Double, irConst.loc)
       else -> parseError("Unknown IrConstKind: ${irConst.kind}")
     }
+}
 
-  context(CX.Scope)
-  fun validateDynamicArg(arg: IrExpression?) {
-    if (arg == null) parseError("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)", arg)
-    on(arg).match(
-      case (SqlQueryExpr.Uprootable[Is()]).then { _ -> /* ok */ },
-      case (ExtractorsDomain.Call.CaptureQueryOrSelect[Is()]).then { _ -> /* ok */ },
-      case (SqlExpressionExpr.Uprootable[Is()]).then { _ -> /* ok */ },
-      case (ExtractorsDomain.Call.CaptureExpression[Is()]).then { _ -> /* ok */ },
-      case (Ir.Const[Is()]).then { _ -> /* ok */ }
-    ) ?: parseError(Messages.InvalidCapturedDynamicArgument(arg), arg)
+context(CX.Scope)
+fun validateDynamicArg(arg: IrExpression?) {
+  if (arg == null) parseError("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)", arg)
+  if (arg.isClass<SqlExpression<*>>() || arg.isClass<SqlQuery<*>>()) {
+    Unit
+  } else {
+    parseError(Messages.InvalidCapturedDynamicArgument(arg), arg)
   }
-
 }
 
 context(CX.Scope, CX.Parsing)
-fun validateNotInternal(varUsed: IrGetValue) {
-  val errorReason: String? =
-  when (val externalBecause = varUsed.isInternalVariableBecause()) {
-    is IsInternalReason.CapturedDynamicFunctionVariable if !varUsed.isAllowedInParam() ->
-      "Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it is an argument of the dynamic-function `${externalBecause.ownerFunction.symbol.safeName}`."
-    is IsInternalReason.CapturedFunctionVariable if !varUsed.isAllowedInParam() ->
-      "Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it is an argument of the captured-function `${externalBecause.ownerFunction.symbol.safeName}`."
-    is IsInternalReason.CapturedBlock if !varUsed.isAllowedInParam() ->
-      "Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the capture-block."
-    else ->
-      null // the InvalidReason.None case is covered here (and batch params)
-  }
-
-  if (errorReason != null)
+fun validateCanUseInParam(varUsed: IrGetValue) {
+  fun throwValidationError(errorReason: String): Nothing =
     parseError(
       """${errorReason} 
          |The `param` function is only used to bring external variables into the capture (i.e. runtime-variables that are defined outside of it). 
@@ -612,6 +597,17 @@ fun validateNotInternal(varUsed: IrGetValue) {
          |""".trimMargin(),
       varUsed
     )
+
+  when (val externalBecause = varUsed.realOwner()) {
+    is RealOwner.CapturedDynamicFunctionVariable if !varUsed.isAllowedInParam() ->
+      throwValidationError("Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it is an argument of the dynamic-function `${externalBecause.ownerFunction.symbol.safeName}`.")
+    is RealOwner.CapturedFunctionVariable if !varUsed.isAllowedInParam() ->
+      throwValidationError("Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it is an argument of the captured-function `${externalBecause.ownerFunction.symbol.safeName}`.")
+    is RealOwner.CapturedBlock if !varUsed.isAllowedInParam() ->
+      throwValidationError("Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the capture-block.")
+    else ->
+      null // the InvalidReason.None case is covered here (and batch params)
+  }
 }
 
 context(CX.Scope, CX.Parsing)

@@ -64,7 +64,7 @@ fun IrExpression.humanSymbolOrNull() =
 
 context(CX.Scope)
 fun IrDeclarationReference.isCapturedVariable(): Boolean =
-  this.isInternalVariableBecause().isExternal
+  this.realOwner().isInternal
 
 context(CX.Symbology)
 fun IrDeclarationReference.isCapturedFunctionArgument(): Boolean = run {
@@ -78,34 +78,36 @@ fun IrDeclarationReference.findCapturedFunctionArgument() = run {
   symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it }
 }
 
-sealed interface IsInternalReason {
-  val isExternal: Boolean
+sealed interface RealOwner {
+  val isInternal: Boolean
 
-  data class CapturedFunctionVariable(val ownerFunction: IrFunction) : IsInternalReason { override val isExternal: Boolean = true }
-  data class CapturedDynamicFunctionVariable(val ownerFunction: IrFunction) : IsInternalReason { override val isExternal: Boolean = true }
-  data object CapturedBlock : IsInternalReason { override val isExternal: Boolean = true }
-  data object None : IsInternalReason { override val isExternal: Boolean = false }
+  data class CapturedFunctionVariable(val ownerFunction: IrFunction) : RealOwner { override val isInternal: Boolean = true }
+  data class CapturedDynamicFunctionVariable(val ownerFunction: IrFunction) : RealOwner { override val isInternal: Boolean = false }
+  data object CapturedBlock : RealOwner { override val isInternal: Boolean = true }
+  data object External : RealOwner { override val isInternal: Boolean = false }
 }
 
 // To be used with IrGetValue and IrGetField
 context(CX.Scope)
-fun IrDeclarationReference.isInternalVariableBecause(): IsInternalReason {
-  tailrec fun rec(elem: IrElement, recurseCount: Int): IsInternalReason =
+fun IrDeclarationReference.realOwner(): RealOwner {
+  tailrec fun rec(elem: IrElement, recurseCount: Int): RealOwner =
     when {
-      recurseCount == 0 -> IsInternalReason.None
+      recurseCount == 0 -> RealOwner.External
       // If the owner is a captured-function then we immediately know it's a captured variable
       //elem is IrFunction && elem.isCapturedFunction() -> true
-      elem is IrFunction && elem.hasAnnotation<CapturedFunction>() -> IsInternalReason.CapturedFunctionVariable(elem)
-      elem is IrFunction && elem.hasAnnotation<CapturedDynamic>() -> IsInternalReason.CapturedDynamicFunctionVariable(elem)
+      elem is IrFunction && elem.hasAnnotation<CapturedFunction>() -> RealOwner.CapturedFunctionVariable(elem)
+      // the variables of a CapturedDynamic function are NOT captured variables, they are just normal variables. You can put them into a param
+      // but normally they will be SqlQuery/SqlExpression instances
+      elem is IrFunction && elem.hasAnnotation<CapturedDynamic>() -> RealOwner.CapturedDynamicFunctionVariable(elem)
 
           // If the owner of the function is a ExoQuery captured-block (i.e. inside of a capture { ... } function of some sort) we immediately
       // know the parent function was defined inside of the capture and is therefore a "captured variable"
-      elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> IsInternalReason.CapturedBlock
+      elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> RealOwner.CapturedBlock
       // Otherwise we need to keep recursing up to the owner
       elem is IrFunction -> rec(elem.symbol.owner.parent, recurseCount - 1)
       elem is IrValueParameter -> rec(elem.symbol.owner.parent, recurseCount - 1)
       elem is IrVariable -> rec(elem.symbol.owner.parent, recurseCount - 1)
-      else -> IsInternalReason.None
+      else -> RealOwner.External
     }
 
   return rec(this.symbol.owner, 100)
@@ -113,16 +115,7 @@ fun IrDeclarationReference.isInternalVariableBecause(): IsInternalReason {
 
 context(CX.Scope, CX.Symbology)
 fun IrDeclarationReference.isExternal(): Boolean =
-  !isCapturedFunctionArgument() && !isInternalVariableBecause().isExternal
-
-context(CX.Scope, CX.Symbology)
-fun IrDeclarationReference.isExternalOrDynamicArg(): Boolean =
-  when (isInternalVariableBecause()) {
-    is IsInternalReason.None -> true
-    is IsInternalReason.CapturedBlock -> false
-    is IsInternalReason.CapturedDynamicFunctionVariable -> true
-    is IsInternalReason.CapturedFunctionVariable -> false
-  }
+  !isCapturedFunctionArgument() && !realOwner().isInternal
 
 context(CX.Scope, CX.Symbology)
 fun IrDeclarationReference.isInternal(): Boolean = !isExternal()

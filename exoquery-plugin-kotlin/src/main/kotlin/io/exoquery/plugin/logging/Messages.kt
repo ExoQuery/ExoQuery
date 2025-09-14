@@ -1,7 +1,9 @@
 package io.exoquery.plugin.logging
 
+import io.exoquery.annotation.CapturedDynamic
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.plugin.dataClassProperties
+import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.source
@@ -10,6 +12,8 @@ import io.exoquery.plugin.stableIdentifier
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.dumpKotlinLikePretty
 import io.exoquery.plugin.transform.prepareForPrintingAdHoc
+import io.exoquery.plugin.trees.RealOwner
+import io.exoquery.plugin.trees.realOwner
 import io.exoquery.plugin.trees.showLineage
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -27,10 +31,12 @@ import org.jetbrains.kotlin.ir.util.render
 // @formatter:off
 object Messages {
 
+
 context(CX.Scope)
 fun InvalidCapturedDynamicArgument(arg: IrExpression) =
 """
-Argument `${arg.sourceOrDump()}` (whose type was: ${arg.type.dumpKotlinLike()}) of a @CapturedDynamic function must be a constant value, a captured query i.e. capture { ... } or capture.select { ... } or capture.expression { ... }.
+Argument `${arg.sourceOrDump()}` (whose type was: ${arg.type.dumpKotlinLike()}) of a @CapturedDynamic function must be either a direct instance of 
+captured query i.e. capture { ... }, capture.select { ... } or capture.expression { ... }. Or a runtime SqlExpression<T> or SqlQuery<T> instance.
 =============== For example ===============
 
 // Say that you have a captured-function that looks like this:
@@ -237,9 +243,19 @@ on the function to allow it to be used in this context.
 """.trimIndent()
 
 context(CX.Scope)
-fun ValueLookupComingFromExternalInExpression(variable: IrGetValue, captureTypeName: String = "select") =
+fun ValueLookupComingFromExternalInExpression(variable: IrGetValue) =
+  when {
+    variable.realOwner() is RealOwner.CapturedDynamicFunctionVariable ->
+      InvalidCapturedDynamicArgument(variable)
+    else ->
+      ValueMustBeWrappedInParam(variable)
+  }
+
+
+context(CX.Scope)
+fun ValueMustBeWrappedInParam(variable: IrGetValue) =
 """
-It looks like the variable `${variable.symbol.safeName}` is coming from outside the capture/${captureTypeName} block. 
+It looks like the variable `${variable.symbol.safeName}` is coming from outside the capture block. 
 If this is a runtime-value (i.e. a value that is NOT being plugged in from some other captured-block query), you need to bring into
 the query as a parameter like this: `param(${variable.symbol.safeName})`.
 For example:

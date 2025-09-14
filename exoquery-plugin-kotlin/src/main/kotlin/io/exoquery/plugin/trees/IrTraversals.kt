@@ -37,10 +37,10 @@ object IrTraversals {
     override fun visitElement(element: IrElement) {
       if (element is IrGetValue)
         getValues.add(element)
-      else if (element is IrCall)
-        getIrCalls.add(element)
-      else
+      else {
+        if (element is IrCall) getIrCalls.add(element)
         element.acceptChildren(this, null)
+      }
     }
   }
 
