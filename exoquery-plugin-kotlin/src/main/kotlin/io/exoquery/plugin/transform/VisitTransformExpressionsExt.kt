@@ -4,15 +4,15 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
-context(CX.Symbology, CX.QueryAccum) fun makeVisitorContextWithAccum() = VisitorContext(symbolSet, accum)
+context(CX.QueryAccum) fun makeVisitorContextWithAccum() = VisitorContext(accum)
 
-context(CX.Symbology) fun makeVisitorContext() = VisitorContext(symbolSet, FileQueryAccum.empty())
+fun makeVisitorContext() = VisitorContext(FileQueryAccum.empty())
 
-context (CX.Symbology) fun VisitTransformExpressions.visitExpression(expression: IrExpression) =
+fun VisitTransformExpressions.visitExpression(expression: IrExpression) =
   visitExpression(expression, makeVisitorContext())
 
-context (CX.Symbology) fun VisitTransformExpressions.visitBlockBody(body: IrBlockBody) =
+fun VisitTransformExpressions.visitBlockBody(body: IrBlockBody) =
   visitBlockBody(body, makeVisitorContext())
 
-context (CX.Symbology) fun VisitTransformExpressions.visitCall(expression: IrCall) =
+fun VisitTransformExpressions.visitCall(expression: IrCall) =
   visitCall(expression, makeVisitorContext())

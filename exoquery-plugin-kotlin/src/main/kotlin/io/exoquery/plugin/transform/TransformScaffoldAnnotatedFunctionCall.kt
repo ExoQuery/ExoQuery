@@ -53,13 +53,13 @@ fun buildScaffolding(zeroisedCall: IrExpression, scaffoldType: IrType, originalA
 
 
 class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransformExpressions, val sourceLabel: String) : Transformer<IrCall>() {
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(call: IrCall): Boolean =
     call.symbol.owner.hasAnnotation<CapturedFunction>()
 
 
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(call: IrCall): IrExpression {
     val paramSketches =
       // if we can get the param-kinds then return it, otherwise try to parse the parent captured-function

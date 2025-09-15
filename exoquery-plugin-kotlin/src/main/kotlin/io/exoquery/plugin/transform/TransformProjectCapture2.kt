@@ -17,11 +17,11 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) : FalliableTransformer<IrExpression>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expression: IrExpression): Boolean =
     expression.isContainerOfXR()
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(expression: IrExpression): IrExpression? = run {
     val ownershipChain = TransformProjectCapture2.buildOwnerChain(expression)
     val output = TransformProjectCapture2.processOwnerChain(ownershipChain, superTransformer, false)
@@ -58,7 +58,7 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
     fun buildOwnerChain(expression: IrExpression) =
       OwnerChain.buildFrom(expression)
 
-    context(CX.Scope, CX.Builder, CX.Symbology)
+    context(CX.Scope, CX.Builder)
     fun processOwnerChain(ownershipChain: OwnerChain, superTransformer: VisitTransformExpressions, allowProcessCapturedFunction: Boolean) =
       ascendFromRootAndProjectRecurse(ownershipChain, superTransformer, allowProcessCapturedFunction)?.expr
 
@@ -74,7 +74,7 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
       data object ActionBatch : ExprType
     }
 
-    context(CX.Scope, CX.Builder, CX.Symbology)
+    context(CX.Scope, CX.Builder)
     private fun IrExpression.exprTypeOf(): ExprType? =
       when {
         this.type.isClass<SqlExpression<*>>() -> ExprType.Expr
@@ -85,7 +85,7 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
         else -> null
       }
 
-    context(CX.Scope, CX.Builder, CX.Symbology)
+    context(CX.Scope, CX.Builder)
     fun ascendFromRootAndProjectRecurse(node: OwnerChain, superTransformer: VisitTransformExpressions, allowProcessCapturedFunction: Boolean): OwnerChain.Root.Uprootable? {
       fun ascendFromRootAndProject(node: OwnerChain) = ascendFromRootAndProjectRecurse(node, superTransformer, allowProcessCapturedFunction)
 

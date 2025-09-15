@@ -14,12 +14,12 @@ class TransformShowAnnotations(val superTransformer: VisitTransformExpressions) 
 
   private val fqn: String = "io.exoquery.showAnnotations"
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     expression.symbol.owner.kotlinFqName.asString().let { it == fqn }
 
   // parent symbols are collected in the parent context
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(expression: IrCall): IrExpression {
     val newExpression = superTransformer.recurse(expression)
     val sqlExpressionType = newExpression.type

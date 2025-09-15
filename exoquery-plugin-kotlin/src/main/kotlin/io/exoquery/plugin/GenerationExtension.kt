@@ -5,7 +5,6 @@ import io.exoquery.plugin.transform.CompileTimeStoredXRs
 import io.exoquery.plugin.transform.CompileTimeStoredXRsScope
 import io.exoquery.plugin.transform.CompileTimeStoredXRsScope.StorageMode
 import io.exoquery.plugin.transform.FileAccum
-import io.exoquery.plugin.transform.SymbolSet
 import io.exoquery.plugin.transform.VisitTransformExpressions
 import io.exoquery.plugin.transform.VisitorContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -32,7 +31,7 @@ class GenerationExtension(
     moduleFragment
       .transform(
         VisitTransformExpressions(pluginContext, config, scopeXRs, exoOptions),
-        VisitorContext(SymbolSet(listOf(), listOf()), FileAccum.empty())
+        VisitorContext(FileAccum.empty())
       )
   }
 }

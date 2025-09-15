@@ -89,7 +89,7 @@ import kotlin.collections.plus
  */
 class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions) : ElementTransformer<IrFunction>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expr: IrFunction): Boolean =
     expr is IrSimpleFunction && expr.hasAnnotation<CapturedFunction>() &&
         // If the function has a CapturedFunctionParamKinds annotation it has already been transformed
@@ -97,7 +97,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
 
   private fun errorText() = "A function annotated with @CapturedFunction must return a single, single SqlQuery<T> or SqlExpression<T> instance"
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(capFunRaw: IrFunction): IrFunction {
     val capFun = capFunRaw as? IrSimpleFunction ?: parseError("The function annotated with @CapturedFunction must be a simple function.", capFunRaw)
 
@@ -150,7 +150,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     }
   }
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   private fun constructSqlContainer(capFun: IrSimpleFunction, capFunRaw: IrFunction) = run {
     val recieiverParam: XR.Ident? =
       capFun.extensionParam?.let { recieiverExpr ->
@@ -165,32 +165,31 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     val capFunReturn =
       getSingleReturnExpr() ?: parseError(Messages.CapturedFunctionFormWrong("Outer form of the captured-function was wrong."), capFun)
 
-    with(CX.Symbology(symbolSet.withCapturedFunctionParameters(capFun))) {
-      // If we've got some function like:
-      // @CapturedFunction fun nameIsJoe(people: SqlQuery<Person>) = capture { people.filter { p -> p.name == name } }
-      // we need to parse the body of the function and transform it into a XR.Function. On the site of a use-call
-      // e.g. `nameIsJoe(Table<Person>())` we need to transform the use-site a XR.FunctionApply(..., args)
-      // eventually during beta-reduction we'll get we'll get XR.FunctionApply(XR.Function(...), args) which is the XR representation of the function
-      // and we'll apply the function during the SqlNormalization phase.
-      on(capFunReturn).match(
-        // It can either be a `select { ... }` or a `capture { ... }`
-        case(Call.CaptureQuery[Is()]).thenThis {
-          val (rawQueryXR, dynamics) = TransformCapturedQuery.parseCapturedQuery(it, superTransformer)
-          processQuery(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
-        },
-        case(Call.CaptureSelect[Is()]).thenThis {
-          val (rawQueryXR, dynamics) = TransformSelectClause.parseSelectClause(it, superTransformer)
-          processQuery(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
-        },
-        case(Call.CaptureExpression[Is()]).thenThis {
-          val (rawQueryXR, dynamics) = TransformCapturedExpression.parseSqlExpression(it, superTransformer)
-          processExpression(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
-        }
-      ) ?: parseError(Messages.CapturedFunctionFormWrong("Invalid capture-function body. ${errorText()}"), capFunReturn)
-    }
+
+    // If we've got some function like:
+    // @CapturedFunction fun nameIsJoe(people: SqlQuery<Person>) = capture { people.filter { p -> p.name == name } }
+    // we need to parse the body of the function and transform it into a XR.Function. On the site of a use-call
+    // e.g. `nameIsJoe(Table<Person>())` we need to transform the use-site a XR.FunctionApply(..., args)
+    // eventually during beta-reduction we'll get we'll get XR.FunctionApply(XR.Function(...), args) which is the XR representation of the function
+    // and we'll apply the function during the SqlNormalization phase.
+    on(capFunReturn).match(
+      // It can either be a `select { ... }` or a `capture { ... }`
+      case(Call.CaptureQuery[Is()]).thenThis {
+        val (rawQueryXR, dynamics) = TransformCapturedQuery.parseCapturedQuery(it, superTransformer)
+        processQuery(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
+      },
+      case(Call.CaptureSelect[Is()]).thenThis {
+        val (rawQueryXR, dynamics) = TransformSelectClause.parseSelectClause(it, superTransformer)
+        processQuery(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
+      },
+      case(Call.CaptureExpression[Is()]).thenThis {
+        val (rawQueryXR, dynamics) = TransformCapturedExpression.parseSqlExpression(it, superTransformer)
+        processExpression(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
+      }
+    ) ?: parseError(Messages.CapturedFunctionFormWrong("Invalid capture-function body. ${errorText()}"), capFunReturn)
   }
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   private fun constructReturnBody(capFun: IrFunction, newSqlContainer: IrExpression) =
     run {
       val body = capFun.body
@@ -216,7 +215,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
       capFun
     }
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   private fun processQuery(recieverParam: XR.Ident?, rawQueryXR: XR, dynamics: DynamicsAccum, originalParams: List<IrValueParameter>, capFunLocation: XR.Location, capFunReturn: IrExpression, originalCall: IrFunction) = run {
     val xrLambdaParams = recieverParam.nullableAsList() + originalParams.map { Parser.scoped { Parser.parseValueParamter(it) } }
     val params = dynamics.makeParams()
@@ -240,7 +239,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     }
   }
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   private fun processExpression(recieverParam: XR.Ident?, rawQueryXR: XR, dynamics: DynamicsAccum, originalParams: List<IrValueParameter>, capFunLocation: XR.Location, capFunReturn: IrExpression, originalCall: IrFunction) = run {
     val xrLambdaParams = recieverParam.nullableAsList() + originalParams.map { Parser.scoped { Parser.parseValueParamter(it) } }
     val params = dynamics.makeParams()
@@ -276,7 +275,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
   }
 
   companion object {
-    context(CX.Scope, CX.Builder, CX.Symbology)
+    context(CX.Scope, CX.Builder)
     fun addInputSketch(capFun: IrSimpleFunction) {
       // Create a helper annotation so we know what the original Param-Kinds of the function so that later in
       // the TransformScaffoldAnnotatedFunctionCall we can reconstruct what the arguments of the function were

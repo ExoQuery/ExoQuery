@@ -15,12 +15,12 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 class TransformCapturedQuery(val superTransformer: VisitTransformExpressions, val calledFrom: String) : Transformer<IrCall>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureQuery[Is()].matchesAny(expression)
 
   // parent symbols are collected in the parent context
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(expression: IrCall): IrExpression {
     val (xr, dynamics) = parseCapturedQuery(expression, superTransformer)
 
@@ -47,7 +47,7 @@ class TransformCapturedQuery(val superTransformer: VisitTransformExpressions, va
   }
 
   companion object {
-    context(CX.Scope, CX.Builder, CX.Symbology)
+    context(CX.Scope, CX.Builder)
     fun parseCapturedQuery(expression: IrCall, superTransformer: VisitTransformExpressions) = run {
       val bodyExpr =
         on(expression).match(

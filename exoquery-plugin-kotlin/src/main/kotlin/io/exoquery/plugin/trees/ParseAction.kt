@@ -29,7 +29,7 @@ import org.jetbrains.kotlin.ir.types.isSubtypeOf
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 object ParseAction {
-  context(CX.Scope, CX.Parsing, CX.Symbology, CX.Builder)
+  context(CX.Scope, CX.Parsing, CX.Builder)
   // Parse an action, normally dynamic splicing of actions is not allowed, the only exception to this is from a free(... action ...) call where `action` is dynamic (see the ParseFree in ParserOps)
   fun parse(expr: IrExpression, dynamicCallsAllowed: Boolean = false): XR.Action =
     on(expr).match<XR.Action>(
@@ -141,7 +141,7 @@ object ParseAction {
       }
     ) ?: parseError("Could not parse the action", expr)
 
-  context(CX.Scope, CX.Parsing, CX.Symbology, CX.Builder)
+  context(CX.Scope, CX.Parsing, CX.Builder)
   private fun parseAssignmentList(expr: IrExpression, inputType: IrType) =
     on(expr).match(
       case(Ir.Call.FunctionMem1[Ir.Expr.IsTypeOf(inputType), Is("set"), Ir.Vararg[Is()]]).then { _, (assignments) ->
@@ -153,7 +153,7 @@ object ParseAction {
 
 
   // TODO when going back to the Expression parser the 'this' pointer needs to be on the list of local symbols
-  context(CX.Scope, CX.Parsing, CX.Symbology, CX.Builder)
+  context(CX.Scope, CX.Parsing, CX.Builder)
   private fun parseActionComposite(expr: IrExpression, inputType: IrType, actionAlias: XR.Ident, compositeType: CompositeType): XR.Action =
     // the i.e. insert { set(...) } or update { set(...) }
     on(expr).match<XR.Action>(
@@ -294,7 +294,7 @@ object ParseAction {
       },
     ) ?: parseError("Could not parse the expression inside of the action", expr)
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun parseAssignment(expr: IrExpression): XR.Assignment =
     on(expr).match<XR.Assignment>(
       case(ExtractorsDomain.Call.`x to y`[Is.Companion(), Is.Companion()]).thenThis { left, right ->

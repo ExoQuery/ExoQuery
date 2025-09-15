@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
 object ParseWindow {
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun parse(expr: IrExpression): XR.Window =
     on(expr).match(
       case(Ir.Call.FunctionMem1[Is(), Is("partitionBy"), Ir.Vararg[Is()]]).thenThis { head, (partitionExprs) ->
@@ -68,14 +68,14 @@ object ParseExpression {
         }
     }
 
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun constOrFail(): Const =
       when (this) {
         is Const -> this
         is Expr -> parseError("Expected a constant segment, but found an expression segment: Seg.Expr(${expr.dumpKotlinLike()})", this.expr)
       }
 
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun exprOrFail(): Expr =
       when (this) {
         is Const -> parseError("Expected an expression segment, but found a constant segment: Seg.Const(${value})")
@@ -83,7 +83,7 @@ object ParseExpression {
       }
   }
 
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun parseBlockStatement(expr: IrStatement): XR.Variable =
+  context(CX.Scope, CX.Parsing) fun parseBlockStatement(expr: IrStatement): XR.Variable =
     on(expr).match(
       case(Ir.Variable[Is(), Is()]).thenThis { name, rhs ->
         val irType = TypeParser.of(this)
@@ -92,14 +92,14 @@ object ParseExpression {
       }
     ) ?: parseError("Could not parse Ir Variable statement from:\n${expr.dumpSimple()}")
 
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun parseBranch(expr: IrBranch): XR.Branch =
+  context(CX.Scope, CX.Parsing) fun parseBranch(expr: IrBranch): XR.Branch =
     on(expr).match(
       case(Ir.Branch[Is(), Is()]).then { cond, then ->
         XR.Branch(parse(cond), parse(then), expr.loc)
       }
     ) ?: parseError("Could not parse Branch from: ${expr.dumpSimple()}")
 
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun parseFunctionBlockBody(blockBody: IrBlockBody): XR.Expression =
+  context(CX.Scope, CX.Parsing) fun parseFunctionBlockBody(blockBody: IrBlockBody): XR.Expression =
     blockBody.match(
       case(Ir.BlockBody.ReturnOnly[Is()]).then { irReturnValue ->
         parse(irReturnValue)
@@ -111,7 +111,7 @@ object ParseExpression {
       }
     ) ?: parseError("Could not parse IrBlockBody:\n${blockBody.dumpKotlinLike()}")
 
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun parse(expr: IrExpression): XR.Expression =
+  context(CX.Scope, CX.Parsing) fun parse(expr: IrExpression): XR.Expression =
     on(expr).match<XR.Expression>(
 
       case(Ir.Call[Is()]).thenIf { it.ownerHasAnnotation<DslFunctionCall>() || it.ownerHasAnnotation<DslNestingIgnore>() }.then { call ->
@@ -528,7 +528,7 @@ object ParseExpression {
       parseError("Could not parse the expression." + (if (additionalHelp.isNotEmpty()) "\n${additionalHelp}" else ""), expr)
     }
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun processScaffolded(sqlExprArg: IrExpression, irVararg: IrExpression, currentExpr: IrExpression) = run {
     val loc = currentExpr.loc
     //if (this.dumpKotlinLikePretty().contains("Table(Address).join { a -> p.id == a.ownerId }.toExpr")) {

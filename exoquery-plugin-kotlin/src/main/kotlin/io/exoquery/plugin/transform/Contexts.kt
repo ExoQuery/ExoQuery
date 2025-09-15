@@ -26,8 +26,6 @@ object CX {
 
   data class QueryAccum(val accum: FileQueryAccum)
 
-  data class Symbology(val symbolSet: SymbolSet)
-
   data class DebugDataConfig(val addParamDescriptions: Boolean = true)
 
   data class StoredXRsScope(val storedXRs: CompileTimeStoredXRs)

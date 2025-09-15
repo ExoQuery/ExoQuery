@@ -19,28 +19,28 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 
 object Parser {
-  context (CX.Scope, CX.Symbology)
-  fun <X> scoped(parse: context(CX.Scope, CX.Symbology, CX.Parsing) () -> X): X =
-    parse(this@Scope, this@Symbology, CX.Parsing())
+  context (CX.Scope)
+  fun <X> scoped(parse: context(CX.Scope, CX.Parsing) () -> X): X =
+    parse(this@Scope, CX.Parsing())
 
-  context (CX.Scope, CX.Symbology)
-  fun <X> scoped(parsingScope: CX.Parsing, parse: context(CX.Scope, CX.Symbology, CX.Parsing) () -> X): X =
-    parse(this@Scope, this@Symbology, parsingScope)
+  context (CX.Scope)
+  fun <X> scoped(parsingScope: CX.Parsing, parse: context(CX.Scope, CX.Parsing) () -> X): X =
+    parse(this@Scope, parsingScope)
 
   // The action-parser requires a builder context to build the entity from setParams
-  context(CX.Scope, CX.Symbology, CX.Parsing, CX.Builder)
+  context(CX.Scope, CX.Parsing, CX.Builder)
   fun parseAction(expr: IrExpression): Pair<XR.Action, DynamicsAccum> =
     ParseAction.parse(expr) to binds
 
-  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseFunctionBlockBody(blockBody: IrBlockBody): Pair<XR.Expression, DynamicsAccum> =
+  context(CX.Scope, CX.Parsing) fun parseFunctionBlockBody(blockBody: IrBlockBody): Pair<XR.Expression, DynamicsAccum> =
     ParseExpression.parseFunctionBlockBody(blockBody) to binds
 
-  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseQuery(expr: IrExpression): Pair<XR.Query, DynamicsAccum> = run {
+  context(CX.Scope, CX.Parsing) fun parseQuery(expr: IrExpression): Pair<XR.Query, DynamicsAccum> = run {
     //logger.error("------------------- Parsing Query From -------------------\n${expr.dumpKotlinLike().prepareForPrintingAdHoc()}")
     ParseQuery.parse(expr) to binds
   }
 
-  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseQueryFromBlock(expr: IrBlockBody): Pair<XR.Query, DynamicsAccum> =
+  context(CX.Scope, CX.Parsing) fun parseQueryFromBlock(expr: IrBlockBody): Pair<XR.Query, DynamicsAccum> =
     run {
       //logger.error("------------------- Parsing Query From Block -------------------\n${expr.dumpKotlinLike().prepareForPrintingAdHoc()}")
       val parsedQuery =
@@ -53,16 +53,16 @@ object Parser {
       parsedQuery to binds
     }
 
-  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseSelectClauseLambda(expr: IrExpression): Pair<SelectClause, DynamicsAccum> =
+  context(CX.Scope, CX.Parsing) fun parseSelectClauseLambda(expr: IrExpression): Pair<SelectClause, DynamicsAccum> =
     ParseSelectClause.parseSelectLambda(expr) to binds
 
-  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseExpression(expr: IrExpression): Pair<XR.Expression, DynamicsAccum> =
+  context(CX.Scope, CX.Parsing) fun parseExpression(expr: IrExpression): Pair<XR.Expression, DynamicsAccum> =
     ParseExpression.parse(expr) to binds
 
-  context(CX.Scope, CX.Symbology, CX.Parsing) fun parseValueParamter(expr: IrValueParameter): XR.Ident =
+  context(CX.Scope, CX.Parsing) fun parseValueParamter(expr: IrValueParameter): XR.Ident =
     expr.makeIdent()
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   internal fun parseArg(arg: IrExpression) =
     when {
       arg.type.isClass<SqlQuery<*>>() -> ParseQuery.parse(arg)
@@ -70,7 +70,7 @@ object Parser {
     }
 }
 
-context(CX.Scope, CX.Parsing, CX.Symbology)
+context(CX.Scope, CX.Parsing)
 fun IrValueParameter.makeIdent() =
   XR.Ident(this.unadulteratedName.sanitizeIdentName(), TypeParser.of(this), this.locationXR())
 
@@ -83,7 +83,7 @@ fun IrCall.extensionOrDispatch() =
 
 // Parser for GlobalCall and MethodCall
 object CallParser {
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun parse(expr: IrCall): XR.U.QueryOrExpression {
 
     fun IrSimpleFunctionSymbol.toFqNameXR() = this.owner.kotlinFqName.toXR()
@@ -106,7 +106,7 @@ object CallParser {
     }
   }
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   private fun parseCall(reciever: IrExpression?, expr: IrCall): XR.U.QueryOrExpression {
     val tpe =
       if (expr.symbol.owner.hasAnnotation<DslBooleanExpression>())
@@ -149,7 +149,7 @@ object CallParser {
     }
   }
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   private fun IrCall.extractCallType(): Pair<XR.CallType, String?> {
     val annotationArgs = this.symbol.owner.getAnnotationArgs<DslFunctionCall>()
     val arg =

@@ -23,7 +23,7 @@ import org.jetbrains.kotlin.ir.util.statements
 
 object ParseSelectClause {
 
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun processSelectLambda(statementsFromRet: List<IrStatement>, loc: CompilerMessageSourceLocation): SelectClause {
+  context(CX.Scope, CX.Parsing) fun processSelectLambda(statementsFromRet: List<IrStatement>, loc: CompilerMessageSourceLocation): SelectClause {
     if (statementsFromRet.isEmpty()) parseError("A select-clause usually should have two statements, a from(query) and an output. This one has neither", loc) // TODO provide example in the error
     if (statementsFromRet.last() !is IrReturn) parseError("A select-clause must return a plain (i.e. not SqlQuery) value.", loc)
     val ret = statementsFromRet.last()
@@ -36,7 +36,7 @@ object ParseSelectClause {
     return ValidateAndOrganize(statementsToParsed, retXR)
   }
 
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun parseSelectLambda(lambda: IrStatement): SelectClause =
+  context(CX.Scope, CX.Parsing) fun parseSelectLambda(lambda: IrStatement): SelectClause =
     lambda.match(
       // this typically happens when the top-level select is called
       case(Ir.FunctionExpression.withBlockStatements[Is(), Is()]).thenThis { _, statementsFromRet ->
@@ -51,7 +51,7 @@ object ParseSelectClause {
 
   // need to test case of `select { from(x.map(select { ... })) }` to see how nested recursion works
   // also test case of `select { from(select { ... } }` to see how nested recursion works
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun parseSubClause(expr: IrStatement): SX =
+  context(CX.Scope, CX.Parsing) fun parseSubClause(expr: IrStatement): SX =
     on(expr).match<SX>(
       case(Ir.Variable[Is(), Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SelectClauseCapturedBlock>(), Is("from"), Is()]]).thenThis { varName, (_, table) ->
         val id = XR.Ident(varName.sanitizeIdentName(), TypeParser.of(this), this.loc)

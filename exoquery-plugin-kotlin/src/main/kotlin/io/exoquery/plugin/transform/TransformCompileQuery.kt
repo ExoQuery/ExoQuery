@@ -37,14 +37,14 @@ import kotlin.time.measureTimedValue
 
 class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : TransformerWithQueryAccum<IrCall>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expr: IrCall): Boolean =
     SqlBuildFunction.matches(expr)
 
   private data class BuildFunctionArgs(val queryLabel: String?)
 
   // Making args extraction somewhat modular so can add more args to the build function in the future
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.QueryAccum)
   private fun extractArgsFromCall(expr: IrCall): BuildFunctionArgs = run {
     val partsWithParams = expr.zipArgsWithParamsOrFail()
     val queryLabel =
@@ -62,7 +62,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
     data class Failure(val error: Throwable): ProcessResult<Nothing>
   }
 
-  context(CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum)
+  context(CX.Scope, CX.Builder, CX.QueryAccum)
   override fun transform(expr: IrCall): IrExpression {
 
     // Interesting IDEA. If the a file has a particular annotation, in the visitor before leaving it throw and error with the contents
@@ -86,9 +86,6 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
       val clsPackageName = dialectCls.owner.kotlinFqName.asString() ?: parseError("The dialect class ${dialectType.dumpKotlinLike()} must have a package name but it did not", expr)
       construct to clsPackageName
     }
-
-    val transfomerScope = symbolSet
-
 
     // recurse down into the expression in order to make it into an Uprootable if needed
     return expr.match(

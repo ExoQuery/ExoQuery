@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 object ParseQuery {
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   private fun processQueryLambda(head: IrExpression, lambda: IrExpression) =
     lambda.match(
       case(Ir.FunctionExpression.withBlock[Is(), Is()]).thenThis { _, blockBody ->
@@ -38,11 +38,11 @@ object ParseQuery {
       }
     )
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun IrCall.isDslMethod() =
     this.symbol.owner.let { it.hasAnnotation<Dsl>() } ?: false
 
-  context(CX.Scope, CX.Parsing, CX.Symbology) fun parse(expr: IrExpression): XR.Query =
+  context(CX.Scope, CX.Parsing) fun parse(expr: IrExpression): XR.Query =
     when {
       // We don't want arbitrary functions returning SqlQuery to be treated as dynamic so we make sure they are annotated with @Dsl
       // this processes everything like that.
@@ -167,7 +167,7 @@ object ParseQuery {
     }
 
   // Assuming everything that gets into here is already annotated with @Dsl
-  context(CX.Scope, CX.Parsing, CX.Symbology) private fun parseDslCall(expr: IrExpression): XR.Query? =
+  context(CX.Scope, CX.Parsing) private fun parseDslCall(expr: IrExpression): XR.Query? =
     // Note, every single instance being parsed here shuold be of SqlQuery<*>, should check for that as an entry sanity-check
     on(expr).match<XR.Query>(
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlQuery<*>>(), Is.of("map", "concatMap", "filter"), Is()]).thenThis { head, lambda ->
@@ -260,14 +260,14 @@ object ParseQuery {
       }
     )
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun entityFromType(type: IrType, location: CompilerMessageSourceLocation): XR.Entity {
     val tpe = TypeParser.ofTypeAt(type, location)
     val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", location)
     return XR.Entity(tpeProd.name, tpeProd, XR.HasRename.hasOrNot(tpeProd.meta.hasRename), location.toLocationXR())
   }
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun parseEntity(type: IrType, location: CompilerMessageSourceLocation): XR.Entity {
     val tpe = TypeParser.ofTypeAt(type, location)
     val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", location)

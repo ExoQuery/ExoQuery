@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.ir.types.IrType
 object Types {
   private var sqlDialectValue: IrType? = null
 
-  context(CX.Scope, CX.Symbology)
+  context(CX.Scope)
   fun sqliteDialect(): IrType =
     sqlDialectValue ?: run {
       val tpe = typeOfClass<SqliteDialect>() ?: parseError("No type for SQLiteDialect found, this is a bug in the plugin")

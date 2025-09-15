@@ -14,12 +14,12 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 
 
 class TransformCapturedExpression(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureExpression[Is()].matchesAny(expression)
 
   // parent symbols are collected in the parent context
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(expression: IrCall): IrExpression {
     val (xrExpr, dynamics) = parseSqlExpression(expression, superTransformer)
     val paramsExprModel = dynamics.makeParams()
@@ -38,7 +38,7 @@ class TransformCapturedExpression(val superTransformer: VisitTransformExpression
   }
 
   companion object {
-    context(CX.Scope, CX.Builder, CX.Symbology)
+    context(CX.Scope, CX.Builder)
     fun parseSqlExpression(expression: IrCall, superTransformer: VisitTransformExpressions) = run {
       val bodyRaw =
         on(expression).match(

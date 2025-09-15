@@ -19,7 +19,7 @@ object ValidateAndOrganize {
   // The "pure functiona' way to do this would be to have a State object that is copied with new values but since
   // everything here is completely private and the only way to interact with it is through the invoke function, we it should be fine for now.
   private class State(var phase: Phase = Phase.BEGIN, val clauses: MutableList<U.Assignment> = mutableListOf(), var where: SX.Where? = null, var groupBy: SX.GroupBy? = null, var sortBy: SX.SortBy? = null) {
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun validPhases(vararg validPhases: Phase) = { errorMsg: String, expr: IrElement ->
       if (!validPhases.contains(phase)) logger.error(errorMsg, expr)
     }
@@ -28,21 +28,21 @@ object ValidateAndOrganize {
       this.phase = phase
     }
 
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun addFrom(from: SX.From, expr: IrElement) {
       validPhases(Phase.BEGIN, Phase.FROM)("Cannot add a FROM clause after a JOIN clause or any other kind of clause", expr)
       setPhaseTo(Phase.FROM)
       clauses += from
     }
 
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun addJoin(join: SX.Join, expr: IrElement) {
       validPhases(Phase.JOIN, Phase.FROM)("At least one FROM-clause is needed and can only add JOIN clauses after FROM and before any WHERE/GROUP/SORT clauses.", expr)
       setPhaseTo(Phase.JOIN)
       clauses += join
     }
 
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun addWhere(where: SX.Where, expr: IrElement) {
       //if (phase != Phase.JOIN && phase != Phase.FROM) error("", expr)
       //phase = Phase.MODIFIER
@@ -51,14 +51,14 @@ object ValidateAndOrganize {
       this.where = where
     }
 
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun addGroupBy(groupBy: SX.GroupBy, expr: IrElement) {
       validPhases(Phase.JOIN, Phase.FROM, Phase.MODIFIER)("Only one `GROUP BY` clause is allowed an it must be after from/join calls and before any sort clauses", expr)
       setPhaseTo(Phase.MODIFIER)
       this.groupBy = groupBy
     }
 
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun addSortBy(sortBy: SX.SortBy, expr: IrElement) {
       validPhases(Phase.JOIN, Phase.FROM, Phase.MODIFIER)("Only one `SORT BY` clause is allowed an it must be after from/join calls and before any group clauses", expr)
       setPhaseTo(Phase.MODIFIER)
@@ -66,13 +66,13 @@ object ValidateAndOrganize {
     }
 
     // Ignore other states for the arbitrary assignments. They can technically be between anything
-    context(CX.Scope, CX.Parsing, CX.Symbology)
+    context(CX.Scope, CX.Parsing)
     fun addArbitraryAssignment(assignment: SX.ArbitraryAssignment, expr: IrElement) {
       clauses += assignment
     }
   }
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   operator fun invoke(statements: List<Pair<SX, IrStatement>>, ret: XR.Expression): SelectClause {
     val state = State()
     statements.forEach { (sx, stmt) ->

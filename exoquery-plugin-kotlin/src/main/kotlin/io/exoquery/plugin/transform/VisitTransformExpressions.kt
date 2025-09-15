@@ -31,12 +31,12 @@ import org.jetbrains.kotlin.ir.util.statements
 typealias FileQueryAccum = FileAccum<PrintableQuery>
 typealias FileCodegenAccum = FileAccum<Code.Entities>
 
-data class VisitorContext(val symbolSet: SymbolSet, val queriesAccum: FileQueryAccum, val codegenAccum: FileCodegenAccum = FileCodegenAccum.empty()) {
-  fun withNewAccum() = VisitorContext(symbolSet, FileQueryAccum.empty(), FileCodegenAccum.empty())
-  fun withNewFileAccum(queryAccum: FileQueryAccum, codegenAccum: FileCodegenAccum) = VisitorContext(symbolSet, queryAccum, codegenAccum)
+data class VisitorContext(val queriesAccum: FileQueryAccum, val codegenAccum: FileCodegenAccum = FileCodegenAccum.empty()) {
+  fun withNewAccum() = VisitorContext(FileQueryAccum.empty(), FileCodegenAccum.empty())
+  fun withNewFileAccum(queryAccum: FileQueryAccum, codegenAccum: FileCodegenAccum) = VisitorContext(queryAccum, codegenAccum)
 
   companion object {
-    fun empty() = VisitorContext(SymbolSet.empty, FileAccum.empty())
+    fun empty() = VisitorContext(FileAccum.empty())
   }
 }
 
@@ -62,21 +62,19 @@ class VisitTransformExpressions(
     storedXRsScope = storedXRsScope,
   )
 
-  context (CX.Symbology, CX.QueryAccum)
+  context (CX.QueryAccum)
   fun recurseWithAccum(expression: IrExpression): IrExpression =
     when (expression) {
       is IrCall -> visitCall(expression, makeVisitorContext()) as IrExpression
       else -> visitExpression(expression, makeVisitorContext()) as IrExpression
     }
 
-  context (CX.Symbology)
   fun recurse(expression: IrExpression): IrExpression =
     when (expression) {
       is IrCall -> visitCall(expression, makeVisitorContext()) as IrExpression
       else -> visitExpression(expression, makeVisitorContext()) as IrExpression
     }
 
-  context (CX.Symbology)
   fun recurse(expression: IrBlockBody): IrBlockBody =
     visitBody(expression, makeVisitorContext()) as IrBlockBody
 
@@ -150,8 +148,8 @@ class VisitTransformExpressions(
     return ret
   }
 
-  private fun <R> runInContext(scopeContext: CX.Scope, builderContext: CX.Builder, visitorContext: VisitorContext, runBlock: context (CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum) () -> R): R =
-    runBlock(scopeContext, builderContext, CX.Symbology(visitorContext.symbolSet), CX.QueryAccum(visitorContext.queriesAccum))
+  private fun <R> runInContext(scopeContext: CX.Scope, builderContext: CX.Builder, visitorContext: VisitorContext, runBlock: context (CX.Scope, CX.Builder, CX.QueryAccum) () -> R): R =
+    runBlock(scopeContext, builderContext, CX.QueryAccum(visitorContext.queriesAccum))
 
   override fun visitFunctionNew(declaration: IrFunction, data: VisitorContext): IrStatement {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
@@ -176,9 +174,9 @@ class VisitTransformExpressions(
   }
 
   data class ScopedRunner(val scopeContext: CX.Scope, val builderContext: CX.Builder, val visitorContext: VisitorContext) {
-    fun <R : IrElement> run(expression: R, block: context (CX.Scope, CX.Builder, CX.Symbology, CX.QueryAccum) () -> R): R =
+    fun <R : IrElement> run(expression: R, block: context (CX.Scope, CX.Builder, CX.QueryAccum) () -> R): R =
       try {
-        block(scopeContext, builderContext, CX.Symbology(visitorContext.symbolSet), CX.QueryAccum(visitorContext.queriesAccum))
+        block(scopeContext, builderContext, CX.QueryAccum(visitorContext.queriesAccum))
       } catch (e: ParseError) {
         // builderContext.logger.error(e.msg, e.location ?: expression.location(currentFile.fileEntry))
         scopeContext.logger.error(

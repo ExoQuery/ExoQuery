@@ -17,12 +17,12 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 class TransformSelectClause(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureSelect[Is()].matchesAny(expression)
 
   // parent symbols are collected in the parent context
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(selectExpressionRaw: IrCall): IrExpression {
     val (xr, dynamics) = parseSelectClause(selectExpressionRaw, superTransformer)
     val paramsExprModel = dynamics.makeParams()
@@ -39,7 +39,7 @@ class TransformSelectClause(val superTransformer: VisitTransformExpressions) : T
   }
 
   companion object {
-    context(CX.Scope, CX.Builder, CX.Symbology)
+    context(CX.Scope, CX.Builder)
     fun parseSelectClause(selectExpressionRaw: IrCall, superTransformer: VisitTransformExpressions) = run {
       // since there could be SqlQuery clauses inside we need to recurisvely transform the stuff inside the Select-Clause first
       // therefore we need to call the super-transform on the select lambda

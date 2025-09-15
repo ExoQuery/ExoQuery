@@ -18,11 +18,11 @@ import org.jetbrains.kotlin.ir.builders.irUnit
 
 class TransformCaptureCodegenRead(val codegenAccum: FileCodegenAccum) : Transformer<IrCall>() {
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureGenerate[Is(), Is()].matchesAny(expression)
 
-  context(CX.Scope, CX.Builder, CX.Symbology)
+  context(CX.Scope, CX.Builder)
   override fun transform(expression: IrCall): IrExpression {
     val (caseClassCodegen, callType) =
       on(expression).match(

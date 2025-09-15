@@ -41,7 +41,7 @@ object ExtractorsDomain {
       (expr.dispatchReceiver?.type?.let { isCompileableType(it) }
         ?: false) && isBuildFunction(expr.symbol.safeName) || expr.ownerHasAnnotation<ExoBuildDatabaseSpecific>() || expr.ownerHasAnnotation<ExoBuildRoomSpecific>()
 
-    context(CX.Scope, CX.Symbology)
+    context(CX.Scope)
     operator fun <AP : Pattern<Data>> get(x: AP) =
       customPattern1("SqlBuildFunction", x) { call: IrCall ->
         if (!matches(call))
@@ -92,7 +92,7 @@ object ExtractorsDomain {
 
 
   object DynamicQueryCall {
-    context(CX.Scope, CX.Symbology)
+    context(CX.Scope)
     operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("DynamicQueryCall", x) { expr: IrExpression ->
         val matches = expr.match(
@@ -113,7 +113,7 @@ object ExtractorsDomain {
   }
 
   object DynamicExprCall {
-    context(CX.Scope, CX.Symbology)
+    context(CX.Scope)
     operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("DynamicExprCall", x) { expr: IrExpression ->
         val matches = expr.match(
@@ -131,7 +131,7 @@ object ExtractorsDomain {
   }
 
   object DynamicActionCall {
-    context(CX.Scope, CX.Symbology)
+    context(CX.Scope)
     operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("DynamicActionCall", x) { expr: IrExpression ->
         val matches = expr.match(
@@ -282,9 +282,9 @@ object ExtractorsDomain {
      */
     class ActionSetClause(val inputType: IrType) {
       data class Data(val inputType: IrType, val originalExpr: IrExpression, val assignments: List<IrExpression>) {
-        context(CX.Scope, CX.Parsing, CX.Symbology)
+        context(CX.Scope, CX.Parsing)
         fun parseEntity() = ParseQuery.parseEntity(inputType, originalExpr.location())
-        context(CX.Scope, CX.Parsing, CX.Symbology)
+        context(CX.Scope, CX.Parsing)
         fun parseAssignments() = assignments.map { ParseAction.parseAssignment(it) }
       }
 

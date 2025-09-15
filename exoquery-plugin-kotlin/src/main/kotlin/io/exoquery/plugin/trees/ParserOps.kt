@@ -73,12 +73,6 @@ fun IrDeclarationReference.isCapturedVariable(): Boolean =
 //  symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it } != null
 //}
 
-context(CX.Symbology)
-fun IrDeclarationReference.findCapturedFunctionArgument() = run {
-  val gv = this
-  symbolSet.capturedFunctionParameters.find { gv.symbol.owner == it }
-}
-
 sealed interface RealOwner {
   val capturesVariables: Boolean
 
@@ -143,14 +137,14 @@ fun IrDeclarationReference.realOwner(): RealOwner {
   return rec(this.symbol.owner, VarType.Unknown, 100)
 }
 
-context(CX.Scope, CX.Symbology)
+context(CX.Scope)
 fun IrDeclarationReference.isExternal(): Boolean =
   !realOwner().capturesVariables
 
-context(CX.Scope, CX.Symbology)
+context(CX.Scope)
 fun IrDeclarationReference.isInternal(): Boolean = !isExternal()
 
-context(CX.Scope, CX.Symbology, CX.Parsing)
+context(CX.Scope, CX.Parsing)
 fun parseFieldListOrFail(fieldExprs: List<IrExpression>): List<XR.Property> = run {
   // Keep around the field Ir's for another minute, if one of them isn't parsed right we want the right code position for it in the parseError
   val fieldsListRaw = fieldExprs.map { it to ParseExpression.parse(it) }
@@ -315,11 +309,11 @@ fun getSerializerForType(type: IrType): ClassId? = run {
 }
 
 object ParseFree {
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun match() =
     Ir.Call.FunctionMem0[ExtractorsDomain.Call.FreeInvoke[Is()], Is.of("invoke", "asPure", "asConditon", "asPureConditon")]
 
-  context(CX.Scope, CX.Parsing, CX.Symbology)
+  context(CX.Scope, CX.Parsing)
   fun parse(expr: IrExpression, components: List<IrExpression>, funName: String) = run {
     val segs = components.map { Seg.parse(it) }
     val (partsRaw, paramsRaw) =
