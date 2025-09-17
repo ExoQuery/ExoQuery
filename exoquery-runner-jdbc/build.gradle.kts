@@ -3,13 +3,13 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 plugins {
   // Only uses the base conventions-project because this builds only for jvm and all of those define native targets
   id("conventions")
-  kotlin("multiplatform") version "2.2.0"
-  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+  kotlin("multiplatform") version "2.2.20"
+  id("com.google.devtools.ksp") version "2.2.20-2.0.3"
   alias(libs.plugins.kotest)
   id("io.exoquery.exoquery-plugin")
 
   // NEED serialization to be able to read the encoded XR, in the future the GradlePlugin should probably add this to the classpath
-  kotlin("plugin.serialization") version "2.2.0"
+  kotlin("plugin.serialization") version "2.2.20"
 }
 
 version = extra["controllerProjectVersion"].toString()

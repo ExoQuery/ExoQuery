@@ -68,7 +68,7 @@ object Ir {
   object CastingTypeOperator {
     context(CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<IrType>> get(op: AP, type: BP) =
       customPattern2("Ir.TypeOperatorCall", op, type) { it: IrTypeOperatorCall ->
-        if (it.operator == IrTypeOperator.CAST) {
+        if (it.operator == IrTypeOperator.CAST || it.operator == IrTypeOperator.IMPLICIT_CAST) {
           Components2(it.argument, it.typeOperand)
         } else {
           null

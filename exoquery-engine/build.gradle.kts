@@ -8,18 +8,18 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 val kspEnabled = true
 
 plugins {
-  kotlin("multiplatform") version "2.2.0"
+  kotlin("multiplatform") version "2.2.20"
   id("maven-publish")
 
-  id("io.exoquery.terpal-plugin") version "2.2.0-2.0.0.PL"
+  id("io.exoquery.terpal-plugin") version "2.2.20-2.0.1.PL"
 
   id("conventions-multiplatform")
   id("publish")
 
   // can remove this if kspEnabled is false (this the variable kspEnabled cannot be used here)
-  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+  id("com.google.devtools.ksp") version "2.2.20-2.0.3"
 
-  kotlin("plugin.serialization") version "2.2.0"
+  kotlin("plugin.serialization") version "2.2.20"
 }
 
 version = extra["pluginProjectVersion"].toString()
@@ -42,7 +42,7 @@ kotlin {
 
   jvm()
   linuxX64()
-  mingwX64()
+  //mingwX64()
 
   sourceSets {
     val commonMain by getting {
@@ -57,7 +57,7 @@ kotlin {
         api("io.exoquery:pprint-kotlin-kmp:3.0.0")
         // Actually this is going to be 0.0.5 - using an unpublished one now
         api("io.exoquery:decomat-core:1.0.0")
-        api("io.exoquery:terpal-runtime:2.2.0-2.0.0.PL")
+        api("io.exoquery:terpal-runtime:2.2.20-2.0.1.PL")
         // This is a java-only library, I have no idea who it can even be here.
         // maybe if I actually attempt to use it in KMP mode in a non-java target it will actually fail
         api("com.github.vertical-blank:sql-formatter:2.0.4")

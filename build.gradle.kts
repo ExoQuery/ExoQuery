@@ -3,7 +3,7 @@ import org.jetbrains.dokka.gradle.AbstractDokkaTask
 plugins {
   `maven-publish`
   signing
-  kotlin("multiplatform") version "2.2.0" apply false
+  kotlin("multiplatform") version "2.2.20" apply false
   id("com.android.library") version "8.2.0" apply false
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0" apply false
   id("org.jetbrains.dokka") version "1.9.10" apply false
@@ -43,7 +43,7 @@ tasks.register("publishLinuxLocal") {
     gradle.includedBuild(Release.Project.`exoquery-plugin-gradle`).task(":publishToMavenLocal"),
     gradle.includedBuild(Release.Project.`exoquery-plugin-kotlin`).task(":publishToMavenLocal"),
     ":${Release.Project.`exoquery-runner-core`}:publishToMavenLocal",
-    //":${Release.Project.`exoquery-runner-android`}:publishToMavenLocal",
+    ":${Release.Project.`exoquery-runner-android`}:publishToMavenLocal",
     ":${Release.Project.`exoquery-runner-native`}:publishToMavenLocal",
     ":${Release.Project.`exoquery-runner-jdbc`}:publishToMavenLocal",
   )

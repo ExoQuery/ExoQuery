@@ -14,6 +14,8 @@ import io.exoquery.xr.*
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.types.isBoolean
+import org.jetbrains.kotlin.ir.types.isNullableString
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
@@ -266,7 +268,29 @@ object ParseExpression {
 
       case(Ir.CastingTypeOperator[Is(), Is()]).thenThis { target, newType ->
         val callType: XR.CallType = XR.CallType.PureFunction
-        XR.GlobalCall(XR.FqName.Cast, listOf(parse(target)), callType, false, TypeParser.of(this), this.loc) //, TypeParser.of(this), loc)
+        val targetProperty = parse(target)
+        val thisType = TypeParser.of(this)
+        // SQl does not have a notion of products (e.g. table-types) being something that is castable e.g. you can do `SELECT castToSomething(p).field FROM Person p`
+        // That means that in any situation where kotlin casts a product type we need to cast the individual field instead of the entire product
+        // Currently this is only happening in situations with ? operators e.g. something like this:
+        //    classes: Name(first, last), Person(Name?, Int), Robot(String, String)
+        //    capture.select {
+        //      val p = from(Table<Person>())
+        //      val r = join(Table<Robot>()) { r -> p.name?.first == r.ownerFirstName }
+        //      p to r
+        //    }
+        // Parsers to an IR like this:
+        //   select { val p = from(Table(Person)); val r = join(Table(Robot)) { { val tmp0_safe_receiver = p.name; if (tmp0_safe_receiver == null) null else kotlinCast_GC(tmp0_safe_receiver).first } == r.ownerFirstName }; Tuple(first = p, second = r) }
+        // Instead of this:
+        //   select { val p = from(Table(Person)); val r = join(Table(Robot)) { { val tmp0_safe_receiver = p.name; if (tmp0_safe_receiver == null) null else tmp0_safe_receiver.first } == r.ownerFirstName }; Tuple(first = p, second = r) }
+        // That means we just need to remove the kotlin-cast from the tmp0_safe_receiver which is just a cast on a product type
+        if (targetProperty.type.isProduct())
+          targetProperty
+        // If we're casting a Boolean to a Boolean ignore the cast because it does not matter in SQL
+        else if (thisType.isBooleanValue() && targetProperty.type.isBooleanValue())
+          targetProperty
+        else
+          XR.GlobalCall(XR.FqName.Cast, listOf(targetProperty), callType, false, thisType, this.loc) //, TypeParser.of(this), loc)
       },
 
       // I.e. the nullableColumn!! or nullableRow!! operator, just ignore the !! part since all SQL expressions are trinary-value

@@ -184,7 +184,7 @@ context (CX.Scope, CX.Builder) fun createLambdaN(functionBody: IrExpression, par
 context (CX.Scope, CX.Builder) fun createLambda0Closure(functionBody: IrExpression, functionParent: IrDeclarationParent, otherStatements: List<IrStatement> = listOf()): IrSimpleFunction {
   return with(pluginCtx) {
     irFactory.buildFun {
-      origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA
+      origin = IrDeclarationOrigin.LOCAL_FUNCTION
       name = SpecialNames.NO_NAME_PROVIDED
       visibility = DescriptorVisibilities.LOCAL
       returnType = functionBody.type
@@ -214,7 +214,7 @@ context (CX.Scope, CX.Builder) fun createLambda0Closure(functionBody: IrExpressi
 context (CX.Scope, CX.Builder) fun createLambdaClosure(functionBody: IrExpression, params: List<IrValueParameter>, functionParent: IrDeclarationParent): IrSimpleFunction {
   return with(pluginCtx) {
     irFactory.buildFun {
-      origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA
+      origin = IrDeclarationOrigin.LOCAL_FUNCTION
       name = SpecialNames.NO_NAME_PROVIDED
       visibility = DescriptorVisibilities.LOCAL
       returnType = functionBody.type

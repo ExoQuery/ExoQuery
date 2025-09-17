@@ -3,6 +3,7 @@ package io.exoquery
 import io.exoquery.sql.*
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
+import io.exoquery.util.stmt
 import io.exoquery.util.unaryPlus
 import io.exoquery.xr.XR
 
@@ -139,13 +140,13 @@ class SqliteDialect(override val traceConf: TraceConfig = TraceConfig.Companion.
 
   override fun xrOrderByCriteriaTokenImpl(orderByCriteriaImpl: XR.OrderField): Token = with(orderByCriteriaImpl) {
     when {
-      orderingOpt == null -> +"${scopedTokenizer(field)}"
-      orderingOpt is XR.Ordering.Asc -> +"${scopedTokenizer(field)} ASC"
-      orderingOpt is XR.Ordering.Desc -> +"${scopedTokenizer(field)} DESC"
-      orderingOpt is XR.Ordering.AscNullsFirst -> +"${scopedTokenizer(field)} ASC /* NULLS FIRST */"
-      orderingOpt is XR.Ordering.DescNullsFirst -> +"${scopedTokenizer(field)} DESC /* NULLS FIRST */"
-      orderingOpt is XR.Ordering.AscNullsLast -> +"${scopedTokenizer(field)} ASC /* NULLS LAST */"
-      orderingOpt is XR.Ordering.DescNullsLast -> +"${scopedTokenizer(field)} DESC /* NULLS LAST */"
+      orderingOpt == null -> stmt("${scopedTokenizer(field)}")
+      orderingOpt is XR.Ordering.Asc -> stmt("${scopedTokenizer(field)} ASC")
+      orderingOpt is XR.Ordering.Desc -> stmt("${scopedTokenizer(field)} DESC")
+      orderingOpt is XR.Ordering.AscNullsFirst -> stmt("${scopedTokenizer(field)} ASC /* NULLS FIRST */")
+      orderingOpt is XR.Ordering.DescNullsFirst -> stmt("${scopedTokenizer(field)} DESC /* NULLS FIRST */")
+      orderingOpt is XR.Ordering.AscNullsLast -> stmt("${scopedTokenizer(field)} ASC /* NULLS LAST */")
+      orderingOpt is XR.Ordering.DescNullsLast -> stmt("${scopedTokenizer(field)} DESC /* NULLS LAST */")
       else -> xrError("Unsupported ordering: $orderingOpt")
     }
   }
@@ -154,8 +155,8 @@ class SqliteDialect(override val traceConf: TraceConfig = TraceConfig.Companion.
   override fun xrSqlQueryModelTokenImpl(queryImpl: SqlQueryModel): Token = with(queryImpl) {
     when (this) {
       is FlattenSqlQuery -> token
-      is SetOperationSqlQuery -> +"${a.token} ${op.token} ${b.token}"
-      is UnaryOperationSqlQuery -> +"SELECT ${op.token} (${query.token})"
+      is SetOperationSqlQuery -> stmt("${a.token} ${op.token} ${b.token}")
+      is UnaryOperationSqlQuery -> stmt("SELECT ${op.token} (${query.token})")
       is TopLevelFree -> this.value.token
     }
   }
@@ -167,22 +168,22 @@ class SqliteDialect(override val traceConf: TraceConfig = TraceConfig.Companion.
   override fun limitOffsetToken(query: Statement, limit: XR.Expression?, offset: XR.Expression?): Token =
     when {
       limit == null && offset == null -> query
-      limit != null && offset == null -> +"$query LIMIT ${limit.token}"
-      limit != null && offset != null -> +"$query LIMIT ${limit.token} OFFSET ${offset.token}"
-      limit == null && offset != null -> +"$query LIMIT -1 OFFSET ${offset.token}"
+      limit != null && offset == null -> stmt("$query LIMIT ${limit.token}")
+      limit != null && offset != null -> stmt("$query LIMIT ${limit.token} OFFSET ${offset.token}")
+      limit == null && offset != null -> stmt("$query LIMIT -1 OFFSET ${offset.token}")
       else -> throw IllegalStateException("Invalid limit/offset combination")
     }
 
   override fun XR.U.QueryOrExpression.stringConversionMapping(name: String): Token = run {
     val head = this
     when (name) {
-      "toLong" -> +"CAST(${head.token} AS BIGINT)"
-      "toInt" -> +"CAST(${head.token} AS INTEGER)"
-      "toShort" -> +"CAST(${head.token} AS SMALLINT)"
-      "toDouble" -> +"CAST(${head.token} AS DOUBLE PRECISION)"
-      "toFloat" -> +"CAST(${head.token} AS REAL)"
-      "toBoolean" -> +"CASE WHEN ${head.token} = 'true' THEN 1 ELSE 0 END"
-      "toString" -> +"${head.token}"
+      "toLong" -> stmt("CAST(${head.token} AS BIGINT)")
+      "toInt" -> stmt("CAST(${head.token} AS INTEGER)")
+      "toShort" -> stmt("CAST(${head.token} AS SMALLINT)")
+      "toDouble" -> stmt("CAST(${head.token} AS DOUBLE PRECISION)")
+      "toFloat" -> stmt("CAST(${head.token} AS REAL)")
+      "toBoolean" -> stmt("CASE WHEN ${head.token} = 'true' THEN 1 ELSE 0 END")
+      "toString" -> stmt("${head.token}")
       else -> throw IllegalArgumentException("Unknown conversion function: ${name}")
     }
   }

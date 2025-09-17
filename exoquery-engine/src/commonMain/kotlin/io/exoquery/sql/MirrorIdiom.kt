@@ -11,6 +11,7 @@ import io.exoquery.xr.PrefixUnaryOperator
 import io.exoquery.xr.SX
 import io.exoquery.xr.SelectClause
 import io.exoquery.xr.XR
+import io.exoquery.xr.XR.FqName
 import io.exoquery.xr.XRType
 import io.exoquery.xr.id
 
@@ -187,7 +188,10 @@ class MirrorIdiom(val renderOpts: RenderOptions = RenderOptions()) {
 
   val XR.GlobalCall.token: Token
     get() =
-      stmt("${name.name.token}${suffix().token}(${args.map { it.token }.mkStmt(", ")})")
+      if (this.name == FqName.Cast)
+        stmt("kotlinCast(${args.first().token},${args.first().type.shortString().token}->${args.first().type.shortString().token})")
+      else
+        stmt("${name.name.token}${suffix().token}(${args.map { it.token }.mkStmt(", ")})")
   val XR.MethodCall.token: Token
     get() =
       stmt("${head.tokenScoped}.${name.token}${suffix().token}(${args.map { it.token }.mkStmt(", ")})")

@@ -124,7 +124,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
       target.addCompilerDependency("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
       target.addCompilerDependency("com.github.vertical-blank:sql-formatter:2.0.4")
-      target.addCompilerDependency("io.exoquery:terpal-runtime:2.2.0-2.0.0.PL")
+      target.addCompilerDependency("io.exoquery:terpal-runtime:2.2.20-2.0.1.PL")
       target.addCompilerDependency("io.exoquery:pprint-kotlin-core-jvm:3.0.0")
       target.addCompilerDependency("io.exoquery:pprint-kotlin-kmp-jvm:3.0.0")
       // Fansi and core pprint ADT come from here

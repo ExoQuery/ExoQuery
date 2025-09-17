@@ -540,7 +540,7 @@ open class RenderIrElementVisitorSimple(
     "[IrStringConcatenation]${expression.renderOffsets(options)} type=${expression.type.render()}"
 
   override fun visitTypeOperator(expression: IrTypeOperatorCall, data: Nothing?): String =
-    "[IrTypeOperatorCall]]" +
+    "[IrTypeOperatorCall]" +
         "${expression.renderOffsets(options)} " +
         "type=${expression.type.render()} origin=${expression.operator} typeOperand=${expression.typeOperand.render()}"
 

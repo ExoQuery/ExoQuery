@@ -1,12 +1,15 @@
 plugins {
   id("conventions-multiplatform")
-  kotlin("multiplatform") version "2.2.0"
-  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
-  alias(libs.plugins.kotest)
+  kotlin("multiplatform") version "2.2.20"
+  id("com.google.devtools.ksp") version "2.2.20-2.0.3"
+  alias(libs.plugins.kotest) apply false
   id("io.exoquery.exoquery-plugin")
 
   // NEED serialization to be able to read the encoded XR, in the future the GradlePlugin should probably add this to the classpath
-  kotlin("plugin.serialization") version "2.2.0"
+  kotlin("plugin.serialization") version "2.2.20"
+}
+pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+  pluginManager.apply("io.kotest")
 }
 
 kotlin {
@@ -27,7 +30,7 @@ kotlin {
     }
 
     val commonTest by getting {
-      kotlin.srcDir("$buildDir/generated/ksp/metadata/commonMain/kotlin")
+      kotlin.srcDir("${layout.buildDirectory}/generated/ksp/metadata/commonMain/kotlin")
       dependencies {
         // TODO probably the gradle plugin should add these? They don't seem to be just inherited from the exoquery-engine project
         api(libs.kotlinx.serialization.core)

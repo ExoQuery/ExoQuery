@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.diagnostics.*
 import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
 import org.jetbrains.kotlin.diagnostics.rendering.ContextIndependentParameterRenderer
-import org.jetbrains.kotlin.diagnostics.rendering.RootDiagnosticRendererFactory
+import org.jetbrains.kotlin.diagnostics.BackendErrorMessages
 
 @AutoService(CompilerPluginRegistrar::class)
 @OptIn(ExperimentalCompilerApi::class)
@@ -35,7 +35,7 @@ object Diagnostics {
   inline fun <reified P : PsiElement, A> myWarning1(
     positioningStrategy: AbstractSourceElementPositioningStrategy = SourceElementPositioningStrategies.DEFAULT
   ): DiagnosticFactory1DelegateProvider<A> {
-    return DiagnosticFactory1DelegateProvider(Severity.INFO, positioningStrategy, P::class)
+    return DiagnosticFactory1DelegateProvider(Severity.INFO, positioningStrategy, P::class, BackendErrors)
   }
 
   val SQL: KtDiagnosticFactory1<String> by myWarning1<PsiElement, String>()
@@ -47,12 +47,14 @@ object Diagnostics {
 
   object KtMessages : BaseDiagnosticRendererFactory() {
     override val MAP =
-      KtDiagnosticFactoryToRendererMap("Query Generated").also { map ->
+      KtDiagnosticFactoryToRendererMap("Query Generated") { map ->
         map.put(SQL, "{0}", Renderer)
-      }
+      }.value
   }
 
   init {
-    RootDiagnosticRendererFactory.registerFactory(KtMessages)
+    BackendErrorMessages.MAP.put(
+      SQL, "{0}", Renderer
+    )
   }
 }

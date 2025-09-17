@@ -8,14 +8,14 @@ plugins {
   id("conventions")
   kotlin("multiplatform")
   id("com.android.library")
-  kotlin("plugin.serialization") version "2.2.0"
+  kotlin("plugin.serialization") version "2.2.20"
   alias(libs.plugins.kotest)
   id("io.exoquery.exoquery-plugin")
 
   // Already on the classpath
-  //id("org.jetbrains.kotlin.android") version "2.2.0"
+  //id("org.jetbrains.kotlin.android") version "2.2.20"
 
-  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+  id("com.google.devtools.ksp") version "2.2.20-2.0.3"
   id("androidx.room") version "2.7.1"
 }
 

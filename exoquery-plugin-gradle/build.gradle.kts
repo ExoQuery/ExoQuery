@@ -1,5 +1,5 @@
 plugins {
-  kotlin("jvm") version "2.2.0"
+  kotlin("jvm") version "2.2.20"
 
   // No inclusion of `publish` here because this project is not published to maven directly
   id("maven-publish")
