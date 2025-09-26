@@ -18,6 +18,24 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "query with map" to cr(
       "SELECT p.name AS value FROM Person p"
     ),
+    "query with groupBy/XR" to kt(
+      "select { val p = from(Table(Person)); groupBy(p.name); Tuple(first = p.name, second = avg_GC(p.age)) }"
+    ),
+    "query with groupBy" to cr(
+      "SELECT p.name AS first, avg(p.age) AS second FROM Person p GROUP BY p.name"
+    ),
+    "query with groupBy + having/XR" to kt(
+      "select { val p = from(Table(Person)); having(avg_GC(p.age) > 18.toDouble_MCS()); groupBy(p.name); Tuple(first = p.name, second = avg_GC(p.age)) }"
+    ),
+    "query with groupBy + having" to cr(
+      "SELECT p.name AS first, avg(p.age) AS second FROM Person p GROUP BY p.name HAVING avg(p.age) > 18"
+    ),
+    "query with with-clause + groupBy + having/XR" to kt(
+      "select { val p = from(Table(Person)); where(p.name == Joe); having(avg_GC(p.age) > 18.toDouble_MCS()); groupBy(p.name); Tuple(first = p.name, second = avg_GC(p.age)) }"
+    ),
+    "query with with-clause + groupBy + having" to cr(
+      "SELECT p.name AS first, avg(p.age) AS second FROM Person p WHERE p.name = 'Joe' GROUP BY p.name HAVING avg(p.age) > 18"
+    ),
     "union with impure free - should not collapse/XR" to kt(
       """select { val u = from(Table(Person).filter { p -> p.name == Joe }.union(Table(Person).filter { p -> p.name == Jack })); val a = join(Table(Address)) { a.ownerId == u.id }; free("stuff(, ${'$'}{u.name}, )").invoke() }"""
     ),

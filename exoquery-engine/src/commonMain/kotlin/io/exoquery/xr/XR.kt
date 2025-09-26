@@ -543,6 +543,22 @@ sealed interface XR {
 
   @Serializable
   @Mat
+  data class FlatHaving(@Slot val by: XR.Expression, override val loc: Location = Location.Synth) : Query, U.FlatUnit, PC<FlatHaving> {
+    @Transient
+    override val productComponents = productOf(this, by)
+    override val type get() = by.type
+
+    companion object {}
+
+    override fun toString() = show()
+    @Transient
+    private val cid = id()
+    override fun hashCode(): Int = cid.hashCode()
+    override fun equals(other: Any?): Boolean = other is FlatHaving && other.id() == cid
+  }
+
+  @Serializable
+  @Mat
   data class Distinct(@Slot val head: XR.Query, override val loc: Location = Location.Synth) : Query, PC<Distinct> {
     @Transient
     override val productComponents = productOf(this, head)

@@ -118,6 +118,12 @@ object SelectClauseToXR {
               // Since there is no 'new' variable to bind to use use Ident.Unused
               nestRecurse(FlatFilter(curr.condition, curr.loc), XR.Ident.Unused("sxw", prevVar.type), remaining.tail)
             )
+          is SX.Having ->
+            FlatMap(
+              prev, prevVar,
+              nestRecurse(FlatHaving(curr.condition, curr.loc), XR.Ident.Unused("sxh", prevVar.type), remaining.tail)
+            )
+
           is SX.GroupBy ->
             FlatMap(
               prev, prevVar,

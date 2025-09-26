@@ -735,6 +735,23 @@ interface SelectClauseCapturedBlock : CapturedBlock {
   fun where(condition: () -> Boolean): Unit = errorCap("The `where` expression of the Query was not inlined")
 
   /**
+   * Use this to filter grouped results. For example:
+   * ```
+   * val citiesWithManyPeople =
+   *   capture.select {
+   *     val p = from(Table<Person>())
+   *     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
+   *     groupBy { a.city }
+   *     having { count(p.id) > 1000 }
+   *     a.city
+   *  }
+   * // SQL: SELECT a.city FROM people p JOIN addresses a ON a.ownerId = p.id GROUP BY a.city HAVING COUNT(p.id) > 1000
+   * ```
+   */
+  @Dsl
+  fun having(condition: () -> Boolean): Unit = errorCap("The `having` expression of the Query was not inlined")
+
+  /**
    * Use this to group by one or multiple columns. For example:
    * ```
    * val countPeopleByCity =

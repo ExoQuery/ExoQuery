@@ -5,19 +5,6 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class StatelessTransformerSpec: FreeSpec({
-  class Subject(vararg val replace: Pair<XR, XR>): StatelessTransformerSingleRoot {
-    override fun <X: XR> root(xr: X): X {
-      val rep = replace.toMap().getOrElse(xr, { xr })
-      return when {
-        // Is the thing we're replacing the element with the same type as the thing we were trying to replace
-        !xr::class.isInstance(rep) ->
-          throw IllegalArgumentException("Cannot replace ${xr}:${xr::class.simpleName} with ${rep}:${rep::class.simpleName} since they have different types")
-
-        else -> rep as X
-      }
-    }
-  }
-
   "transforms asts" - {
     "query" - {
       "filter" {
@@ -218,4 +205,17 @@ class StatelessTransformerSpec: FreeSpec({
           )
     }
   }
-})
+}) {
+  class Subject(vararg val replace: Pair<XR, XR>): StatelessTransformerSingleRoot {
+    override fun <X: XR> root(xr: X): X {
+      val rep = replace.toMap().getOrElse(xr, { xr })
+      return when {
+        // Is the thing we're replacing the element with the same type as the thing we were trying to replace
+        !xr::class.isInstance(rep) ->
+          throw IllegalArgumentException("Cannot replace ${xr}:${xr::class.simpleName} with ${rep}:${rep::class.simpleName} since they have different types")
+
+        else -> rep as X
+      }
+    }
+  }
+}

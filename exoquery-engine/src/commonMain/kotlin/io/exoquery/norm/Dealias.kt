@@ -86,7 +86,7 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
           FlatJoin.cs(head1, id1, on1) to Dealias(id1, traceConfig)
         }
 
-        is Entity, is Distinct, is Nested, is FlatFilter, is FlatSortBy, is FlatGroupBy, is Free, is ExprToQuery, is TagForSqlQuery, is GlobalCall, is MethodCall -> {
+        is Entity, is Distinct, is Nested, is FlatFilter, is FlatHaving, is FlatSortBy, is FlatGroupBy, is Free, is ExprToQuery, is TagForSqlQuery, is GlobalCall, is MethodCall -> {
           this to Dealias(null, traceConfig)
         }
 

@@ -22,6 +22,36 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
+  "query with groupBy" {
+    val people = capture.select {
+      val p = from(Table<Person>())
+      groupBy(p.name)
+      p.name to avg(p.age)
+    }
+    shouldBeGolden(people.xr, "XR")
+    shouldBeGolden(people.build<PostgresDialect>())
+  }
+  "query with groupBy + having" {
+    val people = capture.select {
+      val p = from(Table<Person>())
+      groupBy(p.name)
+      having { avg(p.age) > 18 }
+      p.name to avg(p.age)
+    }
+    shouldBeGolden(people.xr, "XR")
+    shouldBeGolden(people.build<PostgresDialect>())
+  }
+  "query with with-clause + groupBy + having" {
+    val people = capture.select {
+      val p = from(Table<Person>())
+      where { p.name == "Joe" }
+      groupBy(p.name)
+      having { avg(p.age) > 18 }
+      p.name to avg(p.age)
+    }
+    shouldBeGolden(people.xr, "XR")
+    shouldBeGolden(people.build<PostgresDialect>())
+  }
   "union with impure free - should not collapse" {
     val joes = capture { Table<Person>().filter { p -> p.name == "Joe" } }
     val jacks = capture { Table<Person>().filter { p -> p.name == "Jack" } }

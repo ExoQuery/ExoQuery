@@ -138,6 +138,9 @@ object MirrorIdiomReqGoldenDynamic: GoldenQueryFile {
     "XR Query/XR FlatFilter" to kt(
       "where(p.name == o.other)"
     ),
+    "XR Query/XR FlatHaving" to kt(
+      "having(p.name == o.other)"
+    ),
     "XR Query/XR ConcatMap" to kt(
       "Table(Person).concatMap { p -> p.name }"
     ),
@@ -154,7 +157,7 @@ object MirrorIdiomReqGoldenDynamic: GoldenQueryFile {
       """TagQ("foo")"""
     ),
     "XR Query/XR CustomQueryRef - SelectValue" to kt(
-      "select { val p = from(Table(Person)); val p = join(Table(Address)) { p.name == a.street }; where(p.age == 42); groupBy(p.name); sortBy(p.name to Asc); p.name }"
+      "select { val p = from(Table(Person)); val p = join(Table(Address)) { p.name == a.street }; where(p.age == 42); having(p.age == 43); groupBy(p.name); sortBy(p.name to Asc); p.name }"
     ),
   )
 }

@@ -80,6 +80,16 @@ sealed interface SX {
   }
 
   @Serializable
+  data class Having(val condition: XR.Expression, val loc: XR.Location = XR.Location.Synth) : SX {
+    data class Id(val condition: XR.Expression)
+
+    @Transient
+    private val id = Id(condition)
+    override fun equals(other: Any?): Boolean = if (this === other) true else other is Having && id == other.id
+    override fun hashCode(): Int = id.hashCode()
+  }
+
+  @Serializable
   data class GroupBy(val grouping: XR.Expression, val loc: XR.Location = XR.Location.Synth) : SX {
     data class Id(val grouping: XR.Expression)
 

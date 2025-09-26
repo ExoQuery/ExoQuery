@@ -2,9 +2,7 @@
 
 package io.exoquery.sql
 
-import io.exoquery.sql.PostgresDialect
 import io.exoquery.printing.PrintXR
-import io.exoquery.sql.FlattenCriteria.flattenBase
 import io.exoquery.sql.SqlQueryHelper.flattenDualHeadsIfPossible
 import io.exoquery.util.Globals
 import io.exoquery.util.TraceConfig
@@ -17,6 +15,7 @@ import io.exoquery.xr.XR.U.FlatUnit
 import io.exoquery.xr.XR.FlatGroupBy
 import io.exoquery.xr.XR.FlatSortBy
 import io.exoquery.xr.XR.FlatFilter
+import io.exoquery.xr.XR.FlatHaving
 import io.exoquery.xr.XR.FlatJoin
 import io.exoquery.xr.XR.Ordering.PropertyOrdering
 import io.exoquery.xrError
@@ -194,6 +193,7 @@ final data class SelectValue(val expr: XR.Expression, val alias: List<String> = 
 final data class FlattenSqlQuery(
   val from: List<FromContext> = emptyList(),
   val where: XR.Expression? = null,
+  val having: XR.Expression? = null,
   val groupBy: XR.Expression? = null,
   val orderBy: List<XR.OrderField> = emptyList(),
   val limit: XR.Expression? = null,
@@ -211,6 +211,7 @@ final data class FlattenSqlQuery(
     copy(
       from = from.map { it.transformXR(f) },
       where = where?.let { f(it) },
+      having = having?.let { f(it) },
       groupBy = groupBy?.let { f(it) },
       orderBy = orderBy.map { ord -> ord.transform { f(it) } },
       limit = limit?.let { f(it) },
@@ -284,14 +285,16 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
     data class Context(val ctx: FromContext) : Layer
     data class Grouping(val groupBy: XR.Expression) : Layer
     data class Sorting(val criteria: List<XR.OrderField>) : Layer
-    data class Filtering(val where: XR.Expression) : Layer {
+    data class Filtering(val condition: XR.Expression) : Layer {
       infix fun combine(other: Layer.Filtering) =
-        Layer.Filtering(XR.BinaryOp(this.where, OP.And, other.where))
+        Layer.Filtering(XR.BinaryOp(this.condition, OP.And, other.condition))
     }
+    data class Having(val condition: XR.Expression) : Layer
     companion object {
       fun fromFlatUnit(xr: XR.U.FlatUnit): Layer =
         when (xr) {
           is FlatFilter -> Layer.Filtering(xr.by)
+          is FlatHaving -> Layer.Having(xr.by)
           is FlatGroupBy -> Layer.Grouping(xr.by)
           is FlatSortBy -> Layer.Sorting(xr.criteria)
         }
@@ -358,7 +361,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
       val contexts = sources.mapNotNull { if (it is Layer.Context) it.ctx else null }
 
       // back here
-      val (grouping, sorting, filtering) = sources.findComponentsOrNull()
+      val (grouping, sorting, filtering, having) = sources.findComponentsOrNull()
 
       val queryRaw = flatten(contexts, finalFlatMapBody, alias, nestNextMap = false)
       val query =
@@ -379,7 +382,12 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
           // Not sure if its possible to already have a where-clause but if it is combine them
           .let {
             if (filtering != null) {
-              it.copy(where = combineWhereClauses(it.where, filtering.where))
+              it.copy(where = combineWhereClauses(it.where, filtering.condition))
+            } else it
+          }
+          .let {
+            if (having != null) {
+              it.copy(having = having.condition)
             } else it
           }
 
@@ -702,6 +710,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
 
           is FlatFilter -> xrError("FlatFilter (and all FlatUnit) functions should have already been handled in the `base` phase: ${this}")
+          is FlatHaving -> xrError("FlatHaving (and all FlatUnit) functions should have already been handled in the `base` phase: ${this}")
           is FlatGroupBy -> xrError("FlatGroupBy (and all FlatUnit) functions should have already been handled in the `base` phase: ${this}")
           is FlatSortBy -> xrError("FlatSortBy (and all FlatUnit) functions should have already been handled in the `base` phase: ${this}")
 

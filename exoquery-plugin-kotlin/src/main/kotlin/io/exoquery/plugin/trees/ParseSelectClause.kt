@@ -99,6 +99,11 @@ object ParseSelectClause {
       case(Ir.Call.FunctionMem1[ExtractorsDomain.IsSelectFunction(), Is("where"), Ir.Expr.ClassOf<Boolean>()]).thenThis { _, argValue ->
         SX.Where(ParseExpression.parse(argValue), this.loc)
       },
+      // having(() -> Boolean)
+      case(Ir.Call.FunctionMem1[ExtractorsDomain.IsSelectFunction(), Is("having"), Ir.FunctionExpression.withBlock[Is(), Is()]]).thenThis { _, (_, body) ->
+        val havingCond = ParseExpression.parseFunctionBlockBody(body)
+        SX.Having(havingCond, this.loc)
+      },
       // groupBy(...Any)
       case(Ir.Call.FunctionMemVararg[ExtractorsDomain.IsSelectFunction(), Is("groupBy"), Is(), Is()]).thenThis { _, argValues ->
         val groupings = argValues.map { ParseExpression.parse(it) }

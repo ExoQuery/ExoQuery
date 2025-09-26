@@ -162,6 +162,9 @@ class MirrorIdiomReq: GoldenSpecDynamic(MirrorIdiomReqGoldenDynamic, Mode.ExoGol
     "XR.FlatFilter" {
       shouldBeGolden(XR.FlatFilter("p" dot "name" `+==+` ("o" dot "other")))
     }
+    "XR.FlatHaving" {
+      shouldBeGolden(XR.FlatHaving("p" dot "name" `+==+` ("o" dot "other")))
+    }
     "XR.ConcatMap" {
       shouldBeGolden(XR.ConcatMap(personEnt, "p".toId, "p" dot "name"))
     }
@@ -194,6 +197,7 @@ class MirrorIdiomReq: GoldenSpecDynamic(MirrorIdiomReqGoldenDynamic, Mode.ExoGol
               SX.Join(XR.JoinType.Inner, "p".toId, addressEnt, "a".toId, ("p" dot "name") `+==+` ("a" dot "street"))
             ),
             SX.Where("p" dot "age" `+==+` XR.Const.Int(42)),
+            SX.Having("p" dot "age" `+==+` XR.Const.Int(43)),
             SX.GroupBy("p" dot "name"),
             SX.SortBy(listOf(XR.OrderField.By("p" dot "name", XR.Ordering.Asc))),
             "p" dot "name",

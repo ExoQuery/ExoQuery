@@ -13,13 +13,15 @@ class StatefulSelectClauseTransformer<S>(private val delegate: StatefulTransform
   fun invoke(selectClause: SelectClause): Pair<SelectClause, StatefulTransformer<S>> =
     with (selectClause) {
       val (assignmentsA, stateA) = applyList(assignments) { t, asi -> t.invoke(asi) }
-      val (whereA, stateB) = where?.let { invoke(it) } ?: Pair(where, this@StatefulSelectClauseTransformer)
-      val (groupByA, stateC) = groupBy?.let { invoke(it) } ?: Pair(groupBy, this@StatefulSelectClauseTransformer)
-      val (sortByA, stateD) = sortBy?.let { invoke(it) } ?: Pair(sortBy, this@StatefulSelectClauseTransformer)
-      val (selectA, stateE) = delegate.invoke(select)
+      val (whereA, stateB) = where?.let { stateA.invoke(it) } ?: Pair(where, this@StatefulSelectClauseTransformer)
+      val (havingA, stateB2) = having?.let { stateB.invoke(it) } ?: Pair(having, stateB)
+      val (groupByA, stateC) = groupBy?.let { stateB2.invoke(it) } ?: Pair(groupBy, this@StatefulSelectClauseTransformer)
+      val (sortByA, stateD) = sortBy?.let { stateC.invoke(it) } ?: Pair(sortBy, this@StatefulSelectClauseTransformer)
+      val (selectA, stateE) = stateD.delegate.invoke(select)
       copy(
         assignments = assignmentsA,
         where = whereA,
+        having = havingA,
         groupBy = groupByA,
         sortBy = sortByA,
         select = selectA
@@ -35,7 +37,8 @@ class StatefulSelectClauseTransformer<S>(private val delegate: StatefulTransform
         }
         is SX.Join -> {
           val (aA, stateA) = delegate.invoke(onQuery)
-          copy(onQuery = aA) to wrap(stateA)
+          val (aB, stateB) = stateA.invoke(condition)
+          copy(onQuery = aA, condition = aB) to wrap(stateB)
         }
         is SX.ArbitraryAssignment -> {
           val (aA, stateA) = delegate.invoke(expression)
@@ -45,6 +48,12 @@ class StatefulSelectClauseTransformer<S>(private val delegate: StatefulTransform
     }
 
   operator fun invoke(sx: SX.Where) =
+    with (sx) {
+      val (aA, stateA) = delegate.invoke(condition)
+      copy(condition = aA) to wrap(stateA)
+    }
+
+  operator fun invoke(sx: SX.Having) =
     with (sx) {
       val (aA, stateA) = delegate.invoke(condition)
       copy(condition = aA) to wrap(stateA)
@@ -96,6 +105,7 @@ class StatefulSelectClauseTransformer<S>(private val delegate: StatefulTransform
 data class SelectClause(
   val assignments: List<SX.U.Assignment>,
   val where: SX.Where?,
+  val having: SX.Having?,
   val groupBy: SX.GroupBy?,
   val sortBy: SX.SortBy?,
   val select: XR.Expression,
@@ -104,7 +114,7 @@ data class SelectClause(
 ) : XR.CustomQuery.Convertable {
 
   override fun toQueryXR(isOutermost: Boolean): XR.Query = SelectClauseToXR(this, isOutermost)
-  fun allComponents(): List<SX> = assignments + listOfNotNull(where, groupBy, sortBy)
+  fun allComponents(): List<SX> = assignments + listOfNotNull(where, having, groupBy, sortBy)
 
   // Do nothing for now, in the cuture recurse in queries and expressions inside the SX clauses
   override fun handleStatelessTransform(t: StatelessTransformer): XR.CustomQuery.Convertable =
@@ -126,6 +136,7 @@ data class SelectClause(
         }
       },
       where?.let { where -> where.copy(t(where.condition)) },
+      having?.let { having -> having.copy(t(having.condition)) },
       groupBy?.let { groupBy -> groupBy.copy(t(groupBy.grouping)) },
       sortBy?.let { sortBy ->
         val newCriteria = sortBy.criteria.map { ord -> ord.transform { t.invoke(it) } }
@@ -141,18 +152,19 @@ data class SelectClause(
   override fun showTree(config: PPrinterConfig): Tree = PrintSkipLoc<SelectClause>(serializer(), config).treeify(this, null, false, false)
 
   companion object {
-    fun justSelect(select: XR.Expression, loc: XR.Location): SelectClause = SelectClause(emptyList(), null, null, null, select, select.type, loc)
+    fun justSelect(select: XR.Expression, loc: XR.Location): SelectClause = SelectClause(emptyList(), null, null, null, null, select, select.type, loc)
 
     // A friendlier constructor for tests
     fun of(
       assignments: List<SX.U.Assignment>,
       where: SX.Where? = null,
+      having: SX.Having? = null,
       groupBy: SX.GroupBy? = null,
       sortBy: SX.SortBy? = null,
       select: XR.Expression,
       type: XRType,
       loc: XR.Location = XR.Location.Synth
-    ): SelectClause = SelectClause(assignments, where, groupBy, sortBy, select, type, loc)
+    ): SelectClause = SelectClause(assignments, where, having, groupBy, sortBy, select, type, loc)
   }
 
   /** Do the equivalent of [io.exoquery.norm.NormalizeCustomQueries] for user introspection. Assume the segment being acted on is the top-level query */
@@ -160,10 +172,10 @@ data class SelectClause(
   fun toXrRef(): XR.CustomQueryRef = XR.CustomQueryRef(this)
 
 
-  data class Id(val assignments: List<SX.U.Assignment>, val where: SX.Where?, val groupBy: SX.GroupBy?, val sortBy: SX.SortBy?, val select: XR.Expression)
+  data class Id(val assignments: List<SX.U.Assignment>, val where: SX.Where?, val having: SX.Having?, val groupBy: SX.GroupBy?, val sortBy: SX.SortBy?, val select: XR.Expression)
 
   @Transient
-  val id = Id(assignments, where, groupBy, sortBy, select)
+  val id = Id(assignments, where, having, groupBy, sortBy, select)
   override fun equals(other: Any?): Boolean = (this === other) || (other is SelectClause && id == other.id)
   override fun hashCode(): Int = id.hashCode()
 }

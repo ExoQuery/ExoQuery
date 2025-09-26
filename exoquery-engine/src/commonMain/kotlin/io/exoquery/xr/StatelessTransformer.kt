@@ -103,6 +103,7 @@ interface StatelessTransformer {
         is FlatGroupBy -> FlatGroupBy.csf(invoke(by))(this)
         is FlatSortBy -> FlatSortBy.csf(criteria.map { invoke(it) })(this)
         is FlatFilter -> FlatFilter.csf(invoke(by))(this)
+        is FlatHaving -> FlatHaving.csf(invoke(by))(this)
         is ConcatMap -> ConcatMap.csf(invoke(head), invokeIdent(id), invoke(body))(this)
         is Nested -> Nested.csf(invoke(head))(this)
         is ExprToQuery -> ExprToQuery.csf(invoke(head))(this)

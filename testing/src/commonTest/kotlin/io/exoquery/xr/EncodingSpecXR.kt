@@ -99,6 +99,7 @@ class EncodingSpecXR: FreeSpec({
     val specialPeople = XR.Entity("SpecialPeople", peopleType)
     val peopleVar = XR.Ident("p", peopleType)
     val peopleAreGreen = XR.Property(peopleVar, "name") `+==+` XR.Const.String("Green")
+    val peopleAreBlue = XR.Property(peopleVar, "name") `+==+` XR.Const.String("Blue")
     val peopleToName = XR.Map(people, peopleVar, XR.Property(XR.Ident("p", peopleType), "name"))
     val addressType = XRType.Product("foo.bar.Product", listOf("street" to XRType.Value, "city" to XRType.Value))
     val addresses = XR.Entity("Addresses", addressType)
@@ -143,6 +144,10 @@ class EncodingSpecXR: FreeSpec({
       val xr = XR.FlatFilter(peopleAreGreen)
       xr.encode().decodeXR() shouldBeXR xr
     }
+    "FlatHaving" {
+      val xr = XR.FlatHaving(peopleAreBlue)
+      xr.encode().decodeXR() shouldBeXR xr
+    }
     "Distinct" {
       val xr = XR.Distinct(people)
       xr.encode().decodeXR() shouldBeXR xr
@@ -163,6 +168,7 @@ class EncodingSpecXR: FreeSpec({
             SX.Join(XR.JoinType.Inner, addressesVar, addresses, addressesVar, addressesJoinCond)
           ),
           SX.Where(peopleAreGreen),
+          SX.Having(peopleAreBlue),
           SX.GroupBy(peopleVar),
           SX.SortBy(listOf(XR.OrderField.Implicit(peopleVar), XR.OrderField.By(peopleVar, XR.Ordering.Asc))),
           peopleVar,

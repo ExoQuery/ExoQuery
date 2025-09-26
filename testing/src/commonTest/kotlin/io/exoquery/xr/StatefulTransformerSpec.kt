@@ -5,29 +5,6 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class StatefulTransformerSpec: FreeSpec({
-  class Subject(override val state: List<XR>, vararg val replace: Pair<XR, XR>):
-    StatefulTransformerSingleRoot<List<XR>> {
-    override fun <X: XR> root(e: X): Pair<X, StatefulTransformerSingleRoot<List<XR>>> {
-      @Suppress("UNCHECKED_CAST")
-
-      fun assertIsTypeX(tree: XR) =
-        // i.e. `tree` has to be an instance of the class of `e`
-        if (!e::class.isInstance(tree))
-          throw IllegalArgumentException("Cannot replace ${e}:${e::class.simpleName} with ${tree}:${tree::class.simpleName} since they have different types")
-        else
-          tree as X
-
-      val rep = replace.toMap().get(e)
-      return when {
-        rep != null ->
-          Pair(assertIsTypeX(rep), Subject(state + e, *replace))
-
-        else ->
-          Pair(e, this)
-      }
-    }
-  }
-
   "transforms asts using a transformation state" - {
     "query" - {
       "entity" {
@@ -296,4 +273,27 @@ class StatefulTransformerSpec: FreeSpec({
     }
   }
 
-})
+}) {
+  class Subject(override val state: List<XR>, vararg val replace: Pair<XR, XR>):
+    StatefulTransformerSingleRoot<List<XR>> {
+    override fun <X: XR> root(e: X): Pair<X, StatefulTransformerSingleRoot<List<XR>>> {
+      @Suppress("UNCHECKED_CAST")
+
+      fun assertIsTypeX(tree: XR) =
+        // i.e. `tree` has to be an instance of the class of `e`
+        if (!e::class.isInstance(tree))
+          throw IllegalArgumentException("Cannot replace ${e}:${e::class.simpleName} with ${tree}:${tree::class.simpleName} since they have different types")
+        else
+          tree as X
+
+      val rep = replace.toMap().get(e)
+      return when {
+        rep != null ->
+          Pair(assertIsTypeX(rep), Subject(state + e, *replace))
+
+        else ->
+          Pair(e, this)
+      }
+    }
+  }
+}

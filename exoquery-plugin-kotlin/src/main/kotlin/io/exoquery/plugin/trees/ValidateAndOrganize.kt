@@ -13,12 +13,12 @@ object ValidateAndOrganize {
     data object BEGIN : Phase
     data object FROM : Phase
     data object JOIN : Phase
-    data object MODIFIER : Phase // I.e. for group/sort/take/drop
+    data object MODIFIER : Phase // I.e. for group(+having)/sort/take/drop
   }
 
   // The "pure functiona' way to do this would be to have a State object that is copied with new values but since
   // everything here is completely private and the only way to interact with it is through the invoke function, we it should be fine for now.
-  private class State(var phase: Phase = Phase.BEGIN, val clauses: MutableList<U.Assignment> = mutableListOf(), var where: SX.Where? = null, var groupBy: SX.GroupBy? = null, var sortBy: SX.SortBy? = null) {
+  private class State(var phase: Phase = Phase.BEGIN, val clauses: MutableList<U.Assignment> = mutableListOf(), var where: SX.Where? = null, var groupBy: SX.GroupBy? = null, var having: SX.Having? = null, var sortBy: SX.SortBy? = null) {
     context(CX.Scope, CX.Parsing)
     fun validPhases(vararg validPhases: Phase) = { errorMsg: String, expr: IrElement ->
       if (!validPhases.contains(phase)) logger.error(errorMsg, expr)
@@ -46,7 +46,7 @@ object ValidateAndOrganize {
     fun addWhere(where: SX.Where, expr: IrElement) {
       //if (phase != Phase.JOIN && phase != Phase.FROM) error("", expr)
       //phase = Phase.MODIFIER
-      validPhases(Phase.JOIN, Phase.FROM, Phase.MODIFIER)("Only one `WHERE` clause is allowed an it must be after from/join calls and before any group/sort clauses", expr)
+      validPhases(Phase.JOIN, Phase.FROM, Phase.MODIFIER)("Only one `WHERE` clause is allowed and it must be after from/join calls and before any group/sort clauses", expr)
       setPhaseTo(Phase.MODIFIER) // Basically `WHERE` is like it's on phase but we don't need to create one since it can only occur once
       this.where = where
     }
@@ -56,6 +56,14 @@ object ValidateAndOrganize {
       validPhases(Phase.JOIN, Phase.FROM, Phase.MODIFIER)("Only one `GROUP BY` clause is allowed an it must be after from/join calls and before any sort clauses", expr)
       setPhaseTo(Phase.MODIFIER)
       this.groupBy = groupBy
+    }
+
+    context(CX.Scope, CX.Parsing)
+    fun addHaving(having: SX.Having, expr: IrElement) {
+      validPhases(Phase.MODIFIER)("A `HAVING` clause can only be used if there is a `GROUP BY` clause and only one `HAVING` clause is allowed.", expr)
+      if (groupBy == null) logger.error("A `HAVING` clause can only be used if there is a `GROUP BY` clause", expr)
+      // Having is like where in that it can only occur once so no need to create a new phase for it
+      this.having = having
     }
 
     context(CX.Scope, CX.Parsing)
@@ -80,12 +88,13 @@ object ValidateAndOrganize {
         is SX.From -> state.addFrom(sx, stmt)
         is SX.Join -> state.addJoin(sx, stmt)
         is SX.Where -> state.addWhere(sx, stmt)
+        is SX.Having -> state.addHaving(sx, stmt)
         is SX.GroupBy -> state.addGroupBy(sx, stmt)
         is SX.SortBy -> state.addSortBy(sx, stmt)
         is SX.ArbitraryAssignment -> state.addArbitraryAssignment(sx, stmt)
       }
     }
-    return SelectClause(state.clauses, state.where, state.groupBy, state.sortBy, ret, ret.type)
+    return SelectClause(state.clauses, state.where, state.having, state.groupBy, state.sortBy, ret, ret.type)
   }
 
 }

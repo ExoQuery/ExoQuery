@@ -210,6 +210,10 @@ interface StatefulTransformer<T> {
           val (aA, stateA) = invoke(by)
           FlatFilter.cs(aA) to stateA
         }
+        is FlatHaving -> {
+          val (aA, stateA) = invoke(by)
+          FlatHaving.cs(aA) to stateA
+        }
         is ConcatMap -> {
           val (aA, stateA) = invoke(head)
           val (bA, stateB) = stateA.invoke(body)

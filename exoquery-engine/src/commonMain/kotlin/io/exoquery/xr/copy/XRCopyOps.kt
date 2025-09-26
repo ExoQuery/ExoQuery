@@ -23,6 +23,7 @@ import io.exoquery.xr.XR.FlatJoin
 import io.exoquery.xr.XR.FlatGroupBy
 import io.exoquery.xr.XR.FlatSortBy
 import io.exoquery.xr.XR.FlatFilter
+import io.exoquery.xr.XR.FlatHaving
 import io.exoquery.xr.XR.Distinct
 import io.exoquery.xr.XR.DistinctOn
 import io.exoquery.xr.XR.Nested
@@ -99,6 +100,9 @@ fun FlatSortBy.cs(criteria: List<XR.OrderField>) = io.exoquery.xr.XR.FlatSortBy.
 
 val FlatFilter.FlatFilter get() = this
 fun FlatFilter.cs(by: XR.Expression) = io.exoquery.xr.XR.FlatFilter.csf(by)(this)
+
+val FlatHaving.FlatHaving get() = this
+fun FlatHaving.cs(by: XR.Expression) = io.exoquery.xr.XR.FlatHaving.csf(by)(this)
 
 val Distinct.Distinct get() = this
 fun Distinct.cs(head: XR.Query) = io.exoquery.xr.XR.Distinct.csf(head)(this)

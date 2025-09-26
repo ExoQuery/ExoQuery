@@ -278,6 +278,8 @@ class MirrorIdiom(val renderOpts: RenderOptions = RenderOptions()) {
           stmt("${head.token}.${joinType.token} { ${id.token} -> ${on.token} }")
         is XR.FlatFilter ->
           stmt("where(${by.token})")
+        is XR.FlatHaving ->
+          stmt("having(${by.token})")
         is XR.FlatGroupBy ->
           stmt("groupBy(${by.token})")
         is XR.FlatSortBy ->
@@ -434,6 +436,7 @@ class MirrorIdiom(val renderOpts: RenderOptions = RenderOptions()) {
         is SX.GroupBy -> stmt("groupBy(${grouping.token})")
         is SX.SortBy -> stmt("sortBy(${criteria.map { it.token }.mkStmt()})")
         is SX.Where -> stmt("where(${condition.token})")
+        is SX.Having -> stmt("having(${condition.token})")
       }
 
 }

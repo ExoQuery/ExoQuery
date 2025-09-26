@@ -97,6 +97,7 @@ interface StatelessChecker {
         is XR.FlatGroupBy -> invoke(by)
         is XR.FlatSortBy -> criteria.any { invoke(it) }
         is XR.FlatFilter -> invoke(by)
+        is XR.FlatHaving -> invoke(by)
         is XR.ConcatMap -> invoke(head) || invokeIdent(id) || invoke(body)
         is XR.Nested -> invoke(head)
         is XR.ExprToQuery -> invoke(head)

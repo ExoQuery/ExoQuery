@@ -9,7 +9,12 @@ import io.exoquery.xr._And_
 import io.exoquery.xr.XR
 import io.exoquery.xrError
 
-data class LayerComponents(val grouping: SqlQueryApply.Layer.Grouping?, val sorting: SqlQueryApply.Layer.Sorting?, val filtering: SqlQueryApply.Layer.Filtering?)
+data class LayerComponents(
+  val grouping: SqlQueryApply.Layer.Grouping?,
+  val sorting: SqlQueryApply.Layer.Sorting?,
+  val filtering: SqlQueryApply.Layer.Filtering?,
+  val having: SqlQueryApply.Layer.Having? = null
+)
 
 fun List<SqlQueryApply.Layer>.findComponentsOrNull(): LayerComponents {
   val groupings = this.mapNotNull { if (it is SqlQueryApply.Layer.Grouping) it else null }
@@ -22,7 +27,10 @@ fun List<SqlQueryApply.Layer>.findComponentsOrNull(): LayerComponents {
   val filterings = this.mapNotNull { if (it is SqlQueryApply.Layer.Filtering) it else null }
   val filtering = if (filterings.isEmpty()) null else filterings.reduce { a, b -> a combine b }
 
-  return LayerComponents(groupings.firstOrNull(), sortings.firstOrNull(), filtering)
+  val havings = this.mapNotNull { if (it is SqlQueryApply.Layer.Having) it else null }
+  if (havings.size > 1) xrError("Multiple havings detected, this is illegal:\n" + havings.map { it.condition }.joinToString("\n"))
+
+  return LayerComponents(groupings.firstOrNull(), sortings.firstOrNull(), filtering, havings.firstOrNull())
 }
 
 fun XR.Query.findFlatUnits(): Triple<List<XR.FlatGroupBy>, List<XR.FlatSortBy>, List<XR.FlatFilter>> =

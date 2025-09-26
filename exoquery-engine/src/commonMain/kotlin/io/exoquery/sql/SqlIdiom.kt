@@ -442,9 +442,15 @@ interface SqlIdiom : HasPhasePrinting {
           else -> withWhere
         }
       }
+      val withHaving by lazy {
+        when {
+          having != null -> +"$withGroupBy HAVING ${having.token}"
+          else -> withGroupBy
+        }
+      }
       val withOrderBy by lazy {
         when {
-          orderBy.isEmpty() -> withGroupBy
+          orderBy.isEmpty() -> withHaving
           else -> +"$withGroupBy ${tokenOrderBy(orderBy)}"
         }
       }
