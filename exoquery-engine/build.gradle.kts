@@ -182,7 +182,7 @@ tasks.named<Test>("jvmTest") {
 // Preferably we can just use the following to get every target:
 
 if (kspEnabled) {
-  tasks.filter { it.name == "sourcesJar" || it.name.endsWith("SourcesJar") }.forEach {
+  tasks.filter { it.name == "sourcesJar" || it.name.endsWith("SourcesJar") || it.name.contains("dokkaHtml") }.forEach {
     it.dependsOn("kspCommonMainKotlinMetadata")
   }
 }

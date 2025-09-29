@@ -41,6 +41,17 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
+  "query with groupBy + having + orderBy" {
+    val people = capture.select {
+      val p = from(Table<Person>())
+      groupBy(p.name)
+      having { avg(p.age) > 18 }
+      orderBy(avg(p.age) to Ord.Desc)
+      p.name to avg(p.age)
+    }
+    shouldBeGolden(people.xr, "XR")
+    shouldBeGolden(people.build<PostgresDialect>())
+  }
   "query with with-clause + groupBy + having" {
     val people = capture.select {
       val p = from(Table<Person>())

@@ -451,7 +451,7 @@ interface SqlIdiom : HasPhasePrinting {
       val withOrderBy by lazy {
         when {
           orderBy.isEmpty() -> withHaving
-          else -> +"$withGroupBy ${tokenOrderBy(orderBy)}"
+          else -> +"$withHaving ${tokenOrderBy(orderBy)}"
         }
       }
       val withLimitOffset by lazy { limitOffsetToken(withOrderBy, limit, offset) }

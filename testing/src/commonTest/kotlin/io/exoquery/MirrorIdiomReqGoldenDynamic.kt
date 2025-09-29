@@ -157,7 +157,7 @@ object MirrorIdiomReqGoldenDynamic: GoldenQueryFile {
       """TagQ("foo")"""
     ),
     "XR Query/XR CustomQueryRef - SelectValue" to kt(
-      "select { val p = from(Table(Person)); val p = join(Table(Address)) { p.name == a.street }; where(p.age == 42); having(p.age == 43); groupBy(p.name); sortBy(p.name to Asc); p.name }"
+      "select { val p = from(Table(Person)); val p = join(Table(Address)) { p.name == a.street }; where(p.age == 42); groupBy(p.name); having(p.age == 43); sortBy(p.name to Asc); p.name }"
     ),
   )
 }

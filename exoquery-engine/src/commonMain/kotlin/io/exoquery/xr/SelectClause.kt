@@ -114,7 +114,7 @@ data class SelectClause(
 ) : XR.CustomQuery.Convertable {
 
   override fun toQueryXR(isOutermost: Boolean): XR.Query = SelectClauseToXR(this, isOutermost)
-  fun allComponents(): List<SX> = assignments + listOfNotNull(where, having, groupBy, sortBy)
+  fun allComponents(): List<SX> = assignments + listOfNotNull(where, groupBy, having, sortBy)
 
   // Do nothing for now, in the cuture recurse in queries and expressions inside the SX clauses
   override fun handleStatelessTransform(t: StatelessTransformer): XR.CustomQuery.Convertable =
