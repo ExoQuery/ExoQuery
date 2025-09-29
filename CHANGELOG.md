@@ -1,5 +1,13 @@
 # ExoQuery Changelog
 
+### Version 1.7.1.PL (September 28, 2025)
+ ```kotlin
+plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.1.PL" }
+dependencies { implementation("io.exoquery:exoquery-runner-jdbc:1.7.1.PL") }
+ ```
+- **Bugfix**: Fix having + orderBy ([#48](https://github.com/ExoQuery/ExoQuery/pull/48))
+
+
 ### Version 1.7.0.PL (September 28, 2025)
  ```kotlin
 plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.0.PL" }
