@@ -12,33 +12,27 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.mapdb.DB
 import org.mapdb.DBMaker
 
-class CompileTimeStoredXRsScope(private val buildDirPath: String, private val sourceSet: String, private val dependentSourceSets: List<String>, private val mode: StorageMode) {
+class CompileTimeStoredXRsScope(private val mode: StorageMode, private val sourceSet: String, private val dependentSourceSets: List<String>) {
   sealed interface StorageMode {
-    object Persistent: StorageMode
+    data class Persistent(val buildDirPath: String): StorageMode
     object Transient: StorageMode
   }
 
   context(CX.Scope)
-  fun tryPrintStore(): String = run {
-    try {
-      load().use {
-        it.printStored()
+  fun tryPrintStore(): String = when (mode) {
+    is StorageMode.Persistent ->
+      try {
+        load().use {
+          it.printStored()
+        }
+      } catch (ex: Exception) {
+        "Error loading stored XRs from build directory ${mode}: ${ex.message}"
       }
-    } catch (ex: Exception) {
-      "Error loading stored XRs from build directory $buildDirPath: ${ex.message}"
-    }
+    StorageMode.Transient -> "Transient storage mode, no stored XRs"
   }
 
   private fun load(): CompileTimeStoredXRs {
-    val buildDir = java.io.File(buildDirPath)
-    if (!buildDir.exists()) {
-      val couldMakeDirs = buildDir.mkdirs()
-      if (!couldMakeDirs) {
-        error("Could not create build directory at $buildDirPath")
-      }
-    }
-
-    fun makePersistentDB(): DB =
+    fun makePersistentDB(buildDir: java.io.File): DB =
       DBMaker
         .fileDB(java.io.File(buildDir, "StoredXRs.db"))
         .fileLockWait(30_000) // wait up to 30s for lock
@@ -50,8 +44,18 @@ class CompileTimeStoredXRsScope(private val buildDirPath: String, private val so
 
     val db =
       when (mode) {
-        StorageMode.Persistent -> makePersistentDB()
-        StorageMode.Transient -> makeTransientDB()
+        is StorageMode.Persistent -> {
+          val buildDir = java.io.File(mode.buildDirPath)
+          if (!buildDir.exists()) {
+            val couldMakeDirs = buildDir.mkdirs()
+            if (!couldMakeDirs) {
+              error("Could not create build directory at ${mode.buildDirPath}")
+            }
+          }
+          makePersistentDB(buildDir)
+        }
+        StorageMode.Transient ->
+          makeTransientDB()
       }
 
     val primaryMap: MutableMap<String, String> =
