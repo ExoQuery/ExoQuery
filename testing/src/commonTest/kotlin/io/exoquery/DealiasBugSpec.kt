@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 /**
  * The purpose of this test was to originally test a bug that occurred when we had a
@@ -17,8 +17,8 @@ class DealiasBugSpec: GoldenSpecDynamic(DealiasBugSpecGoldenDynamic, Mode.ExoGol
   "column names in a subquery with same sub-name (original bug case)" {
     data class MyTable(val id: Int, val user: String)
     data class MySubTable(val user: MyTable, val id: Int)
-    val q = capture.select {
-      val t = from(capture.select {
+    val q = sql.select {
+      val t = from(sql.select {
         val tt = from(Table<MyTable>())
         where { tt.id == 123 }
         MySubTable(tt, tt.id)
@@ -33,8 +33,8 @@ class DealiasBugSpec: GoldenSpecDynamic(DealiasBugSpecGoldenDynamic, Mode.ExoGol
   "column names in a subquery with differnet sub-names" {
     data class MyTable(val id: Int, val user: String)
     data class MySubTable(val otherOther: MyTable, val id: Int)
-    val q = capture.select {
-      val t = from(capture.select {
+    val q = sql.select {
+      val t = from(sql.select {
         val tt = from(Table<MyTable>())
         where { tt.id == 123 }
         MySubTable(tt, tt.id)
@@ -49,8 +49,8 @@ class DealiasBugSpec: GoldenSpecDynamic(DealiasBugSpecGoldenDynamic, Mode.ExoGol
   "column names in a subquery with same names but no where-clause" {
     data class MyTable(val id: Int, val user: String)
     data class MySubTable(val otherOther: MyTable, val id: Int)
-    val q = capture.select {
-      val t = from(capture.select {
+    val q = sql.select {
+      val t = from(sql.select {
         val tt = from(Table<MyTable>())
         MySubTable(tt, tt.id)
       })

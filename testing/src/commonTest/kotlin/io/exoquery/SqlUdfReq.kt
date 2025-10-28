@@ -1,12 +1,12 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 
 class SqlUdfReq: GoldenSpecDynamic(SqlUdfReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "does necessary casts" {
-    val q = capture {
+    val q = sql {
       Table<Person>().map { p -> p.age.toString() to p.name.toInt() }
     }.dyanmic()
     shouldBeGolden(q.xr, "XR")
@@ -15,7 +15,7 @@ class SqlUdfReq: GoldenSpecDynamic(SqlUdfReqGoldenDynamic, Mode.ExoGoldenTest(),
   "can handle de-nulling - element" {
     data class Test(val id: Int, val name: String?)
 
-    val q = capture {
+    val q = sql {
       Table<Test>().map { p -> p.name!! }
     }.dyanmic()
     shouldBeGolden(q.xr, "XR")
@@ -25,7 +25,7 @@ class SqlUdfReq: GoldenSpecDynamic(SqlUdfReqGoldenDynamic, Mode.ExoGoldenTest(),
     data class Test(val id: Int, val name: String?)
 
     val q =
-      capture.select {
+      sql.select {
         val p = from(Table<Person>())
         val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
         p.name to a!!.city

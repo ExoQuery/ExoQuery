@@ -554,7 +554,7 @@ fun IrExpression.isSqlAction() =
  * val joe = Person(1, "Joe", "Bloggs", 111)
  * "transaction support" - {
  *   "success" {
- *       capture { insert<Person> { setParams(joe) } }.build<PostgresDialect>()
+ *       sql { insert<Person> { setParams(joe) } }.build<PostgresDialect>()
  *    }
  * }
  * //> Compile Error:
@@ -565,22 +565,22 @@ fun IrExpression.isSqlAction() =
  * "transaction support" - {
  *   "success" {
  *       val joe = Person(1, "Joe", "Bloggs", 111)
- *       capture { insert<Person> { setParams(joe) } }.build<PostgresDialect>()
+ *       sql { insert<Person> { setParams(joe) } }.build<PostgresDialect>()
  *    }
  * }
  * ```
- * It was then noted that the above consturct would trivially work if the capture block was writtein to a new variable
+ * It was then noted that the above consturct would trivially work if the sql block was writtein to a new variable
  * ```
  * "transaction support" - {
  *   "success" {
  *       val joe = Person(1, "Joe", "Bloggs", 111)
- *       val cap = capture { insert<Person> { setParams(joe) } }
+ *       val cap = sql { insert<Person> { setParams(joe) } }
  *       cap.build<PostgresDialect>()
  *    }
  * }
  * ```
  * This leads me to belive that specifically in the situation where the variable is not created,
- * the way the `capture { ... }` is munged around inside of the TransformCompileQuery, the original
+ * the way the `sql { ... }` is munged around inside of the TransformCompileQuery, the original
  * expression becomes somehow invalid. Writing it to a variable seems to introduce some kind of stability
  * that allows it to be resused. As of yet I have not seen similar issues with constructs like `param`
  * but if they do arise, a similar solution (i.e. creating a run-function with a internal-variable

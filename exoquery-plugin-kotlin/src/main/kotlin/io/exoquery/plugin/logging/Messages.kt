@@ -36,7 +36,7 @@ context(CX.Scope)
 fun InvalidCapturedDynamicArgument(arg: IrExpression) =
 """
 Argument `${arg.sourceOrDump()}` (whose type was: ${arg.type.dumpKotlinLike()}) of a @CapturedDynamic function must be either a direct instance of 
-captured query i.e. capture { ... }, capture.select { ... } or capture.expression { ... }. Or a runtime SqlExpression<T> or SqlQuery<T> instance.
+captured query i.e. sql { ... }, sql.select { ... } or sql.expression { ... }. Or a runtime SqlExpression<T> or SqlQuery<T> instance.
 =============== For example ===============
 
 // Say that you have a captured-function that looks like this:
@@ -46,21 +46,21 @@ val state: State = getSomeRuntimeValue()
 fun canDrive(age: Int) = if (state == SD) age >= 16 else age >= 18
 
 // and you are trying to use it like this:
-val query = capture {
+val query = sql {
   Table<Person>().filter { p -> canDrive(p.age) }
 }
 
 // You cannot mix runtime values and types (like State) with captured-functions. So instead you need to do this:
 val state: State = getSomeRuntimeValue()
 
-// Use an if-expression inside the capture block to select the right captured-function:
+// Use an if-expression inside the sql block to select the right captured-function:
 @CapturedDynamic
 fun canDrive(age: SqlExpression<Int>) = 
-  if (state == SD) capture.expression { age >= 16 } else capture.expression { age >= 18 }
+  if (state == SD) sql.expression { age >= 16 } else sql.expression { age >= 18 }
 
 // Then make sure to pass captured-expression clause to the function, not just a raw variable:
-val query = capture {
-  Table<Person>().filter { p -> canDrive(capture.expression{ p.age }.use) }
+val query = sql {
+  Table<Person>().filter { p -> canDrive(sql.expression{ p.age }.use) }
 }
 """.trimIndent()
 
@@ -142,14 +142,14 @@ In order to use a batch-param or a field of a batch param use wrap it in a param
 For example for a batch query of List<Person> use it like this:
 
 val people: List<Person> = ...
-capture.batch(people) { p -> insert<Person> { set(name to param(p.name)) } }
+sql.batch(people) { p -> insert<Person> { set(name to param(p.name)) } }
 
 You can use use setParams to set the entire batch param as a single entity:
-capture.batch(people) { p -> insert<Person> { setParams(p) } }
+sql.batch(people) { p -> insert<Person> { setParams(p) } }
 
 Note that the batch parameter can be different from the entity being inserted for example:
 val names: List<String> = listOf("Joe", "John")
-capture.batch(names) { name -> insert<Person> { set(name to param(name), age to 123) } }
+sql.batch(names) { name -> insert<Person> { set(name to param(name), age to 123) } }
 """.trimIndent()
 
 val ReturningKeysExplanation =
@@ -203,7 +203,7 @@ is used, in order to exlcude generated-columns from the insert or update query. 
 data class Person(val id: Int, val name: String, val age: Int)
 val joe = Person(1, "Joe", 123)
 
-val insertPerson = capture {
+val insertPerson = sql {
   insert<Person> {
     setParams(joe).excluding(id)
   }
@@ -222,14 +222,14 @@ val ActionExample =
 """
 For example:
 
-val insertPerson = capture {
+val insertPerson = sql {
   insert<Person> { set(name to "Joe", age to 123) }
 }
 
 You can also use setParams to make an action based on an existing data-class instance:
 
 val joe = Person(name = "Joe", age = 123)
-val insertPerson = capture {
+val insertPerson = sql {
   insert<Person> { setParams(joe) }
 }
 """.trimIndent()
@@ -237,7 +237,7 @@ val insertPerson = capture {
 fun CannotCallUseOnAnArbitraryDynamic() =
 """
 Could not understand the SqlExpression (from the scaffold-call) that you are attempting to call `.use` on. You can only call `.use` on a variable whose type is SqlExpression.
-If you are attempting to use an expression here, it is best practice to write it into a variable outside the capture-block and then call `.use` on that variable. If
+If you are attempting to use an expression here, it is best practice to write it into a variable outside the sql-block and then call `.use` on that variable. If
 this is a function that you are sure can be safely spliced (e.g. it is a pure-function that does not have side-effects) then you can use the @CapturedDynamic annotation
 on the function to allow it to be used in this context.
 """.trimIndent()
@@ -255,7 +255,7 @@ fun ValueLookupComingFromExternalInExpression(variable: IrGetValue) =
 context(CX.Scope)
 fun ValueMustBeWrappedInParam(variable: IrGetValue) =
 """
-It looks like the variable `${variable.symbol.safeName}` is coming from outside the capture block. 
+It looks like the variable `${variable.symbol.safeName}` is coming from outside the sql block. 
 If this is a runtime-value (i.e. a value that is NOT being plugged in from some other captured-block query), you need to bring into
 the query as a parameter like this: `param(${variable.symbol.safeName})`.
 For example:
@@ -268,15 +268,15 @@ val query = select { Table<Person>().filter { p -> p.name == param(nameVariable)
 If this is a value that some other captured-query is plugging into a function, you need to use the @CapturedFunction
 to mark function for ExoQuery to introspect. For example:
 
-val people = capture.select {
+val people = sql.select {
   val p = from(Table<Person>())
-  // The `p` variable is being plugged-in from the capture.select block
+  // The `p` variable is being plugged-in from the sql.select block
   where { getName(p) == "Joe" }
   p
 }
 // ...so we need to add the @CapturedFunction to this function: 
 @CapturedFunction
-fun getName(p: Person): SqlQuery<Person> = capture.expression { p.name }
+fun getName(p: Person): SqlQuery<Person> = sql.expression { p.name }
 
 
 (Lineage: ${variable.showLineage()})
@@ -290,11 +290,11 @@ the whole surrounding query to become dynamic. If the whole function `${funName}
 else, annotate it as @CapturedFunction and you can then use it to build compile-time functions.
 ================= For example: =================
 
-fun joes(people: SqlQuery<Person>) = capture { people.filter { p -> p.name == "Joe" } }
+fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
 val myJoes = joes(Table<Person>()) // This will be dynamic
 
 @CapturedFunction
-fun joes(people: SqlQuery<Person>) = capture { people.filter { p -> p.name == "Joe" } }
+fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
 val myJoes = joes(Table<Person>()) // Now it will be static
 """.trimIndent()
 
@@ -326,7 +326,7 @@ single output expression that returns a SqlQuery<T> instance.
 ================= For example: =================
 
 @CapturedFunction
-fun myFunction(): SqlQuery<Int> = capture { Table<Person>().map { it.age } }
+fun myFunction(): SqlQuery<Int> = sql { Table<Person>().map { it.age } }
 
 @CapturedFunction
 fun myFunction(): SqlQuery<Int> = select { 

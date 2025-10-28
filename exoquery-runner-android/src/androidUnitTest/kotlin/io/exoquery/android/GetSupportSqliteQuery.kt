@@ -4,8 +4,7 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
 import androidx.test.core.app.ApplicationProvider
 import io.exoquery.SqlCompiledQuery
-import io.exoquery.android.TestDatabase.databaseName
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.android.AndroidDatabaseController
 import io.exoquery.controller.android.AndroidxArrayWrapper
 import io.exoquery.controller.sqlite.Unused
@@ -37,7 +36,7 @@ data class Person(val id: Int, val name: String, val age: Int)
     val ctx = AndroidDatabaseController.fromApplicationContext("empty_database.db", ApplicationProvider.getApplicationContext(), BasicSchemaTerpal)
 
     fun executeQuery(q: SupportSQLiteQuery): SupportSQLiteQuery {
-      val query = capture.select {
+      val query = sql.select {
         val p = from(Table<Person>())
         p
       }

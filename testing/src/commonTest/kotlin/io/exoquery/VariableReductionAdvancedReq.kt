@@ -2,7 +2,7 @@
 
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 import io.exoquery.testdata.Robot
@@ -12,7 +12,7 @@ class VariableReductionAdvancedReq : GoldenSpec(VariableReductionAdvancedReqGold
     "in simple case" {
       data class Output(val name: String, val city: String)
 
-      val people = capture.select {
+      val people = sql.select {
         val (p, a) = from(
           select {
             val p = from(Table<Person>())
@@ -27,7 +27,7 @@ class VariableReductionAdvancedReq : GoldenSpec(VariableReductionAdvancedReqGold
 
     "with leaf-level props" {
 
-      val people = capture.select {
+      val people = sql.select {
         val (n, a) = from(
           select {
             val (id, name, age) = from(Table<Person>())
@@ -43,7 +43,7 @@ class VariableReductionAdvancedReq : GoldenSpec(VariableReductionAdvancedReqGold
     "when passed to further join" {
       data class Output(val name: String, val city: String, val robotName: String)
 
-      val people = capture.select {
+      val people = sql.select {
         val (p, a) = from(
           select {
             val p = from(Table<Person>())

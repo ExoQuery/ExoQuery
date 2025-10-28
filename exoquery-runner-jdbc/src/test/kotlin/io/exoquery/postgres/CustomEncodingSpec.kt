@@ -3,10 +3,10 @@ package io.exoquery.postgres
 import io.exoquery.TestDatabases
 import io.exoquery.annotation.ExoField
 import io.exoquery.annotation.ExoValue
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.jdbc.runOn
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import kotlinx.serialization.KSerializer
@@ -66,13 +66,13 @@ class CustomEncodingSpec : FreeSpec({
         Person(3, FirstName("John"), "Smith", 40)
       )
 
-      val q = capture.batch(insertPeople.asSequence()) { p ->
+      val q = sql.batch(insertPeople.asSequence()) { p ->
         insert<Person> { setParams(p) }
       }
       q.build<PostgresDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(1, 1, 1)
 
       val retrievePeople =
-        capture {
+        sql {
           Table<Person>()
         }
       retrievePeople.build<PostgresDialect>().runOn(ctx) shouldContainExactlyInAnyOrder insertPeople
@@ -94,13 +94,13 @@ class CustomEncodingSpec : FreeSpec({
         Person(3, FirstName("John"), "Smith", 40)
       )
 
-      val q = capture.batch(insertPeople.asSequence()) { p ->
+      val q = sql.batch(insertPeople.asSequence()) { p ->
         insert<Person> { setParams(p) }
       }
       q.build<PostgresDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(1, 1, 1)
 
       val retrievePeople =
-        capture {
+        sql {
           Table<Person>()
         }
       retrievePeople.build<PostgresDialect>().runOn(ctx) shouldContainExactlyInAnyOrder insertPeople
@@ -122,13 +122,13 @@ class CustomEncodingSpec : FreeSpec({
         Person(3, FirstNameAnnotated("John"), "Smith", 40)
       )
 
-      val q = capture.batch(insertPeople.asSequence()) { p ->
+      val q = sql.batch(insertPeople.asSequence()) { p ->
         insert<Person> { setParams(p) }
       }
       q.build<PostgresDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(1, 1, 1)
 
       val retrievePeople =
-        capture {
+        sql {
           Table<Person>()
         }
       retrievePeople.build<PostgresDialect>().runOn(ctx) shouldContainExactlyInAnyOrder insertPeople

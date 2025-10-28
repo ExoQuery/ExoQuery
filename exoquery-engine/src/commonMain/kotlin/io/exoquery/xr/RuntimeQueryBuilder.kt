@@ -11,13 +11,13 @@ import io.exoquery.SqlBatchAction
 import io.exoquery.SqlQuery
 import io.exoquery.TransformXrError
 import io.exoquery.printing.pprintMisc
-import io.exoquery.sql.ParamBatchToken
-import io.exoquery.sql.ParamMultiToken
-import io.exoquery.sql.ParamSingleToken
-import io.exoquery.sql.SqlIdiom
-import io.exoquery.sql.SqlQueryModel
-import io.exoquery.sql.StatelessTokenTransformer
-import io.exoquery.sql.Token
+import io.exoquery.lang.ParamBatchToken
+import io.exoquery.lang.ParamMultiToken
+import io.exoquery.lang.ParamSingleToken
+import io.exoquery.lang.SqlIdiom
+import io.exoquery.lang.SqlQueryModel
+import io.exoquery.lang.StatelessTokenTransformer
+import io.exoquery.lang.Token
 import io.exoquery.util.formatQuery
 
 class RuntimeBuilder(val dialect: SqlIdiom, val pretty: Boolean) {

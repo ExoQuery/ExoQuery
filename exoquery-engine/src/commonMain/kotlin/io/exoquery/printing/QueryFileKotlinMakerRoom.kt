@@ -58,7 +58,7 @@ object QueryFileKotlinMakerRoom {
     val type = printable.type
 
     val qqq = """"""".repeat(3)
-    val row = // TODO if it's `val x = capture.select { ... }` then `x` should be the default label
+    val row = // TODO if it's `val x = sql.select { ... }` then `x` should be the default label
       if (query.contains('"')) {
         """|  @Query(${qqq}${query}${qqq})
            |  fun ${label}(${variablesLine}): ${printable.queryOutputType.render()}

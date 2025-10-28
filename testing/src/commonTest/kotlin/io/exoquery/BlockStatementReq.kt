@@ -1,12 +1,12 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 
 class BlockStatementReq: GoldenSpecDynamic(BlockStatementReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "blocks with map" {
-    val p = capture {
+    val p = sql {
       Table<Person>().map {
         val name = it.name
         val age = it.age
@@ -17,7 +17,7 @@ class BlockStatementReq: GoldenSpecDynamic(BlockStatementReqGoldenDynamic, Mode.
     shouldBeGolden(p.build<PostgresDialect>(), "SQL")
   }
   "block with filter condition" {
-    val p = capture {
+    val p = sql {
       Table<Person>().filter {
         val age = it.age
         val thirty = 30
@@ -28,7 +28,7 @@ class BlockStatementReq: GoldenSpecDynamic(BlockStatementReqGoldenDynamic, Mode.
     shouldBeGolden(p.build<PostgresDialect>(), "SQL")
   }
   "block in query" {
-    val p = capture {
+    val p = sql {
       val p = Table<Person>()
       p.filter { it.age > 30 }
     }
@@ -36,7 +36,7 @@ class BlockStatementReq: GoldenSpecDynamic(BlockStatementReqGoldenDynamic, Mode.
     shouldBeGolden(p.build<PostgresDialect>(), "SQL")
   }
   "block with query clause" {
-    val p = capture {
+    val p = sql {
       val p = Table<Person>()
       select {
         val p = from(p)

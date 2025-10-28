@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.lang
 
 import io.exoquery.norm.AvoidAliasConflictApply
 import io.exoquery.norm.ExpandProductNullChecks

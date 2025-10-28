@@ -174,7 +174,7 @@ object ParseExpression {
         )
       },
 
-      // parse lambda in a capture block
+      // parse lambda in a sql block
       case(Ir.FunctionExpression.withBlock[Is(), Is()]).thenThis { params, blockBody ->
         XR.FunctionN(params.map { it.makeIdent() }, parseFunctionBlockBody(blockBody), expr.loc)
       },
@@ -240,7 +240,7 @@ object ParseExpression {
         val (varsUsed, callsUsed) = IrTraversals.collectGetValuesAndCalls(paramValue)
         callsUsed.forEach {
           if (it.ownerFunction.hasAnnotation<Dsl>())
-            parseError("Cannot use an ExoQuery DSL function `${it.symbol.safeName}` inside of a param(...) call. The `param` construct is meant to bring external (i.e. runtime) varaibles into the capture expression", it)
+            parseError("Cannot use an ExoQuery DSL function `${it.symbol.safeName}` inside of a param(...) call. The `param` construct is meant to bring external (i.e. runtime) varaibles into the sql expression", it)
         }
 
         varsUsed.forEach { varUsed ->
@@ -274,7 +274,7 @@ object ParseExpression {
         // That means that in any situation where kotlin casts a product type we need to cast the individual field instead of the entire product
         // Currently this is only happening in situations with ? operators e.g. something like this:
         //    classes: Name(first, last), Person(Name?, Int), Robot(String, String)
-        //    capture.select {
+        //    sql.select {
         //      val p = from(Table<Person>())
         //      val r = join(Table<Robot>()) { r -> p.name?.first == r.ownerFirstName }
         //      p to r
@@ -373,8 +373,8 @@ object ParseExpression {
         processScaffolded(sqlExprArg, irVararg, expr)
       },
 
-      // In certain odd situations (e.g. using a `@CatpuredFunction fun foo(p: Person) = capture.expression { flatJoin(Table<Address>, ...) }` inside of a other query
-      // like so capture.select { val p = from(Person); val a = from(joinAddress(...)) }. We can have a scaffold without a proceeding use-function
+      // In certain odd situations (e.g. using a `@CatpuredFunction fun foo(p: Person) = sql.expression { flatJoin(Table<Address>, ...) }` inside of a other query
+      // like so sql.select { val p = from(Person); val a = from(joinAddress(...)) }. We can have a scaffold without a proceeding use-function
       // need to handle that case.
       case(Ir.Call.FunctionUntethered2[Is(PT.io_exoquery_util_scaffoldCapFunctionQuery), Is(), Is()]).thenThis { sqlExprArg, irVararg ->
         processScaffolded(sqlExprArg, irVararg, expr)
@@ -561,7 +561,7 @@ object ParseExpression {
 
     val wrappedExprCall =
       sqlExprArg.match(
-        // It is possible to capture a SqlQuery<*> value inside an capture.expression. Handle that case.
+        // It is possible to sql a SqlQuery<*> value inside an sql.expression. Handle that case.
         // The actual type of the expression in this case will be SqlExpression<SqlQuery<T>> so that's what we need to check for
         case(Ir.Expr.ClassOf<SqlExpression<*>>()).thenIf { sqlExprArg.type.simpleTypeArgs.firstOrNull()?.isClass<SqlQuery<*>>() ?: false }.then {
           ParseQuery.parse(sqlExprArg)
@@ -616,7 +616,7 @@ fun validateCanUseInParam(varUsed: IrGetValue) {
   fun throwValidationError(errorReason: String): Nothing =
     parseError(
       """${errorReason} 
-         |The `param` function is only used to bring external variables into the capture (i.e. runtime-variables that are defined outside of it). 
+         |The `param` function is only used to bring external variables into the sql (i.e. runtime-variables that are defined outside of it). 
          |If you want to use the `${varUsed.symbol.safeName}` symbol inside this captured block, you should be able to use it directly.
          |""".trimMargin(),
       varUsed
@@ -633,7 +633,7 @@ fun validateCanUseInParam(varUsed: IrGetValue) {
     is RealOwner.CapturedFunctionVariable if !varUsed.isAllowedInParam()  && realOwner.varType == RealOwner.VarType.LocalVar ->
       throwValidationError("Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it is a varaible declared inside of the captured-function `${realOwner.ownerFunction.symbol.safeName}`.")
     is RealOwner.CapturedBlock if !varUsed.isAllowedInParam() ->
-      throwValidationError("Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the capture-block.")
+      throwValidationError("Cannot use the variable `${varUsed.symbol.safeName}` inside of a param(...) function because it originates inside of the sql-block.")
     else ->
       null // the InvalidReason.None case is covered here (and batch params)
   }

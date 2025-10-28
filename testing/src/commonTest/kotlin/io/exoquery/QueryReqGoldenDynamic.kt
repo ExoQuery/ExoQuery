@@ -12,6 +12,12 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "basic query" to cr(
       "SELECT x.id, x.name, x.age FROM Person x"
     ),
+    "basic query - deprecated capture/XR" to kt(
+      "Table(Person)"
+    ),
+    "basic query - deprecated capture" to cr(
+      "SELECT x.id, x.name, x.age FROM Person x"
+    ),
     "query with map/XR" to kt(
       "Table(Person).map { p -> p.name }"
     ),

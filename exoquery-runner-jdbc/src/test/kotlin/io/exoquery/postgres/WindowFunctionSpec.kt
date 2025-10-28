@@ -1,11 +1,9 @@
 package io.exoquery.postgres
 
-import io.exoquery.testdata.Address
-import io.exoquery.Ord
 import io.exoquery.testdata.Person
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.jdbc.runOn
 import io.kotest.core.spec.style.FreeSpec
@@ -33,7 +31,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "rank over partition by firstName order by lastName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       p to over().partitionBy(p.firstName).sortBy(p.lastName).rank()
     }
@@ -46,7 +44,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "dense_rank over partition by firstName order by lastName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       p to over().partitionBy(p.firstName).sortBy(p.lastName).rankDense()
     }
@@ -59,7 +57,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "row_number over partition by firstName order by lastName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       p to over().partitionBy(p.firstName).sortBy(p.lastName).rowNumber()
     }
@@ -72,7 +70,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "sum over partition by firstName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).sum(p.age))
     }
@@ -85,7 +83,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "avg over partition by firstName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).avg(p.age))
     }
@@ -98,7 +96,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "min over partition by firstName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).min(p.age))
     }
@@ -111,7 +109,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "max over partition by firstName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).max(p.age))
     }
@@ -124,7 +122,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "count over partition by firstName" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).count())
     }
@@ -137,7 +135,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "lag over partition by firstName order by age" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).sortBy(p.age).lag(p.age))
     }
@@ -150,7 +148,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "lead over partition by firstName order by age" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).sortBy(p.age).lead(p.age))
     }
@@ -163,7 +161,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "first_value over partition by firstName order by age" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().partitionBy(p.firstName).sortBy(p.age).firstValue(p.age))
     }
@@ -176,7 +174,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "rank over orderBy lastName without partition" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       p to over().sortBy(p.lastName).rank()
     }
@@ -189,7 +187,7 @@ class WindowFunctionSpec : FreeSpec({
   }
 
   "count over without partition or ordering" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Triple(p.firstName, p.lastName, over().count())
     }

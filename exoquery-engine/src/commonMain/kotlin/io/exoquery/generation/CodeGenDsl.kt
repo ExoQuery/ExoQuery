@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable as Ser
 
 /*
 
-capture.generate(
+sql.generate(
   TableClasses(
     codeVersion = "1.0.0",
     driver = DatabaseDriver.Postgres,

@@ -11,12 +11,12 @@ package io.exoquery
 //fun main() {
 //  @CapturedFunction
 //  fun <T: HasId> myFunction(input: SqlQuery<T>, selector: (T) -> String) =
-//    capture.select {
+//    sql.select {
 //      val p = from(input)
 //      val a = join(Table<Address>()) { a -> a.ownerId == p.id }
 //      selector(p) to a
 //    }
-//  val myQuery = capture {
+//  val myQuery = sql {
 //    val martians =
 //      myFunction(Table<Martian>().filter { it.title == "Maartok" }) { m -> m.title }
 //    val people =

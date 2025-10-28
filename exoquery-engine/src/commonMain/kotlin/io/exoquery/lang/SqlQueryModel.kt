@@ -1,9 +1,9 @@
 @file:Suppress("NAME_SHADOWING", "NAME_SHADOWING")
 
-package io.exoquery.sql
+package io.exoquery.lang
 
 import io.exoquery.printing.PrintXR
-import io.exoquery.sql.SqlQueryHelper.flattenDualHeadsIfPossible
+import io.exoquery.lang.SqlQueryHelper.flattenDualHeadsIfPossible
 import io.exoquery.util.Globals
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
@@ -95,7 +95,7 @@ sealed interface SqlQueryModel {
 
   fun show(pretty: Boolean = false): String {
     val str =
-      with(PostgresDialect(Globals.traceConfig())) {
+      with(io.exoquery.PostgresDialect(Globals.traceConfig())) {
         this@SqlQueryModel.token.toString()
       }
     // TODO integrate formatter via `expect`
@@ -716,7 +716,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
           // ===== The following have special handling in source function =====
           // Constructs like Map(FlatFilter(...),id,output) rely on this because we treat `output` as ExprToQuery(output) in the
-          // `flatten` function above. Also constructs situations like `capture.select { 1 }`.
+          // `flatten` function above. Also constructs situations like `sql.select { 1 }`.
           is XR.ExprToQuery -> FlattenSqlQuery(from = sources, select = listOf(SelectValue(head)), type = type)
           is XR.Free -> FlattenSqlQuery(from = sources + source(this, alias.name), select = select(alias.name, type, loc), type = type)
           is XR.Nested -> FlattenSqlQuery(from = sources + source(this, alias.name), select = select(alias.name, type, loc), type = type)

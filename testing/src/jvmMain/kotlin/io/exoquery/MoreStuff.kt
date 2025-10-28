@@ -18,13 +18,13 @@ package io.exoquery
 //    fun <T> insert(insertBlock: (T).() -> Values): T
 //  }
 //
-//  fun capture(block: CaptureBlock.() -> Unit): Unit = TODO()
+//  fun sql(block: CaptureBlock.() -> Unit): Unit = TODO()
 //
 //
 //  fun use() {
 //    data class Person(val id: Int, val name: String, val age: Int)
 //
-//    capture {
+//    sql {
 //      // can't do it like this
 //      insert<Person> { values(set[name] = "Joe") }
 //    }
@@ -47,7 +47,7 @@ object Variant2 {
     fun <T> insert(insertBlock: (T).() -> Values): T
   }
 
-  fun capture(block: CaptureBlock.() -> Unit): Unit = TODO()
+  fun sql(block: CaptureBlock.() -> Unit): Unit = TODO()
 
 
   fun use() {
@@ -56,7 +56,7 @@ object Variant2 {
     // TODO write returningColumns after values function
 
 
-    capture {
+    sql {
       insert<Person> { set(name to "Leah", age to 9) }
     }
 
@@ -70,7 +70,7 @@ object Variant3 {
   fun use() {
     data class Person(val id: Int, val name: String, val age: Int)
 
-    capture {
+    sql {
       insert<Person> {
         it[name] = "Leah"
         it[age] = 9
@@ -93,7 +93,7 @@ object Variant3 {
     fun <T> insert(insertBlock: (T).(Setter) -> Unit): T
   }
 
-  fun capture(block: CaptureBlock.() -> Unit): Unit = TODO()
+  fun sql(block: CaptureBlock.() -> Unit): Unit = TODO()
 
 
 }

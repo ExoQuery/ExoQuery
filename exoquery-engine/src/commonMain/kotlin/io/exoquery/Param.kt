@@ -5,23 +5,23 @@ import kotlin.reflect.KClass
 
 
 /*
- * val expr: @Captured SqlExpression<Int> = capture { foo + bar }
- * val query: SqlQuery<Person> = capture { Table<Person>() }
- * val query2: SqlQuery<Int> = capture { query.map { p -> p.age } }
+ * val expr: @Captured SqlExpression<Int> = sql { foo + bar }
+ * val query: SqlQuery<Person> = sql { Table<Person>() }
+ * val query2: SqlQuery<Int> = sql { query.map { p -> p.age } }
  *
  * so:
  * // Capturing a generic expression returns a SqlExpression
- * fun <T> capture(block: () -> T): SqlExpression<T>
+ * fun <T> sql(block: () -> T): SqlExpression<T>
  * for example:
  * {{{
- * val combo: SqlExpression<Int> = capture { foo + bar }
+ * val combo: SqlExpression<Int> = sql { foo + bar }
  * }}}
  *
  * // Capturing a SqlQuery returns a SqlQuery
- * fun <T> capture(block: () -> SqlQuery<T>): SqlQuery<T>
+ * fun <T> sql(block: () -> SqlQuery<T>): SqlQuery<T>
  * for example:
  * {{{
- * val query: SqlQuery<Person> = capture { Table<Person>() }
+ * val query: SqlQuery<Person> = sql { Table<Person>() }
  * }}}
  */
 sealed interface Param<T : Any> {
@@ -56,7 +56,7 @@ data class ParamSingle<T : Any>(override val id: BID, val value: T?, override va
 }
 
 /**
- * For capture.batch { param -> insert { set(name = param(p.name <- encoding the value here!)) }  }
+ * For sql.batch { param -> insert { set(name = param(p.name <- encoding the value here!)) }  }
  */
 data class ParamBatchRefiner<Input, Output : Any>(override val id: BID, val refiner: (Input?) -> Output?, override val serial: ParamSerializer<Output>, override val description: String? = null) : Param<Output> {
   fun refine(input: Input): ParamSingle<Output> = ParamSingle<Output>(id, refiner(input), serial, description)

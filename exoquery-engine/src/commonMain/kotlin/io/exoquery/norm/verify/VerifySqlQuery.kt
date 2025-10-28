@@ -1,7 +1,7 @@
 package io.exoquery.norm.verify
 
 import io.exoquery.norm.verify.FreeVariables.Companion.invoke
-import io.exoquery.sql.*
+import io.exoquery.lang.*
 import io.exoquery.xr.XR
 
 class VerifySqlQuery {

@@ -48,9 +48,9 @@ import kotlin.collections.plus
  * A captured function in the form of:
  * ```
  * @CapturedFunction
- * fun nameIsX(people: SqlQuery<Person>, name: String): SqlQuery<Person> = capture { people.filter { p -> p.name == name } }
+ * fun nameIsX(people: SqlQuery<Person>, name: String): SqlQuery<Person> = sql { people.filter { p -> p.name == name } }
  *
- * // Is supposed to be transformed into a capture-instance with a lambda that looks like this:
+ * // Is supposed to be transformed into a sql-instance with a lambda that looks like this:
  * fun nameIsX() =
  *   SqlQuery(XR.Function(args = Id(people), Id(name), body = XR.Filter(Id(people), BinaryOp(Prop(Id(p), "name"), "==", Id(name))))
  * ```
@@ -62,7 +62,7 @@ import kotlin.collections.plus
  * For example say
  * ```
  * val name = ...
- * fun nameIsParam(people: SqlQuery<Person>): SqlQuery<Person> = capture { people.filter { p -> p.name == param(name) } }
+ * fun nameIsParam(people: SqlQuery<Person>): SqlQuery<Person> = sql { people.filter { p -> p.name == param(name) } }
  *
  * // This needs to be transformed into:
  * fun nameIsParam() =
@@ -167,13 +167,13 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
 
 
     // If we've got some function like:
-    // @CapturedFunction fun nameIsJoe(people: SqlQuery<Person>) = capture { people.filter { p -> p.name == name } }
+    // @CapturedFunction fun nameIsJoe(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == name } }
     // we need to parse the body of the function and transform it into a XR.Function. On the site of a use-call
     // e.g. `nameIsJoe(Table<Person>())` we need to transform the use-site a XR.FunctionApply(..., args)
     // eventually during beta-reduction we'll get we'll get XR.FunctionApply(XR.Function(...), args) which is the XR representation of the function
     // and we'll apply the function during the SqlNormalization phase.
     on(capFunReturn).match(
-      // It can either be a `select { ... }` or a `capture { ... }`
+      // It can either be a `select { ... }` or a `sql { ... }`
       case(Call.CaptureQuery[Is()]).thenThis {
         val (rawQueryXR, dynamics) = TransformCapturedQuery.parseCapturedQuery(it, superTransformer)
         processQuery(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
@@ -186,7 +186,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
         val (rawQueryXR, dynamics) = TransformCapturedExpression.parseSqlExpression(it, superTransformer)
         processExpression(recieiverParam, rawQueryXR, dynamics, originalRegularParams, capFun.locationXR(), capFunReturn, capFunRaw)
       }
-    ) ?: parseError(Messages.CapturedFunctionFormWrong("Invalid capture-function body. ${errorText()}"), capFunReturn)
+    ) ?: parseError(Messages.CapturedFunctionFormWrong("Invalid sql-function body. ${errorText()}"), capFunReturn)
   }
 
   context(CX.Scope, CX.Builder)
@@ -219,7 +219,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
   private fun processQuery(recieverParam: XR.Ident?, rawQueryXR: XR, dynamics: DynamicsAccum, originalParams: List<IrValueParameter>, capFunLocation: XR.Location, capFunReturn: IrExpression, originalCall: IrFunction) = run {
     val xrLambdaParams = recieverParam.nullableAsList() + originalParams.map { Parser.scoped { Parser.parseValueParamter(it) } }
     val params = dynamics.makeParams()
-    val queryXR = rawQueryXR as? XR.Query ?: parseError("The body @CapturedFunction must be a capture returning a SqlQuery<T> or SqlExpression<T> instance but it was: ${rawQueryXR.showRaw()}", capFunReturn)
+    val queryXR = rawQueryXR as? XR.Query ?: parseError("The body @CapturedFunction must be a sql returning a SqlQuery<T> or SqlExpression<T> instance but it was: ${rawQueryXR.showRaw()}", capFunReturn)
     val xrLambda = XR.FunctionN(params = xrLambdaParams, body = queryXR, loc = capFunLocation)
     if (dynamics.noRuntimes()) {
       val (expr, uprootable) = SqlQueryExpr.Uprootable.plantNewUprootableWithPacked(xrLambda.asQuery(), params)

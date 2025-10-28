@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.lang
 
 import io.exoquery.xr._EqEq_
 import io.exoquery.xr._And_

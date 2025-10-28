@@ -1,11 +1,11 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Person
 
 class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "onConflictUpdate" {
-    val q = capture {
+    val q = sql {
       insert<Person> {
         set(name to "Joe", age to 123).onConflictUpdate(id) { excluding -> set(name to excluding.name, age to excluding.age) }
       }
@@ -15,7 +15,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
   }
 
   "onConflictUpdate - complex" {
-    val q = capture {
+    val q = sql {
       insert<Person> {
         set(name to "Joe", age to 123).onConflictUpdate(id) { excluding -> set(name to name + excluding.name, age to age + excluding.age) }
       }
@@ -25,7 +25,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
   }
 
   "onConflictUpdate - complex + returning" {
-    val q = capture {
+    val q = sql {
       insert<Person> {
         set(name to "Joe", age to 123).onConflictUpdate(id) { excluding -> set(name to name + excluding.name, age to age + excluding.age) }
       }.returning { p -> p.id }
@@ -35,7 +35,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
   }
 
   "onConflictUpdate - multiple" {
-    val q = capture {
+    val q = sql {
       insert<Person> {
         // Technically invalid SQL but we want to test the parsing
         set(name to "Joe", age to 123).onConflictUpdate(id, name) { excluding -> set(name to excluding.name, age to excluding.age) }
@@ -47,7 +47,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
 
   "onConflictUpdate - setParams" {
     val joe = Person(1, "Joe", 123)
-    val q = capture {
+    val q = sql {
       insert<Person> {
         setParams(joe).onConflictUpdate(id) { excluding -> set(name to excluding.name, age to excluding.age) }
       }
@@ -58,7 +58,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
 
   "onConflictUpdate - setParams + exclusion" {
     val joe = Person(1, "Joe", 123)
-    val q = capture {
+    val q = sql {
       insert<Person> {
         setParams(joe).excluding(id).onConflictUpdate(id) { excluding -> set(name to excluding.name, age to excluding.age) }
       }
@@ -68,7 +68,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
   }
 
   "onConflictIgnore" {
-    val q = capture {
+    val q = sql {
       insert<Person> {
         set(name to "Joe", age to 123).onConflictIgnore(id)
       }
@@ -78,7 +78,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
   }
 
   "onConflictIgnore - multiple" {
-    val q = capture {
+    val q = sql {
       insert<Person> {
         set(name to "Joe", age to 123).onConflictIgnore(id, name)
       }
@@ -89,7 +89,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
 
   "onConflictIgnore - multiple - setParams" {
     val joe = Person(1, "Joe", 123)
-    val q = capture {
+    val q = sql {
       insert<Person> {
         setParams(joe).onConflictIgnore(id, name)
       }
@@ -100,7 +100,7 @@ class ActionOnConflictReq: GoldenSpecDynamic(ActionOnConflictReqGoldenDynamic, M
 
   "onConflictIgnore - setParams + exclusion" {
     val joe = Person(1, "Joe", 123)
-    val q = capture {
+    val q = sql {
       insert<Person> {
         setParams(joe).excluding(id).onConflictIgnore(id, name)
       }

@@ -2,8 +2,8 @@ package io.exoquery.sample
 
 import io.exoquery.SqlQuery
 import io.exoquery.annotation.CapturedFunction
-import io.exoquery.capture
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.sql
+import io.exoquery.PostgresDialect
 
 interface Nameable {
   val name: String
@@ -17,12 +17,12 @@ fun main() {
 
   @CapturedFunction
   fun <N: Nameable> nameIsJoe(input: SqlQuery<N>) =
-    capture {
+    sql {
       input.filter { p -> p.name == "Joe" }.map { p -> p.name }
     }
 
   // TODO add this case to the unit tests
-//  val q = capture {
+//  val q = sql {
 //    nameIsJoe(
 //      Table<Robot>().filter { r ->
 //        Table<Factory>().filter { f -> f.id == r.factoryId }.filter { f -> f.name == "aaa" }.isNotEmpty()
@@ -36,13 +36,13 @@ fun main() {
 
   @CapturedFunction
   fun robotsWithFactoryName(factoryName: String) =
-    capture {
+    sql {
       Table<Robot>().filter { r ->
         Table<Factory>().filter { f -> f.id == r.factoryId }.filter { f -> f.name == factoryName }.isNotEmpty()
       }
     }
 
-  val q = capture {
+  val q = sql {
     nameIsJoe(
       robotsWithFactoryName("aaa") unionAll robotsWithFactoryName("bbb")
     )

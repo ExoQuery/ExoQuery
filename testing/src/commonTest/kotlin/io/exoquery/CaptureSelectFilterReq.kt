@@ -7,24 +7,24 @@ import io.exoquery.annotation.TracesEnabled
 import io.exoquery.util.TraceType
 
 class CaptureSelectFilterReq: GoldenSpecDynamic(CaptureSelectFilterReqGoldenDynamic, Mode.ExoGoldenTest(), {
-  "capture select.filter should expand correctly" - {
+  "sql select.filter should expand correctly" - {
     "test query" {
       data class User(val id: Int, val name: String, val active: Int)
       data class Comment(val id: Int, val userId: Int, val createdAt: Long)
       data class UserCommentCount(val user: User, val commentCount: Int)
 
-      val users = capture { Table<User>() }
-      val comments = capture { Table<Comment>() }
+      val users = sql { Table<User>() }
+      val comments = sql { Table<Comment>() }
 
-      val now = capture.expression {
+      val now = sql.expression {
         free("now()")<Long>()
       }
       @CapturedFunction
-      fun IntervalDay(days: Int) = capture.expression {
+      fun IntervalDay(days: Int) = sql.expression {
         free("interval '$days days'")<Long>()
       }
 
-      val q = capture {
+      val q = sql {
         select {
           val u = from(users)
           val c = joinLeft(comments) { it.userId == u.id }
@@ -41,11 +41,11 @@ class CaptureSelectFilterReq: GoldenSpecDynamic(CaptureSelectFilterReqGoldenDyna
     data class Person(val id: Int, val name: String, val age: Int)
     data class Address(val ownerId: Int, val street: String, val city: String)
 
-    "capture select.filter simple" {
-      val people = capture { Table<Person>() }
-      val addresses = capture { Table<Address>() }
+    "sql select.filter simple" {
+      val people = sql { Table<Person>() }
+      val addresses = sql { Table<Address>() }
 
-      val c = capture {
+      val c = sql {
         select {
           val p = from(people)
           where { p.age > 18 }
@@ -56,11 +56,11 @@ class CaptureSelectFilterReq: GoldenSpecDynamic(CaptureSelectFilterReqGoldenDyna
       shouldBeGolden(c.buildPrettyFor.Postgres(), useTokenRendering = false)
     }
 
-    "capture select(where,groupBy).filter" {
-      val people = capture { Table<Person>() }
-      val addresses = capture { Table<Address>() }
+    "sql select(where,groupBy).filter" {
+      val people = sql { Table<Person>() }
+      val addresses = sql { Table<Address>() }
 
-      val c = capture {
+      val c = sql {
         select {
           val p = from(people)
           val a = joinLeft(addresses) { it.ownerId == p.id }
@@ -74,11 +74,11 @@ class CaptureSelectFilterReq: GoldenSpecDynamic(CaptureSelectFilterReqGoldenDyna
     }
 
 
-    "capture select(where,groupBy).map" {
-      val people = capture { Table<Person>() }
-      val addresses = capture { Table<Address>() }
+    "sql select(where,groupBy).map" {
+      val people = sql { Table<Person>() }
+      val addresses = sql { Table<Address>() }
 
-      val c = capture {
+      val c = sql {
         select {
           val p = from(people)
           val a = joinLeft(addresses) { it.ownerId == p.id }

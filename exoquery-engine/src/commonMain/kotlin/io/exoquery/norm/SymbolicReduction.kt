@@ -83,7 +83,7 @@ class SymbolicReduction(val traceConfig: TraceConfig) {
          * FlatMap(ent, FlatMap(Map(FlatJoin), Map(FlatJoin)) then you will have a problem because the FlatJoin in the
          * head and body positions of the inner FlatMap. Therefore we need to check that the head and body of the outer FlatMap do not have both have
          * flatJoins in order to proceed with this transformation.
-         * (**) This is typically produced by using a capture.select clause, see "variable deconstruction should work even when passed to further join" in
+         * (**) This is typically produced by using a sql.select clause, see "variable deconstruction should work even when passed to further join" in
          * VariableReductionReq.kt for an example. Also the MonadicMachinerReq has lots of examples of this.
          *
          * The only exception to this rule if the head of the inner FlatMap has a XR.Map in the tail position (which is actually the most common case).

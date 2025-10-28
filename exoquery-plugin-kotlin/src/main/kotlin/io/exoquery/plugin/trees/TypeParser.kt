@@ -91,7 +91,7 @@ object TypeParser {
       // Need to check this before checking the isDataClass clause because for things like custom types e.g. data class MyCustomDate(year: Int, month: Int, day: Int)
       // it could be a data-class but still needs to be interpreted as a value (usually this will be because the type itself is annotated with @Contextual or @ExoValue
       // when it is coming out of a param(...)/paramCtx(...) call or it is a dereferenced property of a data-class that has @Contextual or @ExoValue marked on the type
-      // of the member itself e.g. `data class Person(bornOn: @Contextual LocalDate)`, `capture { Table<Person>().map { p -> p.bornOn <- type: @Contextual MyCustomDate } }`.
+      // of the member itself e.g. `data class Person(bornOn: @Contextual LocalDate)`, `sql { Table<Person>().map { p -> p.bornOn <- type: @Contextual MyCustomDate } }`.
       case(Ir.Type.Value[Is()]).then { type ->
         //error("----------- Got here: ${type} ----------")
         if (type.isBoolean())

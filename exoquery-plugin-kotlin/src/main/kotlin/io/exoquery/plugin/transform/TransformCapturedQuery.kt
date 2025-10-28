@@ -58,12 +58,12 @@ class TransformCapturedQuery(val superTransformer: VisitTransformExpressions, va
         )
           ?: parseError("The qeury expression has an invalid structure", expression)
 
-      // Transform the contents of `capture { ... }` this is important for several reasons,
+      // Transform the contents of `sql { ... }` this is important for several reasons,
       // most notable any kind of variables used inside that need to be inlined e.g:
-      // val x = capture { 123 }
-      // val y = capture { x.use + 1 } // <- this is what we are transforming
+      // val x = sql { 123 }
+      // val y = sql { x.use + 1 } // <- this is what we are transforming
       // Then the `val y` needs to first be transformed into:
-      // val y = capture { SqlExpression(XR.Int(123), ...).use + 1 } which will be done by TransformProjectCapture
+      // val y = sql { SqlExpression(XR.Int(123), ...).use + 1 } which will be done by TransformProjectCapture
       // which is called by the superTransformer.visitBlockBody
       val body = superTransformer.recurse(bodyExpr)
       Parser.scoped { Parser.parseQueryFromBlock(body) }

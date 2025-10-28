@@ -1,7 +1,7 @@
 package io.exoquery.xr
 
 import io.exoquery.codegen.model.NameProcessorLLM
-import io.exoquery.sql.SqlQueryModel
+import io.exoquery.lang.SqlQueryModel
 import io.exoquery.xr.EncodingXR.protoBuf
 import kotlinx.serialization.decodeFromHexString
 import kotlinx.serialization.encodeToHexString

@@ -2,7 +2,7 @@ package io.exoquery
 
 import io.exoquery.annotation.ExoInternal
 import io.exoquery.generation.Code
-import io.exoquery.sql.SqlQueryModel
+import io.exoquery.lang.SqlQueryModel
 import io.exoquery.xr.EncodingXR
 import io.exoquery.xr.XR
 import kotlinx.serialization.decodeFromHexString

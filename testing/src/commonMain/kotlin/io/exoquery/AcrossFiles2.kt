@@ -1,14 +1,13 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedDynamic
 import io.exoquery.annotation.CapturedFunction
 
 
-inline fun crossFileSelectExpr() = capture {
+inline fun crossFileSelectExpr() = sql {
   crossFileSelect().filter { pair ->  pair.first.id > 1 }
 }
 
-inline fun crossFileSelectSelect () = capture.select {
+inline fun crossFileSelectSelect () = sql.select {
   // TODO fails when .nested() is removed. Need to look into why
   val p = from(crossFileSelect().nested())
   val a = join(Table<AddressCrs>()) { it.ownerId == p.first.id }
@@ -16,26 +15,26 @@ inline fun crossFileSelectSelect () = capture.select {
 }
 
 @CapturedFunction
-inline fun crossFileCapSelectCapExpr(q: SqlQuery<PersonCrs>) = capture {
+inline fun crossFileCapSelectCapExpr(q: SqlQuery<PersonCrs>) = sql {
   crossFileCapSelect(Table<PersonCrs>().filter { p -> p.name == "JohnB" })
 }
 
 @CapturedFunction
-inline fun crossFileCapSelectCapSelect(q: SqlQuery<PersonCrs>) = capture.select {
+inline fun crossFileCapSelectCapSelect(q: SqlQuery<PersonCrs>) = sql.select {
   val p = from(crossFileCapSelect(q))
   val a = join(Table<AddressCrs>()) { it.ownerId == p.id }
   p to a
 }
 
 //@CapturedDynamic
-//inline fun crossFileDynSelectDynSelect(q: SqlQuery<PersonCrs>) = capture.select {
+//inline fun crossFileDynSelectDynSelect(q: SqlQuery<PersonCrs>) = sql.select {
 //  val p = from(crossFileDynSelect(q))
 //  val a = join(Table<AddressCrs>()) { it.ownerId == p.id }
 //  p to a
 //}
 
 inline fun crossFileExprExpr() =
-  capture {
+  sql {
     crossFileExpr().filter { it.name == "JohnExprExpr"  }
   }
 

@@ -1,6 +1,6 @@
 package io.exoquery.codegen.model
 
-import io.exoquery.sql.SqlIdiom
+import io.exoquery.lang.SqlIdiom
 import kotlin.reflect.KClass
 
 // Kotlin:

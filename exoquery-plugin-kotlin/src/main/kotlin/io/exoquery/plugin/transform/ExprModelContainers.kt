@@ -4,8 +4,8 @@ import io.exoquery.*
 import io.exoquery.plugin.trees.Lifter
 import io.exoquery.plugin.trees.PT
 import io.exoquery.plugin.trees.simpleTypeArgs
-import io.exoquery.sql.Token
-import io.exoquery.sql.token
+import io.exoquery.lang.Token
+import io.exoquery.lang.token
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString

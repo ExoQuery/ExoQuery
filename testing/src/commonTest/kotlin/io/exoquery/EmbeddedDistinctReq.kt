@@ -2,7 +2,7 @@ package io.exoquery
 
 import io.exoquery.annotation.ExoEntity
 import io.exoquery.annotation.ExoField
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "queries with embedded entities should" - {
@@ -30,7 +30,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       data class Emb(val a: Int, val b: Int)
       data class Parent(val id: Int, val emb1: Emb)
 
-      val q = capture {
+      val q = sql {
         Table<Emb>().map { e -> Parent(1, e) }.distinct()
       }
       shouldBeGolden(q.xr, "XR")
@@ -41,7 +41,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       @ExoEntity("EMB") data class Emb(@ExoField("A") val a: Int, @ExoField("B") val b: Int)
       data class Parent(@ExoField("ID") val id: Int, val emb1: Emb)
 
-      val q = capture {
+      val q = sql {
         Table<Emb>().map { e -> Parent(1, e) }.distinct()
       }
       shouldBeGolden(q.xr, "XR")
@@ -52,7 +52,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       data class Emb(val a: Int, val b: Int)
       data class Parent(val id: Int, val emb1: Emb)
 
-      val q = capture {
+      val q = sql {
         Table<Emb>().map { e -> Parent(1, e) }.distinct().map { p -> 2 to p }.distinct()
       }
       shouldBeGolden(q.xr, "XR")
@@ -72,7 +72,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       data class Emb(val a: Int, val b: Int)
       data class Parent(val id: Int, val emb1: Emb)
 
-      val q = capture {
+      val q = sql {
         Table<Emb>().map { e -> 1 to e }.distinct().map { t -> Parent(t.first, t.second) }.distinct()
       }
       shouldBeGolden(q.xr, "XR")
@@ -84,7 +84,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       data class Parent(val idP: Int, val emb1: Emb)
       data class Grandparent(val idG: Int, val par: Parent)
 
-      val q = capture {
+      val q = sql {
         Table<Emb>().map { e -> Parent(1, e) }.distinct().map { p -> Grandparent(2, p) }.distinct()
       }
       shouldBeGolden(q.xr, "XR")
@@ -96,7 +96,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       data class Parent(val idP: Int, val emb1: Emb)
       data class Grandparent(val idG: Int, val par: Parent)
 
-      val q = capture {
+      val q = sql {
         // Not right result. Need to debug this
         Table<Emb>().map { e -> Parent(1, e) }.distinct().map { p -> Grandparent(2, p) }.distinct().map { g -> 3 to g }
           .distinct()
@@ -110,7 +110,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       data class Parent(val idP: Int, val emb1: Emb)
       data class Grandparent(val idG: Int, val par: Parent)
 
-      val q = capture {
+      val q = sql {
         // Not right result. Need to debug this
         Table<Emb>().map { e -> Parent(1, e) }.distinct().map { p -> Grandparent(2, p) }.distinct().map { g -> 3 to g }
           .distinct()
@@ -125,7 +125,7 @@ class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, M
       data class Parent(@ExoField("idPREN") val idP: Int, @ExoField("emb1REN") val emb1: Emb)
       data class Grandparent(val idG: Int, val par: Parent)
 
-      val q = capture {
+      val q = sql {
         // Not right result. Need to debug this
         Table<Emb>().map { e -> Parent(1, e) }.distinct().map { p -> Grandparent(2, p) }.distinct().map { g -> 3 to g }
           .distinct()

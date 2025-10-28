@@ -22,7 +22,7 @@ class BasicQueryQuotationSpec : FreeSpec({
   // here we are largely testing the DSL mechanics
   "dsl features" - {
     "table" {
-      val cap = capture { Table<Person>() }
+      val cap = sql { Table<Person>() }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
         personEnt,
         RuntimeSet.Empty,
@@ -32,8 +32,8 @@ class BasicQueryQuotationSpec : FreeSpec({
       cap.xr.type shouldBeEqual personTpe
     }
     "map" {
-      val cap0 = capture { Table<Person>() }
-      val cap = capture { cap0.map { p -> p.name } }
+      val cap0 = sql { Table<Person>() }
+      val cap = sql { cap0.map { p -> p.name } }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
         XR.Map(personEnt, pIdent, XR.Property(pIdent, "name", XR.HasRename.NotHas)),
         RuntimeSet.Empty,
@@ -41,8 +41,8 @@ class BasicQueryQuotationSpec : FreeSpec({
       )
     }
     "flatMap" {
-      val cap0 = capture { Table<Robot>() }
-      val cap = capture { cap0.flatMap { r -> Table<Person>() } }
+      val cap0 = sql { Table<Robot>() }
+      val cap = sql { cap0.flatMap { r -> Table<Person>() } }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
         XR.FlatMap(robotEnt, rIdent, personEnt),
         RuntimeSet.Empty,
@@ -50,8 +50,8 @@ class BasicQueryQuotationSpec : FreeSpec({
       )
     }
     "filter" {
-      val cap0 = capture { Table<Person>() }
-      val cap = capture { cap0.filter { p -> p.age > 18 } }
+      val cap0 = sql { Table<Person>() }
+      val cap = sql { cap0.filter { p -> p.age > 18 } }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
         XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "age", XR.HasRename.NotHas), OP.Gt, XR.Const.Int(18))),
         RuntimeSet.Empty,
@@ -60,8 +60,8 @@ class BasicQueryQuotationSpec : FreeSpec({
     }
     // TODO need to build special logic for converting name.toList into "unnest(name)" and probably need to have a custom parseable unnest in the DSL or something like that
     //"concatMap" {
-    //  val cap0 = capture { Table<Person>() }
-    //  val cap = capture { cap0.concatMap { p -> p.name.toList() } }
+    //  val cap0 = sql { Table<Person>() }
+    //  val cap = sql { cap0.concatMap { p -> p.name.toList() } }
     //  cap.determinizeDynamics() shouldBeEqual SqlQuery(
     //    XR.ConcatMap(personEnt, pIdent, ???),
     //    Runtimes.Empty,
@@ -69,12 +69,12 @@ class BasicQueryQuotationSpec : FreeSpec({
     //  )
     //}
     "union and unionAll" - {
-      val cap0 = capture { Table<Person>() }
-      val capA = capture { cap0.filter { p -> p.name == "A" } }
-      val capB = capture { cap0.filter { p -> p.name == "B" } }
+      val cap0 = sql { Table<Person>() }
+      val capA = sql { cap0.filter { p -> p.name == "A" } }
+      val capB = sql { cap0.filter { p -> p.name == "B" } }
 
       "union" {
-        val cap = capture { capA.union(capB) }
+        val cap = sql { capA.union(capB) }
         cap.determinizeDynamics() shouldBeEqual SqlQuery(
           XR.Union(
             XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name", XR.HasRename.NotHas), OP.EqEq, XR.Const.String("A"))),
@@ -85,7 +85,7 @@ class BasicQueryQuotationSpec : FreeSpec({
         )
       }
       "unionAll" {
-        val cap = capture { capA.unionAll(capB) }
+        val cap = sql { capA.unionAll(capB) }
         cap.determinizeDynamics() shouldBeEqual SqlQuery(
           XR.UnionAll(
             XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name", XR.HasRename.NotHas), OP.EqEq, XR.Const.String("A"))),
@@ -102,11 +102,11 @@ class BasicQueryQuotationSpec : FreeSpec({
     "c0D=dyn{TableA}, c={c0D.map(...)} -> {T(B0).map(...),R={B0,TableA}}" {
       val cap0 =
         if (tru) {
-          capture { Table<Person>() }
+          sql { Table<Person>() }
         } else {
           throw IllegalArgumentException("Should not be here")
         }
-      val cap = capture {
+      val cap = sql {
         cap0.map { p -> p.name }
       }
       cap.determinizeDynamics() shouldBeEqual SqlQuery(
@@ -119,11 +119,11 @@ class BasicQueryQuotationSpec : FreeSpec({
     // "c0D=(i)->dyn{TableA.filter(i)}, c={c0D.map(...)} -> {T(B0).map(...),R={B0,TableA}}" {
     //   fun cap0(i: Int) =
     //     if (tru) {
-    //       capture { Table<Person>().filter { p -> p.age == param(i) } }
+    //       sql { Table<Person>().filter { p -> p.age == param(i) } }
     //     } else {
     //       throw IllegalArgumentException("Should not be here")
     //     }
-    //   val cap = capture {
+    //   val cap = sql {
     //     cap0(123).map { p -> p.name }
     //   }
     //   cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlQuery<String>(

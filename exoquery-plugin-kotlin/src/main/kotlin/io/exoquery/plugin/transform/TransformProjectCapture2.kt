@@ -98,8 +98,8 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
 
         // ================ If we're at the root (i.e. the element is of type OwnerChain.Root) we need to determine what to do based on the type of the root element ================
         // 0. If it's null a previous operation has failed, return null and we're done
-        // 1. If we're a Uprootable then just go up one level, the level above will will handle capture-projection
-        // 2. If we're not an uprootable try doing the superTransform.visitCall on it. If it becomes an uprootable then return it, the level above will handle capture-projection
+        // 1. If we're a Uprootable then just go up one level, the level above will will handle sql-projection
+        // 2. If we're not an uprootable try doing the superTransform.visitCall on it. If it becomes an uprootable then return it, the level above will handle sql-projection
         // Note be sure to NEVER return a null other than from anything but a root since this sequence of operations modifies intermeidate expressions
         // and returning `null` effectively tells the upstream "nothing has happened".
         node is OwnerChain.Root -> {
@@ -148,10 +148,10 @@ class TransformProjectCapture2(val superTransformer: VisitTransformExpressions) 
         // TODO need to create a putUprootableIfCrossFile call in the primary traverser in order to put XRs of functions being compiled
         //      that were never called yet.
 
-        // ================ If we're not a Root that means some previous root up the chain succeeded (either doing #1 or #2 above) do we capture-projection and go up the chain ================
+        // ================ If we're not a Root that means some previous root up the chain succeeded (either doing #1 or #2 above) do we sql-projection and go up the chain ================
         // Instructions: say we've got a case of:
-        // fun foo() = capture { Table<Person>() }
-        // fun bar() = capture { foo().filter { it.name == "Alice" } }
+        // fun foo() = sql { Table<Person>() }
+        // fun bar() = sql { foo().filter { it.name == "Alice" } }
         // `fun foo()` will be the node.origin and will be the uprootableParent when we come back from it
         // `node` will be the `foo()` node.call` IrCall from bar that we need to project into an SqlQuery(..., params=params + foo().params) call
         // That means we need to:

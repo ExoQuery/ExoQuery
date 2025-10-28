@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 fun main() {
   val emb = EmbeddedPostgres.start()
   val ds = emb.postgresDatabase
-  val query = capture {
+  val query = sql {
     Table<Person>().filter { p -> p.lastName == "Ioffe" }
   }
 

@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect //hello
+import io.exoquery.PostgresDialect //hello
 
 fun main() {
   data class Person(val id: Int, val name: String, val age: Int)
@@ -8,7 +8,7 @@ fun main() {
   data class Robot(val ownerId: Int, val name: String, val model: String)
 
   val cap =
-    capture {
+    sql {
       Table<Person>().flatMap { p ->
         internal.flatJoin(Table<Address>()) { a -> p.id == a.ownerId }.map { a -> p to a }
           .flatMap { pa ->

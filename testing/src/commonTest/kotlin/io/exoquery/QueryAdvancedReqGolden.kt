@@ -121,7 +121,7 @@ object QueryAdvancedReqGolden : GoldenQueryFile {
         INNER JOIN Address a ON a.ownerId = p.id
       """
     ),
-    "select clauses join(capture+map)" to cr(
+    "select clauses join(sql+map)" to cr(
       """
       SELECT
         p.id,
@@ -138,7 +138,7 @@ object QueryAdvancedReqGolden : GoldenQueryFile {
         ) AS r ON r.value = p.id
       """
     ),
-    "capture + select-clause + filters afterward" to cr(
+    "sql + select-clause + filters afterward" to cr(
       """
       SELECT
         p.id,
@@ -158,7 +158,7 @@ object QueryAdvancedReqGolden : GoldenQueryFile {
         a.ownerId = p.id
       """
     ),
-    "capture + select-clause (+nested) + filters afterward" to cr(
+    "sql + select-clause (+nested) + filters afterward" to cr(
       """
       SELECT
         p.id,

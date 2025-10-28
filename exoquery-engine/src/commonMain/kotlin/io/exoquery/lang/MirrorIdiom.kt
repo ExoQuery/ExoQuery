@@ -1,6 +1,6 @@
-package io.exoquery.sql
+package io.exoquery.lang
 
-import io.exoquery.sql.mkStmt
+import io.exoquery.lang.mkStmt
 import io.exoquery.util.interleaveWith
 import io.exoquery.util.stmt
 import io.exoquery.xr.AggregationOperator

@@ -5,7 +5,7 @@ import io.exoquery.annotation.ExoBuildFunctionLabel
 import io.exoquery.annotation.ExoInternal
 import io.exoquery.norm.NormalizeCustomQueries
 import io.exoquery.printing.PrintMisc
-import io.exoquery.sql.SqlIdiom
+import io.exoquery.lang.SqlIdiom
 import io.exoquery.xr.RuntimeBuilder
 import io.exoquery.xr.XR
 

@@ -3,9 +3,9 @@ package io.exoquery.postgres
 import io.exoquery.testdata.Person
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.joe
 import io.exoquery.people
@@ -28,7 +28,7 @@ class FreeClauseSpec : FreeSpec({
   }
 
   "whole-body insert" {
-    val q = capture {
+    val q = sql {
       free("INSERT INTO Person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 111)")
         .asPure<SqlAction<Nothing, Long>>()
       //insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }
@@ -43,7 +43,7 @@ class FreeClauseSpec : FreeSpec({
       INSERT INTO Person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 111)
       """
     )
-    val q = capture {
+    val q = sql {
       free("SELECT * FROM Person WHERE firstName = 'Joe'")
         .asPure<SqlQuery<Person>>()
     }

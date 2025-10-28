@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 class NameEscapeSpec: GoldenSpecDynamic(NameEscapeSpecGoldenDynamic, Mode.ExoGoldenTest(), {
 
@@ -8,7 +8,7 @@ class NameEscapeSpec: GoldenSpecDynamic(NameEscapeSpecGoldenDynamic, Mode.ExoGol
   "keyword-escaping should work property for" - {
     "table names" {
       data class user(val id: Int, val name: String)
-      val q = capture.select {
+      val q = sql.select {
         val t = from(Table<user>())
         where { t.id == 123 }
         t
@@ -18,7 +18,7 @@ class NameEscapeSpec: GoldenSpecDynamic(NameEscapeSpecGoldenDynamic, Mode.ExoGol
     }
     "table variable names" {
       data class MyTable(val id: Int, val name: String)
-      val q = capture.select {
+      val q = sql.select {
         val user = from(Table<MyTable>())
         where { user.id == 123 }
         user
@@ -28,7 +28,7 @@ class NameEscapeSpec: GoldenSpecDynamic(NameEscapeSpecGoldenDynamic, Mode.ExoGol
     }
     "column names" {
       data class MyTable(val id: Int, val user: String)
-      val q = capture.select {
+      val q = sql.select {
         val t = from(Table<MyTable>())
         where { t.id == 123 }
         t.user
@@ -39,8 +39,8 @@ class NameEscapeSpec: GoldenSpecDynamic(NameEscapeSpecGoldenDynamic, Mode.ExoGol
     "column names in a subquery" {
       data class MyTable(val id: Int, val user: String)
       data class MySubTable(val user: MyTable, val id: Int)
-      val q = capture.select {
-        val t = from(capture.select {
+      val q = sql.select {
+        val t = from(sql.select {
           val tt = from(Table<MyTable>())
           where { tt.id == 123 }
           MySubTable(tt, tt.id)

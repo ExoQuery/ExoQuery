@@ -1,6 +1,6 @@
 package io.exoquery.printing
 
-import io.exoquery.sql.SqlQueryModel
+import io.exoquery.lang.SqlQueryModel
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import io.exoquery.util.Tracer

@@ -5,7 +5,7 @@ fun main() {
   data class Person(val id: Int, val name: String, val age: Int)
 
   val cap =
-    capture {
+    sql {
       Table<Person>().filter { p -> p.name == "Joe" }
     }
 

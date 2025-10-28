@@ -3,10 +3,9 @@ package io.exoquery.native
 import io.exoquery.IllegalSqlOperation
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.native.NativeDatabaseController
 import io.exoquery.controller.runActions
-import io.exoquery.postgres.joe
 import io.exoquery.postgres.people
 import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
@@ -50,7 +49,7 @@ class ActionSpec {
 
   @Test
   fun `insert simple`() = runBlocking {
-    val q = capture {
+    val q = sql {
       insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 1
@@ -59,7 +58,7 @@ class ActionSpec {
 
   @Test
   fun `insert simple with params`() = runBlocking {
-    val q = capture {
+    val q = sql {
       insert<Person> { set(firstName to param("Joe"), lastName to param("Bloggs"), age to param(111)) }
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 1
@@ -68,7 +67,7 @@ class ActionSpec {
 
   @Test
   fun `insert simple with setParams`() = runBlocking {
-    val q = capture {
+    val q = sql {
       insert<Person> { setParams(Person(1, "Joe", "Bloggs", 111)) }
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 1
@@ -77,7 +76,7 @@ class ActionSpec {
 
   @Test
   fun `insert simple with setParams and exclusion`() = runBlocking {
-    val q = capture {
+    val q = sql {
       insert<Person> { setParams(Person(1, "Joe", "Bloggs", 111)).excluding(id) }
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 1
@@ -86,7 +85,7 @@ class ActionSpec {
 
   @Test
   fun `insert with returning`() = runBlocking {
-    val q = capture {
+    val q = sql {
       insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returning { p -> p.id + 100 }
     }
     val build = q.build<SqliteDialect>()
@@ -97,7 +96,7 @@ class ActionSpec {
   @Test
   fun `insert with returning using param`() = runBlocking {
     val n = 1000
-    val q = capture {
+    val q = sql {
       insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returning { p -> p.id + 100 + param(n) }
     }
     val build = q.build<SqliteDialect>()
@@ -107,7 +106,7 @@ class ActionSpec {
 
   @Test
   fun `insert with returning - multiple`() = runBlocking {
-    val q = capture {
+    val q = sql {
       insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returning { p -> p.id to p.firstName }
     }
     val build = q.build<SqliteDialect>()
@@ -117,7 +116,7 @@ class ActionSpec {
 
   @Test
   fun `insert with returning keys`() = runBlocking {
-    val q = capture {
+    val q = sql {
       insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returningKeys { id }
     }
     val build = q.build<SqliteDialect>()
@@ -128,7 +127,7 @@ class ActionSpec {
   @Test
   fun `update simple`() = runBlocking {
     ctx.insertGeorgeAndJim()
-    val q = capture {
+    val q = sql {
       update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 1
@@ -138,7 +137,7 @@ class ActionSpec {
   @Test
   fun `update no condition`() = runBlocking {
     ctx.insertGeorgeAndJim()
-    val q = capture {
+    val q = sql {
       update<Person> { set(firstName to param("Joe"), lastName to param("Bloggs"), age to 111) }.all()
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 2
@@ -152,7 +151,7 @@ class ActionSpec {
   fun `update with setParams`() = runBlocking {
     ctx.insertGeorgeAndJim()
     val updateCall = Person(1, "Joe", "Bloggs", 111)
-    val q = capture {
+    val q = sql {
       // TODO need to make a warning when this situation happens, can't have param instances here
       // update<Person> { setParams(Person(1, param("Joe"), param("Bloggs"), 111)) }.filter { p -> p.id == 1 }
       update<Person> { setParams(updateCall) }.filter { p -> p.id == 1 }
@@ -166,7 +165,7 @@ class ActionSpec {
     ctx.insertGeorgeAndJim()
     // Set a large Id that should specifically be excluded from insertion
     val updateCall = Person(1000, "Joe", "Bloggs", 111)
-    val q = capture {
+    val q = sql {
       // Set the ID to 0 so we can be sure
       update<Person> { setParams(updateCall).excluding(id) }.filter { p -> p.id == 1 }
     }
@@ -177,7 +176,7 @@ class ActionSpec {
   @Test
   fun `update with returning`() = runBlocking {
     ctx.insertGeorgeAndJim()
-    val q = capture {
+    val q = sql {
       update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }.returning { p -> p.id + 100 }
     }
     val build = q.build<SqliteDialect>()
@@ -188,7 +187,7 @@ class ActionSpec {
   @Test
   fun `update with returning - multiple`() = runBlocking {
     ctx.insertGeorgeAndJim()
-    val q = capture {
+    val q = sql {
       update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }.returning { p -> p.id to p.firstName }
     }
     val build = q.build<SqliteDialect>()
@@ -198,7 +197,7 @@ class ActionSpec {
 
   @Test
   fun `update with returningKeys`() = runBlocking {
-    val q = capture {
+    val q = sql {
       update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }.returningKeys { id }
     }
     val build = q.build<SqliteDialect>()
@@ -211,7 +210,7 @@ class ActionSpec {
   @Test
   fun `delete simple`() = runBlocking {
     ctx.insertGeorgeAndJim()
-    val q = capture {
+    val q = sql {
       delete<Person>().filter { p -> p.id == 1 }
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 1
@@ -221,7 +220,7 @@ class ActionSpec {
   @Test
   fun `delete no condition`() = runBlocking {
     ctx.insertGeorgeAndJim()
-    val q = capture {
+    val q = sql {
       delete<Person>().all()
     }
     q.build<SqliteDialect>().runOn(ctx) shouldBe 2
@@ -231,7 +230,7 @@ class ActionSpec {
   @Test
   fun `delete with returning`() = runBlocking {
     ctx.insertGeorgeAndJim()
-    val q = capture {
+    val q = sql {
       delete<Person>().filter { p -> p.id == 1 }.returning { p -> p.id + 100 }
     }
     val build = q.build<SqliteDialect>()
@@ -241,7 +240,7 @@ class ActionSpec {
 
   @Test
   fun `delete with returningKeys`() = runBlocking {
-    val q = capture {
+    val q = sql {
       delete<Person>().filter { p -> p.id == 1 }.returningKeys { id }
     }
     val build = q.build<SqliteDialect>()

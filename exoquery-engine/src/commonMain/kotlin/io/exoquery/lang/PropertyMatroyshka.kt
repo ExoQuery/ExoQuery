@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.lang
 
 import io.decomat.*
 import io.exoquery.xr.XR

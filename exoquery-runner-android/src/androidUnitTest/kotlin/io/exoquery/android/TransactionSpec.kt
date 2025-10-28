@@ -1,10 +1,10 @@
 package io.exoquery.android
 
 import io.exoquery.testdata.Person
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.controller.transaction
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.runner.RunWith
@@ -30,12 +30,12 @@ class TransactionSpec {
   private val jack = Person(2, "Jack", "Roogs", 222)
 
   private suspend fun select() =
-    capture { Table<Person>() }.build<PostgresDialect>().runOn(ctx)
+    sql { Table<Person>() }.build<PostgresDialect>().runOn(ctx)
 
   @Test
   fun `transaction success`() = runBlocking {
     ctx.transaction {
-      capture {
+      sql {
         insert<Person> { setParams(joe) }
       }.build<PostgresDialect>().runOnTransaction()
     }
@@ -45,11 +45,11 @@ class TransactionSpec {
   @Test
   fun `transaction failure`() = runBlocking {
     // Insert joe record
-    capture { insert<Person> { setParams(joe) } }.build<PostgresDialect>().runOn(ctx)
+    sql { insert<Person> { setParams(joe) } }.build<PostgresDialect>().runOn(ctx)
 
     kotlin.test.assertFailsWith<IllegalStateException> {
       ctx.transaction {
-        capture {
+        sql {
           insert<Person> { setParams(jack) }
         }.build<PostgresDialect>().runOnTransaction()
         throw IllegalStateException()
@@ -60,7 +60,7 @@ class TransactionSpec {
 
   @Test
   fun `nested transaction`() = runBlocking {
-    val cap = capture {
+    val cap = sql {
       insert<Person> { setParams(joe) }
     }.build<PostgresDialect>()
 

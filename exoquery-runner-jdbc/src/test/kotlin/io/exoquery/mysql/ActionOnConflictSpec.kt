@@ -2,13 +2,13 @@ package io.exoquery.mysql
 
 import io.exoquery.testdata.Person
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.insertPerson
 import io.exoquery.joe
 import io.exoquery.people
 import io.exoquery.runOn
-import io.exoquery.sql.MySqlDialect
+import io.exoquery.MySqlDialect
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
@@ -31,7 +31,7 @@ class ActionOnConflictSpec : FreeSpec({
       ctx.insertPerson(joe)
       val nameVar = "Joee"
       val lastNameVar = "Bloggsee"
-      val q = capture {
+      val q = sql {
         insert<Person> {
           set(id to param(joe.id), firstName to param(nameVar), lastName to param(lastNameVar), age to 1234)
             .onConflictUpdate(id) { excluding -> set(firstName to firstName + "_" + excluding.firstName, lastName to lastName + "_" + excluding.lastName, age to excluding.age) }
@@ -45,7 +45,7 @@ class ActionOnConflictSpec : FreeSpec({
     //  ctx.insertPerson(joe)
     //  val nameVar = "Joee"
     //  val lastNameVar = "Bloggsee"
-    //  val q = capture {
+    //  val q = sql {
     //    insert<Person> {
     //      set(id to param(joe.id), firstName to param(nameVar), lastName to param(lastNameVar), age to 1234)
     //        .onConflictUpdate(id) { excluding -> set(firstName to firstName + "_" + excluding.firstName, lastName to lastName + "_" + excluding.lastName, age to excluding.age) }
@@ -60,7 +60,7 @@ class ActionOnConflictSpec : FreeSpec({
       ctx.insertPerson(joe)
       val nameVar = "Joee"
       val lastNameVar = "Bloggsee"
-      val q = capture {
+      val q = sql {
         insert<Person> {
           set(id to param(joe.id), firstName to param(nameVar), lastName to param(lastNameVar), age to 1234)
             .onConflictIgnore()

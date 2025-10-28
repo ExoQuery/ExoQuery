@@ -1,13 +1,13 @@
 package io.exoquery
 
-import io.exoquery.sql.*
+import io.exoquery.lang.*
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
 import io.exoquery.util.stmt
 import io.exoquery.util.unaryPlus
 import io.exoquery.xr.XR
 
-class SqliteDialect(override val traceConf: TraceConfig = TraceConfig.Companion.empty) : SqlIdiom, BooleanLiteralSupport {
+open class SqliteDialect(override val traceConf: TraceConfig = TraceConfig.Companion.empty) : SqlIdiom, BooleanLiteralSupport {
   override val concatFunction: String = "||"
   override val useActionTableAliasAs = SqlIdiom.ActionTableAliasBehavior.UseAs
   override val trace: Tracer by lazy { Tracer(traceType, traceConf, 1) }

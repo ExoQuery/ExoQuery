@@ -111,15 +111,15 @@ fun IrDeclarationReference.realOwner(): RealOwner {
       // but normally they will be SqlQuery/SqlExpression instances
       elem is IrFunction && elem.hasAnnotation<CapturedDynamic>() -> RealOwner.CapturedDynamicFunctionVariable(elem, varType)
 
-          // If the owner of the function is a ExoQuery captured-block (i.e. inside of a capture { ... } function of some sort) we immediately
-      // know the parent function was defined inside of the capture and is therefore a "captured variable"
+          // If the owner of the function is a ExoQuery captured-block (i.e. inside of a sql { ... } function of some sort) we immediately
+      // know the parent function was defined inside of the sql and is therefore a "captured variable"
       elem is IrFunction && elem.extensionParam?.type?.isClass<CapturedBlock>() ?: false -> RealOwner.CapturedBlock
       // Otherwise we need to keep recursing up to the owner
       elem is IrFunction -> rec(elem.symbol.owner.parent, varType, recurseCount - 1)
 
       // If it is a value-parameter, check to see if it's parent is a captured-function or captured-dynamic function
       // otherwise it is a parameter of some intermediate function inside (e.g. a function used in a map{} or let{} or something
-      // that is completely inside the capture { ... } block but not actually a parameter of the capture itself)
+      // that is completely inside the sql { ... } block but not actually a parameter of the sql itself)
       elem is IrValueParameter ->
         when (val parent = elem.symbol.owner.parent) {
           is IrFunction if parent.hasAnnotation<CapturedFunction>() ->

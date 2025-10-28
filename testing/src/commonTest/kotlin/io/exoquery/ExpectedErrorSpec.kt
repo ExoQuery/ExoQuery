@@ -8,9 +8,9 @@ import io.kotest.core.spec.style.FreeSpec
 //object CapturedFunctionParamError {
 //  @CapturedFunction
 //  fun capFunc(value: Int) =
-//    capture.expression { param(value) } // Error: Captured function cannot have non-expression parameters
+//    sql.expression { param(value) } // Error: Captured function cannot have non-expression parameters
 //
-//  val q = capture {
+//  val q = sql {
 //    Table<Person>().filter { p -> capFunc(p.id).use == 1 }
 //  }
 //}
@@ -18,9 +18,9 @@ import io.kotest.core.spec.style.FreeSpec
 //object CapturedDynamicParamError {
 //  @CapturedDynamic
 //  fun capFunc(value: Int) =
-//    capture.expression { param(value) } // Error: Captured function cannot have non-expression parameters
+//    sql.expression { param(value) } // Error: Captured function cannot have non-expression parameters
 //
-//  val q = capture {
+//  val q = sql {
 //    Table<Person>().filter { p -> capFunc(p.id).use == 1 }
 //  }
 //}
@@ -28,9 +28,9 @@ import io.kotest.core.spec.style.FreeSpec
 //object CapturedDynamicWrongParamTypeError {
 //  @CapturedDynamic
 //  fun capFunc(value: Int) =
-//    capture.expression { value }
+//    sql.expression { value }
 //
-//  val q = capture {
+//  val q = sql {
 //    Table<Person>().filter { p -> capFunc(p.id).use == 1 }
 //  }
 //}

@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 fun main() {
   data class Name(val first: String, val last: String)
@@ -11,7 +11,7 @@ fun main() {
   data class PersonSimple3(val age: Int)
 
 //  val output = printSourceBefore {
-//    capture {
+//    sql {
 //      insert<Person> { set(name to "Joe", age to 123) }
 //    }
 //  }
@@ -27,7 +27,7 @@ fun main() {
   val ps3 = PersonSimple3(123)
 
   val s =
-    capture {
+    sql {
       //insert<Person> { set(name.first to param(n.first), age to 123) }.returning { p -> Name(p.name.first + "-stuff", p.name.last + "-otherStuff") }
       // TODO Odd error need to figure out: Exception in thread "main" java.lang.NoClassDefFoundError: I
       //insert<Person> { setParams(p) }.returning { p -> Name(p.name.first + "-stuff", p.name.last + "-otherStuff") }

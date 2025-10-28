@@ -2,8 +2,8 @@
 //
 //import io.exoquery.serial.ParamSerializer
 //import io.exoquery.serial.contextualSerializer
-//import io.exoquery.sql.PostgresDialect
-//import io.exoquery.sql.Renderer
+//import io.exoquery.PostgresDialect
+//import io.exoquery.lang.Renderer
 //import io.exoquery.testdata.Person
 //import io.exoquery.testdata.pIdent
 //import io.exoquery.testdata.personEnt
@@ -24,7 +24,7 @@
 //  "fullQuery" - {
 //    "param" {
 //      // TODO need to also test dynamic-path of this
-//      val cap = capture { Table<Person>().filter { p -> p.name == param("name") } }
+//      val cap = sql { Table<Person>().filter { p -> p.name == param("name") } }
 //      cap.determinizeDynamics() shouldBe SqlQuery(
 //        XR.Filter(personEnt, pIdent, XR.BinaryOp(XR.Property(pIdent, "name"), OP.EqEq, XR.TagForParam.valueTag("0"))),
 //        RuntimeSet.Empty,
@@ -57,7 +57,7 @@
 //    "params" {
 //      // TODO need to also test dynamic-path of this
 //      val cap =
-//        capture { Table<Person>().filter { p -> p.name in params(listOf("name1", "name2")) } }.determinizeDynamics()
+//        sql { Table<Person>().filter { p -> p.name in params(listOf("name1", "name2")) } }.determinizeDynamics()
 //      cap shouldBe SqlQuery(
 //        // It should be a standard filter but the `in` should be rendered as a list.contains(value) XR.MethodCall instances
 //        XR.Filter(
@@ -103,14 +103,14 @@
 //  }
 //  "param" - {
 //    "string" {
-//      capture.expression { param("name") }.determinizeDynamics() shouldBe SqlExpression(
+//      sql.expression { param("name") }.determinizeDynamics() shouldBe SqlExpression(
 //        XR.TagForParam.valueTag("0"),
 //        RuntimeSet.Empty,
 //        ParamSet(listOf(ParamSingle(BID("0"), "name", ParamSerializer.String)))
 //      )
 //    }
 //    "int" {
-//      capture.expression { param(123) }.determinizeDynamics() shouldBe SqlExpression(
+//      sql.expression { param(123) }.determinizeDynamics() shouldBe SqlExpression(
 //        XR.TagForParam.valueTag("0"),
 //        RuntimeSet.Empty,
 //        ParamSet(listOf(ParamSingle(BID("0"), 123, ParamSerializer.Int)))
@@ -127,7 +127,7 @@
 //
 //  "paramCtx" - {
 //    "date" {
-//      val cap = capture.expression { paramCtx(date) }
+//      val cap = sql.expression { paramCtx(date) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -136,7 +136,7 @@
 //      ).withNonStrictEquality()
 //    }
 //    "myCustomDate" {
-//      val cap = capture.expression { paramCtx(myDate) }
+//      val cap = sql.expression { paramCtx(myDate) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -148,7 +148,7 @@
 //
 //  "paramCustom" - {
 //    "date" {
-//      val cap = capture.expression { paramCustom(date, ContextualSerializer(LocalDate::class)) }
+//      val cap = sql.expression { paramCustom(date, ContextualSerializer(LocalDate::class)) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -157,7 +157,7 @@
 //      ).withNonStrictEquality()
 //    }
 //    "myCustomDate" {
-//      val cap = capture.expression { paramCustom(myDate, ContextualSerializer(MyCustomDate::class)) }
+//      val cap = sql.expression { paramCustom(myDate, ContextualSerializer(MyCustomDate::class)) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -170,7 +170,7 @@
 //  "paramCustomValue" - {
 //    "date" {
 //      val v = ValueWithSerializer.invoke(date, ContextualSerializer(LocalDate::class))
-//      val cap = capture.expression { param(v) }
+//      val cap = sql.expression { param(v) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -180,7 +180,7 @@
 //    }
 //    "myDate" {
 //      val v = ValueWithSerializer.invoke(myDate, ContextualSerializer(MyCustomDate::class))
-//      capture.expression { param(v) }.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
+//      sql.expression { param(v) }.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
 //        RuntimeSet.Empty,
 //        ParamSet(listOf(ParamSingle(BID("0"), myDate, contextualSerializer<MyCustomDate>())))
@@ -190,7 +190,7 @@
 //
 //  "params" {
 //    val myList = listOf(1, 2, 3)
-//    val cap = capture.expression { params(myList) }
+//    val cap = sql.expression { params(myList) }
 //    cap.xr.type shouldBe XRType.Value
 //    cap.determinizeDynamics() shouldBe SqlExpression(
 //      XR.TagForParam.valueTag("0"),
@@ -202,7 +202,7 @@
 //  "paramsCustom" - {
 //    "date" {
 //      val myList = listOf(date, date)
-//      val cap = capture.expression { paramsCustom(myList, ContextualSerializer(LocalDate::class)) }
+//      val cap = sql.expression { paramsCustom(myList, ContextualSerializer(LocalDate::class)) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -212,7 +212,7 @@
 //    }
 //    "myCustomDate" {
 //      val myList = listOf(myDate, myDate)
-//      val cap = capture.expression { paramsCustom(myList, ContextualSerializer(MyCustomDate::class)) }
+//      val cap = sql.expression { paramsCustom(myList, ContextualSerializer(MyCustomDate::class)) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -226,7 +226,7 @@
 //    "date" {
 //      val myList = listOf(date, date)
 //      val v = ValuesWithSerializer.invoke(myList, ContextualSerializer(LocalDate::class))
-//      val cap = capture.expression { params(v) }
+//      val cap = sql.expression { params(v) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),
@@ -237,7 +237,7 @@
 //    "myCustomDate" {
 //      val myList = listOf(myDate, myDate)
 //      val v = ValuesWithSerializer.invoke(myList, ContextualSerializer(MyCustomDate::class))
-//      val cap = capture.expression { params(v) }
+//      val cap = sql.expression { params(v) }
 //      cap.xr.type shouldBe XRType.Value
 //      cap.determinizeDynamics().withNonStrictEquality() shouldBe SqlExpression<LocalDate>(
 //        XR.TagForParam.valueTag("0"),

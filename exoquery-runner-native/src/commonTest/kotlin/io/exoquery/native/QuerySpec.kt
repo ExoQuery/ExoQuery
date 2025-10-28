@@ -5,7 +5,7 @@ import io.exoquery.Ord
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
 import io.exoquery.testdata.Robot
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -39,7 +39,7 @@ class QuerySpec {
 
   @Test
   fun `simple`() = runBlocking {
-    val q = capture { Table<Person>() }
+    val q = sql { Table<Person>() }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222),
@@ -49,7 +49,7 @@ class QuerySpec {
 
   @Test
   fun `filter`() = runBlocking {
-    val q = capture { Table<Person>().filter { it.firstName == "Joe" } }
+    val q = sql { Table<Person>().filter { it.firstName == "Joe" } }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -59,7 +59,7 @@ class QuerySpec {
   @Test
   fun `filter with param`() = runBlocking {
     val joe = "Joe"
-    val q = capture { Table<Person>().filter { it.firstName == param(joe) } }
+    val q = sql { Table<Person>().filter { it.firstName == param(joe) } }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -68,7 +68,7 @@ class QuerySpec {
 
   @Test
   fun `where`() = runBlocking {
-    val q = capture { Table<Person>().where { firstName == "Joe" } }
+    val q = sql { Table<Person>().where { firstName == "Joe" } }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -77,7 +77,7 @@ class QuerySpec {
 
   @Test
   fun `filter + sortedBy`() = runBlocking {
-    val q = capture { Table<Person>().filter { it.firstName == "Joe" }.sortedBy { it.age } }
+    val q = sql { Table<Person>().filter { it.firstName == "Joe" }.sortedBy { it.age } }
     q.build<SqliteDialect>().runOn(ctx) shouldBe listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -86,7 +86,7 @@ class QuerySpec {
 
   @Test
   fun `filter + correlated isNotEmpty`() = runBlocking {
-    val q = capture { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isNotEmpty() } }
+    val q = sql { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isNotEmpty() } }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -95,7 +95,7 @@ class QuerySpec {
 
   @Test
   fun `filter + correlated isEmpty`() = runBlocking {
-    val q = capture { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isEmpty() } }
+    val q = sql { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isEmpty() } }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(3, "Jim", "Roogs", 333)
     )
@@ -103,7 +103,7 @@ class QuerySpec {
 
   @Test
   fun `sort + take`() = runBlocking {
-    val q = capture { Table<Person>().sortedBy { it.age }.take(1) }
+    val q = sql { Table<Person>().sortedBy { it.age }.take(1) }
     q.build<SqliteDialect>().runOn(ctx) shouldBe listOf(
       Person(1, "Joe", "Bloggs", 111)
     )
@@ -111,7 +111,7 @@ class QuerySpec {
 
   @Test
   fun `sort + drop`() = runBlocking {
-    val q = capture { Table<Person>().sortedBy { it.age }.drop(1) }
+    val q = sql { Table<Person>().sortedBy { it.age }.drop(1) }
     q.build<SqliteDialect>().runOn(ctx) shouldBe listOf(
       Person(2, "Joe", "Doggs", 222),
       Person(3, "Jim", "Roogs", 333)
@@ -120,7 +120,7 @@ class QuerySpec {
 
   @Test
   fun `distinct`() = runBlocking {
-    val q = capture { Table<Person>().map { it.firstName }.distinct() }
+    val q = sql { Table<Person>().map { it.firstName }.distinct() }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       "Joe",
       "Jim"
@@ -130,7 +130,7 @@ class QuerySpec {
   // Not supported in Sqlite
   //@Test
   //fun `distinctOn`() = runBlocking {
-  //  val q = capture { Table<Person>().distinctOn { it.firstName } }
+  //  val q = sql { Table<Person>().distinctOn { it.firstName } }
   //  q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
   //    Person(1, "Joe", "Bloggs", 111),
   //    Person(3, "Jim", "Roogs", 333)
@@ -139,7 +139,7 @@ class QuerySpec {
 
   @Test
   fun `sort + drop + take`() = runBlocking {
-    val q = capture { Table<Person>().sortedBy { it.age }.drop(1).take(1) }
+    val q = sql { Table<Person>().sortedBy { it.age }.drop(1).take(1) }
     q.build<SqliteDialect>().runOn(ctx) shouldBe listOf(
       Person(2, "Joe", "Doggs", 222)
     )
@@ -147,7 +147,7 @@ class QuerySpec {
 
   @Test
   fun `map`() = runBlocking {
-    val q = capture { Table<Person>().map { it.firstName to it.lastName } }
+    val q = sql { Table<Person>().map { it.firstName to it.lastName } }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       "Joe" to "Bloggs",
       "Joe" to "Doggs",
@@ -163,7 +163,7 @@ class QuerySpec {
 
   @Test
   fun `map to custom`() = runBlocking {
-    val q = capture { Table<Person>().map { CustomPerson(Name(it.firstName, it.lastName), it.age) } }
+    val q = sql { Table<Person>().map { CustomPerson(Name(it.firstName, it.lastName), it.age) } }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       CustomPerson(Name("Joe", "Bloggs"), 111),
       CustomPerson(Name("Joe", "Doggs"), 222),
@@ -173,7 +173,7 @@ class QuerySpec {
 
   @Test
   fun `nested`() = runBlocking {
-    val q = capture { Table<Person>().nested() }
+    val q = sql { Table<Person>().nested() }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222),
@@ -183,9 +183,9 @@ class QuerySpec {
 
   @Test
   fun `union`() = runBlocking {
-    val bloggs = capture { Table<Person>().filter { it.lastName == "Bloggs" } }
-    val doggs = capture { Table<Person>().filter { it.lastName == "Doggs" } }
-    val q = capture { bloggs union doggs }
+    val bloggs = sql { Table<Person>().filter { it.lastName == "Bloggs" } }
+    val doggs = sql { Table<Person>().filter { it.lastName == "Doggs" } }
+    val q = sql { bloggs union doggs }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -195,11 +195,11 @@ class QuerySpec {
   // TODO probably only need to test for one DB e.g. postgres, move it out
   @Test
   fun `deconstruct columns - from a table`() = runBlocking {
-    val names = capture.select {
+    val names = sql.select {
       val p = from(Table<Person>())
       p.firstName to p.lastName
     }
-    val q = capture.select {
+    val q = sql.select {
       val (first, last) = from(names)
       first + " - " + last
     }
@@ -212,11 +212,11 @@ class QuerySpec {
 
   @Test
   fun `deconstruct columns - from a table - mapped`() = runBlocking {
-    val names = capture.select {
+    val names = sql.select {
       val p = from(Table<Person>())
       p.firstName to p.lastName
     }
-    val q = capture {
+    val q = sql {
       names.map { (first, last) -> first + " - " + last }
     }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
@@ -229,13 +229,13 @@ class QuerySpec {
   @Test
   fun `deconstruct join - from a join`() = runBlocking {
     val join =
-      capture.select {
+      sql.select {
         val p = from(Table<Person>())
         val a = join(Table<Address>()) { a -> a.ownerId == p.id }
         p to a
       }
     val deconstuct =
-      capture.select {
+      sql.select {
         val (p, a) = from(join)
         val r = join(Table<Robot>()) { r -> r.ownerId == p.id }
         Triple(p, a, r)
@@ -252,7 +252,7 @@ class QuerySpec {
 
   @Test
   fun `joins_Person_Address_join`() = runBlocking {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       val a = join(Table<Address>()) { a -> a.ownerId == p.id }
       p to a
@@ -266,7 +266,7 @@ class QuerySpec {
 
   @Test
   fun `joins_Person_Address_left_join`() = runBlocking {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
       p to a
@@ -281,7 +281,7 @@ class QuerySpec {
 
   @Test
   fun `joins_Person_Address_left_join_plus_groupBy_name`() = runBlocking {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
       groupBy(p.firstName)
@@ -295,7 +295,7 @@ class QuerySpec {
 
   @Test
   fun `joins_Person_Address_left_join_plus_groupBy_name_plus_filter`() = runBlocking {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
       where { p.lastName == "Doggs" || p.lastName == "Roogs" }
@@ -310,7 +310,7 @@ class QuerySpec {
 
   @Test
   fun `joins_Person_address_left_join_plus_groupBy_name_plus_filter_plus_orderBy`() = runBlocking {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
       where { p.lastName == "Doggs" || p.lastName == "Roogs" }

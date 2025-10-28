@@ -3,10 +3,7 @@ package io.exoquery
 import io.exoquery.annotation.ExoBuildDatabaseSpecific
 import io.exoquery.annotation.ExoBuildFunctionLabel
 import io.exoquery.annotation.ExoBuildRoomSpecific
-import io.exoquery.sql.GenericDialect
-import io.exoquery.sql.MySqlDialect
-import io.exoquery.sql.PostgresDialect
-import io.exoquery.sql.SqlServerDialect
+import io.exoquery.lang.GenericDialect
 
 interface BuildFor<T> {
   @ExoBuildDatabaseSpecific(PostgresDialect::class)

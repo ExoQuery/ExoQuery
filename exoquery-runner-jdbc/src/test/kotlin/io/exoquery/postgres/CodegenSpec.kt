@@ -6,7 +6,7 @@ import io.kotest.core.spec.style.FreeSpec
 class CodegenSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
-  //capture.generate(
+  //sql.generate(
   //  Code.Entities(
   //    "v1",
   //    DatabaseDriver.Postgres(),

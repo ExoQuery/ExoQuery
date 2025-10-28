@@ -1,7 +1,7 @@
 package io.exoquery.codegen
 
 import io.exoquery.PostgresTestDB
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.codegen.model.JdbcGenerator
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.util.JdbcSchemaReader
@@ -128,7 +128,7 @@ class GenerationSpec: FreeSpec({
   // }
   // We need to account for this structure by skipping the variables in the block and then looking them up later
   "should lookup vars when out of order" {
-    capture.generateJustReturn(
+    sql.generateJustReturn(
       Code.Entities(
         CodeVersion.Fixed("1.0.0"),
         DatabaseDriver.Postgres("jdbc:postgresql://localhost:5432/postgres?search_path=public,purposely_inconsistent"),

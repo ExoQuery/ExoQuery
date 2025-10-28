@@ -4,7 +4,7 @@ import io.exoquery.annotation.CapturedDynamic
 import io.exoquery.annotation.ExoBuildFunctionLabel
 import io.exoquery.annotation.ExoInternal
 import io.exoquery.printing.PrintMisc
-import io.exoquery.sql.SqlIdiom
+import io.exoquery.lang.SqlIdiom
 import io.exoquery.xr.RuntimeBuilder
 import io.exoquery.xr.XR
 import io.exoquery.xr.toActionKind

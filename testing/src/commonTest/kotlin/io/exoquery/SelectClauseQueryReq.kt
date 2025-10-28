@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 
@@ -13,7 +13,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
 
     "join(p.name?.first)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(Table<Person>())
           val r = join(Table<Robot>()) { r -> p.name?.first == r.ownerFirstName }
           p to r
@@ -23,7 +23,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
     }
     "join(p.name?.first ?: alternative)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(Table<Person>())
           val r = join(Table<Robot>()) { r -> p.name?.first ?: "defaultName" == r.ownerFirstName }
           p to r
@@ -33,7 +33,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
     }
     "joinLeft(p.name?.first ?: alternative)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(Table<Person>())
           val r = joinLeft(Table<Robot>()) { r -> p.name?.first ?: "defaultName" == r.ownerFirstName }
           p.name to r?.model
@@ -44,7 +44,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
 
     "joinLeft(p.name?.first ?: alternative) -> r ?: alternative" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(Table<Person>())
           val r = joinLeft(Table<Robot>()) { r -> p.name?.first ?: "defaultName" == r.ownerFirstName }
           // TODO need an unhappy-paths test for this
@@ -58,7 +58,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
 
     "joinLeft(p.name?.first ?: alternative) -> p ?: alternative" {
       val people =
-        capture.select {
+        sql.select {
           val r = from(Table<Robot>())
           val p = joinLeft(Table<Person>()) { p -> r.ownerFirstName == (p.name?.first ?: "defaultName") }
           // TODO need an unhappy-paths test for this
@@ -71,7 +71,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
 
     "join + aggregation" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(Table<Person>())
           val r = join(Table<Robot>()) { r -> p.name?.first == r.ownerFirstName }
           groupBy(p.name?.first, r.model)
@@ -83,7 +83,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
 
     "sortBy" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(Table<Person>())
           sortBy(p.age to Ord.Asc, p.name?.first to Ord.Desc)
           // TODO when I have the ability to test compile-errors, should test the error that happnes when I try doing p.name for the order-by expression
@@ -97,7 +97,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
 
   "join + where + groupBy + sortBy" {
     val people =
-      capture.select {
+      sql.select {
         val p = from(Table<Person>())
         val a = join(Table<Address>()) { a -> p.id == a.ownerId }
         where { p.age > 18 }

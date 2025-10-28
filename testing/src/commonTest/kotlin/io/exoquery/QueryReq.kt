@@ -1,7 +1,7 @@
 package io.exoquery
 
 import io.exoquery.annotation.CapturedFunction
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Robot
 
 // Note that the 1st time you overwrite the golden file it will still fail because the compiler is using the old version
@@ -13,17 +13,22 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
   data class Address(val ownerId: Int, val street: String, val city: String)
 
   "basic query" {
+    val people = sql { Table<Person>() }
+    shouldBeGolden(people.xr, "XR")
+    shouldBeGolden(people.build<PostgresDialect>())
+  }
+  "basic query - deprecated capture" {
     val people = capture { Table<Person>() }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with map" {
-    val people = capture { Table<Person>().map { p -> p.name } }
+    val people = sql { Table<Person>().map { p -> p.name } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with groupBy" {
-    val people = capture.select {
+    val people = sql.select {
       val p = from(Table<Person>())
       groupBy(p.name)
       p.name to avg(p.age)
@@ -32,7 +37,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with groupBy + having" {
-    val people = capture.select {
+    val people = sql.select {
       val p = from(Table<Person>())
       groupBy(p.name)
       having { avg(p.age) > 18 }
@@ -42,7 +47,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with groupBy + having + orderBy" {
-    val people = capture.select {
+    val people = sql.select {
       val p = from(Table<Person>())
       groupBy(p.name)
       having { avg(p.age) > 18 }
@@ -53,7 +58,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with with-clause + groupBy + having" {
-    val people = capture.select {
+    val people = sql.select {
       val p = from(Table<Person>())
       where { p.name == "Joe" }
       groupBy(p.name)
@@ -64,9 +69,9 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "union with impure free - should not collapse" {
-    val joes = capture { Table<Person>().filter { p -> p.name == "Joe" } }
-    val jacks = capture { Table<Person>().filter { p -> p.name == "Jack" } }
-    val people = capture.select {
+    val joes = sql { Table<Person>().filter { p -> p.name == "Joe" } }
+    val jacks = sql { Table<Person>().filter { p -> p.name == "Jack" } }
+    val people = sql.select {
       val u = from(joes union jacks)
       val a = join(Table<Address>()) { a -> a.ownerId == u.id }
       free("stuff(${u.name})")<String>()
@@ -75,9 +80,9 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "union with pure function - should collapse" {
-    val joes = capture { Table<Person>().filter { p -> p.name == "Joe" } }
-    val jacks = capture { Table<Person>().filter { p -> p.name == "Jack" } }
-    val people = capture.select {
+    val joes = sql { Table<Person>().filter { p -> p.name == "Joe" } }
+    val jacks = sql { Table<Person>().filter { p -> p.name == "Jack" } }
+    val people = sql.select {
       val u = from(joes union jacks)
       val a = join(Table<Address>()) { a -> a.ownerId == u.id }
       u.name.uppercase()
@@ -86,9 +91,9 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "union with aggregation - shuold not collapse" {
-    val joes = capture { Table<Person>().filter { p -> p.name == "Joe" } }
-    val jacks = capture { Table<Person>().filter { p -> p.name == "Jack" } }
-    val people = capture.select {
+    val joes = sql { Table<Person>().filter { p -> p.name == "Joe" } }
+    val jacks = sql { Table<Person>().filter { p -> p.name == "Jack" } }
+    val people = sql.select {
       val u = from(joes union jacks)
       val a = join(Table<Address>()) { a -> a.ownerId == u.id }
       avg(u.age)
@@ -97,78 +102,78 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "map with aggregation" {
-    val people = capture { Table<Person>().map { p -> avg(p.age) } }
+    val people = sql { Table<Person>().map { p -> avg(p.age) } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "map with count" {
-    val people = capture { Table<Person>().map { p -> count(p.age) } }
+    val people = sql { Table<Person>().map { p -> count(p.age) } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "map with count star" {
-    val people = capture { Table<Person>().map { p -> count() } }
+    val people = sql { Table<Person>().map { p -> count() } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "map with count distinct" {
-    val people = capture { Table<Person>().map { p -> countDistinct(p.name, p.age) } }
+    val people = sql { Table<Person>().map { p -> countDistinct(p.name, p.age) } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "map with stddev" {
-    val people = capture { Table<Person>().map { p -> stddev(p.age) } }
+    val people = sql { Table<Person>().map { p -> stddev(p.age) } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with filter" {
-    val people = capture { Table<Person>().filter { p -> p.age > 18 } }
+    val people = sql { Table<Person>().filter { p -> p.age > 18 } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with where" {
-    val people = capture { Table<Person>().where { age > 18 } }
+    val people = sql { Table<Person>().where { age > 18 } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
 
   "filter + correlated isEmpty" {
-    val people = capture { Table<Person>().filter { p -> p.age > Table<Person>().map { p -> p.age }.avg() } }
+    val people = sql { Table<Person>().filter { p -> p.age > Table<Person>().map { p -> p.age }.avg() } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
 
   "filter + correlated + value" {
     val people =
-      capture { Table<Person>().filter { p -> p.age > Table<Person>().map { p -> avg(p.age) - min(p.age) }.value() } }
+      sql { Table<Person>().filter { p -> p.age > Table<Person>().map { p -> avg(p.age) - min(p.age) }.value() } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
 
   "query with flatMap" {
-    val people = capture { Table<Person>().flatMap { p -> Table<Address>().filter { a -> a.ownerId == p.id } } }
+    val people = sql { Table<Person>().flatMap { p -> Table<Address>().filter { a -> a.ownerId == p.id } } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with union" {
     val people =
-      capture { (Table<Person>().filter { p -> p.age > 18 } union Table<Person>().filter { p -> p.age < 18 }) }
+      sql { (Table<Person>().filter { p -> p.age > 18 } union Table<Person>().filter { p -> p.age < 18 }) }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with unionAll" {
     val people =
-      capture { (Table<Person>().filter { p -> p.age > 18 } unionAll Table<Person>().filter { p -> p.age < 18 }) }
+      sql { (Table<Person>().filter { p -> p.age > 18 } unionAll Table<Person>().filter { p -> p.age < 18 }) }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with unionAll - symbolic" {
-    val people = capture { (Table<Person>().filter { p -> p.age > 18 } + Table<Person>().filter { p -> p.age < 18 }) }
+    val people = sql { (Table<Person>().filter { p -> p.age > 18 } + Table<Person>().filter { p -> p.age < 18 }) }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with surrounding free" {
-    val q = capture {
+    val q = sql {
       free("${Table<Person>().filter { p -> p.name == "Joe" }} FOR UPDATE").asPure<SqlQuery<Person>>()
     }
     shouldBeGolden(q.xr, "XR")
@@ -176,11 +181,11 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
   }
   "query with free in captured function" {
     @CapturedFunction
-    fun <T> forUpdate(v: SqlQuery<T>) = capture {
+    fun <T> forUpdate(v: SqlQuery<T>) = sql {
       free("${v} FOR UPDATE").asPure<SqlQuery<T>>()
     }
 
-    val q = capture {
+    val q = sql {
       forUpdate(Table<Person>().filter { p -> p.age > 21 })
     }
     shouldBeGolden(q.xr, "XR")
@@ -188,10 +193,10 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
   }
   "query with free in captured function - receiver position" {
     @CapturedFunction
-    fun <T> SqlQuery<T>.forUpdate() = capture {
+    fun <T> SqlQuery<T>.forUpdate() = sql {
       free("${this@forUpdate} FOR UPDATE").asPure<SqlQuery<T>>()
     }
-    val q = capture {
+    val q = sql {
       Table<Person>().filter { p -> p.age > 21 }.forUpdate()
     }
     shouldBeGolden(q.xr, "XR")
@@ -200,10 +205,10 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "flat joins inside subquery" - {
     // This tests the `is SX.Where` case in XR.SelectClauseToXR.nest making sure that the prevVar is properly passed to outer subclauses
     "where" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<io.exoquery.testdata.Person>())
         val innerRobot = join(
-          capture.select {
+          sql.select {
             val r = from(Table<Robot>())
             where { r.ownerId == p.id }
             r.name to r.ownerId
@@ -216,10 +221,10 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     }
     // This tests the `is SX.GroupBy` case in XR.SelectClauseToXR.nest making sure that the prevVar is properly passed to outer subclauses
     "groupBy" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<io.exoquery.testdata.Person>())
         val innerRobot = join(
-          capture.select {
+          sql.select {
             val r = from(Table<Robot>())
             groupBy(r.ownerId)
             r.name to r.ownerId
@@ -232,10 +237,10 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     }
     // This tests the `is SX.SortBy` case in XR.SelectClauseToXR.nest making sure that the prevVar is properly passed to outer subclauses
     "sortBy" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<io.exoquery.testdata.Person>())
         val innerRobot = join(
-          capture.select {
+          sql.select {
             val r = from(Table<Robot>())
             sortBy(r.name to Ord.Desc)
             r.name to r.ownerId
@@ -250,12 +255,12 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
   "transformation of nested select clauses" - {
     "where clauses are combined" {
-      val addresses = capture.select {
+      val addresses = sql.select {
         val a = from(Table<Address>())
         where { a.city == "Someplace" }
         a
       }
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         val a = from(addresses)
         where { p.name == "Joe" }
@@ -267,12 +272,12 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
     "groupBy clauses cause nesting" - {
       "variation A" {
-        val addresses = capture.select {
+        val addresses = sql.select {
           val a = from(Table<Address>())
           groupBy(a.city)
           a
         }
-        val q = capture.select {
+        val q = sql.select {
           val p = from(Table<Person>())
           val a = from(addresses)
           where { p.name == "Joe" }
@@ -282,12 +287,12 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
         shouldBeGolden(q.build<PostgresDialect>())
       }
       "Variation B" {
-        val addresses = capture.select {
+        val addresses = sql.select {
           val a = from(Table<Address>())
           groupBy(a.city)
           a
         }
-        val q = capture.select {
+        val q = sql.select {
           val p = from(Table<Person>())
           val a = from(addresses)
           groupBy(p.name)
@@ -300,12 +305,12 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
     "sortBy clauses cause nesting" - {
       "variation A" {
-        val addresses = capture.select {
+        val addresses = sql.select {
           val a = from(Table<Address>())
           sortBy(a.city to Ord.Asc)
           a
         }
-        val q = capture.select {
+        val q = sql.select {
           val p = from(Table<Person>())
           val a = from(addresses)
           where { p.name == "Joe" }
@@ -315,12 +320,12 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
         shouldBeGolden(q.build<PostgresDialect>())
       }
       "Variation B" {
-        val addresses = capture.select {
+        val addresses = sql.select {
           val a = from(Table<Address>())
           sortBy(a.city to Ord.Asc)
           a
         }
-        val q = capture.select {
+        val q = sql.select {
           val p = from(Table<Person>())
           val a = from(addresses)
           sortBy(p.name to Ord.Desc)
@@ -332,14 +337,14 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     }
 
     "combo of all cases will cause nesting" {
-      val addresses = capture.select {
+      val addresses = sql.select {
         val a = from(Table<Address>())
         where { a.city == "Someplace" }
         groupBy(a.city)
         sortBy(a.street to Ord.Asc)
         a
       }
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         val a = from(addresses)
         where { p.name == "Joe" }

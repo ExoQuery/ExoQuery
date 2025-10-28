@@ -1,22 +1,22 @@
 package io.exoquery
 
 import io.exoquery.annotation.CapturedFunction
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 import io.exoquery.testdata.Robot
 
 class MonadicMachineryReq: GoldenSpecDynamic(MonadicMachineryReqGoldenDynamic, Mode.ExoGoldenTest(), {
-  "capture.expression.(Row)->Table" {
-    val joinAddress = capture.expression {
+  "sql.expression.(Row)->Table" {
+    val joinAddress = sql.expression {
       { p: Person -> internal.flatJoin(Table<Address>()) { a -> p.id == a.ownerId } }
     }
 
-    val joinRobot = capture.expression {
+    val joinRobot = sql.expression {
       { p: Person -> internal.flatJoin(Table<Robot>()) { r -> p.id == r.ownerId } }
     }
 
-    val cap = capture.select {
+    val cap = sql.select {
       val p = from(Table<Person>())
       val a = from(joinAddress.use(p))
       val r = from(joinRobot.use(p))
@@ -26,18 +26,18 @@ class MonadicMachineryReq: GoldenSpecDynamic(MonadicMachineryReqGoldenDynamic, M
     shouldBeGolden(cap.xr, "XR")
     shouldBeGolden(cap.build<PostgresDialect>(), "SQL")
   }
-  "capture.expression.(@Cap (Row)->Table).use" {
+  "sql.expression.(@Cap (Row)->Table).use" {
     @CapturedFunction
-    fun joinAddress(p: Person) = capture.expression {
+    fun joinAddress(p: Person) = sql.expression {
       internal.flatJoin(Table<Address>()) { a -> p.id == a.ownerId }
     }
 
     @CapturedFunction
-    fun joinRobot(p: Person) = capture.expression {
+    fun joinRobot(p: Person) = sql.expression {
       internal.flatJoin(Table<Robot>()) { r -> p.id == r.ownerId }
     }
 
-    val cap = capture.select {
+    val cap = sql.select {
       val p = from(Table<Person>())
       val a = from(joinAddress(p).use)
       val r = from(joinRobot(p).use)
@@ -47,18 +47,18 @@ class MonadicMachineryReq: GoldenSpecDynamic(MonadicMachineryReqGoldenDynamic, M
     shouldBeGolden(cap.xr, "XR")
     shouldBeGolden(cap.build<PostgresDialect>(), "SQL")
   }
-  "capture.expression.use.(@Cap (Row)()->Table)" {
+  "sql.expression.use.(@Cap (Row)()->Table)" {
     @CapturedFunction
-    fun Person.joinAddress() = capture.expression {
+    fun Person.joinAddress() = sql.expression {
       internal.flatJoin(Table<Address>()) { a -> this@joinAddress.id == a.ownerId }
     }
 
     @CapturedFunction
-    fun Person.joinRobot() = capture.expression {
+    fun Person.joinRobot() = sql.expression {
       internal.flatJoin(Table<Robot>()) { r -> this@joinRobot.id == r.ownerId }
     }
 
-    val cap = capture.select {
+    val cap = sql.select {
       val p = from(Table<Person>())
       val a = from(p.joinAddress().use)
       val r = from(p.joinRobot().use)
@@ -69,18 +69,18 @@ class MonadicMachineryReq: GoldenSpecDynamic(MonadicMachineryReqGoldenDynamic, M
     shouldBeGolden(cap.build<PostgresDialect>(), "SQL")
   }
 
-  "capture.(@Cap (Row)()->Table)" {
+  "sql.(@Cap (Row)()->Table)" {
     @CapturedFunction
-    fun Person.joinAddress() = capture {
+    fun Person.joinAddress() = sql {
       internal.flatJoin(Table<Address>()) { a -> this@joinAddress.id == a.ownerId }
     }
 
     @CapturedFunction
-    fun Person.joinRobot() = capture {
+    fun Person.joinRobot() = sql {
       internal.flatJoin(Table<Robot>()) { r -> this@joinRobot.id == r.ownerId }
     }
 
-    val cap = capture.select {
+    val cap = sql.select {
       val p = from(Table<Person>())
       val a = from(p.joinAddress())
       val r = from(p.joinRobot())

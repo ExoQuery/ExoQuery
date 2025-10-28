@@ -3,10 +3,10 @@ package io.exoquery.sqlserver
 import io.exoquery.testdata.Address
 import io.exoquery.Ord
 import io.exoquery.testdata.Person
-import io.exoquery.sql.SqlServerDialect
+import io.exoquery.SqlServerDialect
 import io.exoquery.testdata.Robot
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.jdbc.runOn
 import io.kotest.core.spec.style.FreeSpec
@@ -39,7 +39,7 @@ class QuerySpec : FreeSpec({
   }
 
   "simple" {
-    val q = capture { Table<Person>() }
+    val q = sql { Table<Person>() }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222),
@@ -48,7 +48,7 @@ class QuerySpec : FreeSpec({
   }
 
   "filter" {
-    val q = capture { Table<Person>().filter { it.firstName == "Joe" } }
+    val q = sql { Table<Person>().filter { it.firstName == "Joe" } }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -57,7 +57,7 @@ class QuerySpec : FreeSpec({
 
   "filter with param" {
     val joe = "Joe"
-    val q = capture { Table<Person>().filter { it.firstName == param(joe) } }
+    val q = sql { Table<Person>().filter { it.firstName == param(joe) } }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -65,7 +65,7 @@ class QuerySpec : FreeSpec({
   }
 
   "where" {
-    val q = capture { Table<Person>().where { firstName == "Joe" } }
+    val q = sql { Table<Person>().where { firstName == "Joe" } }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -73,7 +73,7 @@ class QuerySpec : FreeSpec({
   }
 
   "filter + sortedBy" {
-    val q = capture { Table<Person>().filter { it.firstName == "Joe" }.sortedBy { it.age } }
+    val q = sql { Table<Person>().filter { it.firstName == "Joe" }.sortedBy { it.age } }
     q.build<SqlServerDialect>().runOn(ctx) shouldBe listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -81,7 +81,7 @@ class QuerySpec : FreeSpec({
   }
 
   "filter + correlated isNotEmpty" {
-    val q = capture { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isNotEmpty() } }
+    val q = sql { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isNotEmpty() } }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -89,21 +89,21 @@ class QuerySpec : FreeSpec({
   }
 
   "filter + correlated isEmpty" {
-    val q = capture { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isEmpty() } }
+    val q = sql { Table<Person>().filter { p -> Table<Address>().filter { it.ownerId == p.id }.isEmpty() } }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(3, "Jim", "Roogs", 333)
     )
   }
 
   "sort + take" {
-    val q = capture { Table<Person>().sortedBy { it.age }.take(1) }
+    val q = sql { Table<Person>().sortedBy { it.age }.take(1) }
     q.build<SqlServerDialect>().runOn(ctx) shouldBe listOf(
       Person(1, "Joe", "Bloggs", 111)
     )
   }
 
   "sort + drop" {
-    val q = capture { Table<Person>().sortedBy { it.age }.drop(1) }
+    val q = sql { Table<Person>().sortedBy { it.age }.drop(1) }
     q.build<SqlServerDialect>().runOn(ctx) shouldBe listOf(
       Person(2, "Joe", "Doggs", 222),
       Person(3, "Jim", "Roogs", 333)
@@ -111,7 +111,7 @@ class QuerySpec : FreeSpec({
   }
 
   "distinct" {
-    val q = capture { Table<Person>().map { it.firstName }.distinct() }
+    val q = sql { Table<Person>().map { it.firstName }.distinct() }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       "Joe",
       "Jim"
@@ -120,7 +120,7 @@ class QuerySpec : FreeSpec({
 
   // Does not exists in sqlserver
   //"distinctOn" {
-  //  val q = capture { Table<Person>().distinctOn { it.firstName } }
+  //  val q = sql { Table<Person>().distinctOn { it.firstName } }
   //  q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
   //    Person(1, "Joe", "Bloggs", 111),
   //    Person(3, "Jim", "Roogs", 333)
@@ -128,14 +128,14 @@ class QuerySpec : FreeSpec({
   //}
 
   "sort + drop + take" {
-    val q = capture { Table<Person>().sortedBy { it.age }.drop(1).take(1) }
+    val q = sql { Table<Person>().sortedBy { it.age }.drop(1).take(1) }
     q.build<SqlServerDialect>().runOn(ctx) shouldBe listOf(
       Person(2, "Joe", "Doggs", 222)
     )
   }
 
   "map" {
-    val q = capture { Table<Person>().map { it.firstName to it.lastName } }
+    val q = sql { Table<Person>().map { it.firstName to it.lastName } }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       "Joe" to "Bloggs",
       "Joe" to "Doggs",
@@ -150,7 +150,7 @@ class QuerySpec : FreeSpec({
   data class CustomPerson(val name: Name, val age: Int)
 
   "map to custom" {
-    val q = capture { Table<Person>().map { CustomPerson(Name(it.firstName, it.lastName), it.age) } }
+    val q = sql { Table<Person>().map { CustomPerson(Name(it.firstName, it.lastName), it.age) } }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       CustomPerson(Name("Joe", "Bloggs"), 111),
       CustomPerson(Name("Joe", "Doggs"), 222),
@@ -159,7 +159,7 @@ class QuerySpec : FreeSpec({
   }
 
   "nested" {
-    val q = capture { Table<Person>().nested() }
+    val q = sql { Table<Person>().nested() }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222),
@@ -168,9 +168,9 @@ class QuerySpec : FreeSpec({
   }
 
   "union" {
-    val bloggs = capture { Table<Person>().filter { it.lastName == "Bloggs" } }
-    val doggs = capture { Table<Person>().filter { it.lastName == "Doggs" } }
-    val q = capture { bloggs union doggs }
+    val bloggs = sql { Table<Person>().filter { it.lastName == "Bloggs" } }
+    val doggs = sql { Table<Person>().filter { it.lastName == "Doggs" } }
+    val q = sql { bloggs union doggs }
     q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Joe", "Doggs", 222)
@@ -179,11 +179,11 @@ class QuerySpec : FreeSpec({
 
   "deconstruct" - {
     "columns - from a table" {
-      val names = capture.select {
+      val names = sql.select {
         val p = from(Table<Person>())
         p.firstName to p.lastName
       }
-      val q = capture.select {
+      val q = sql.select {
         val (first, last) = from(names)
         first + " - " + last
       }
@@ -195,11 +195,11 @@ class QuerySpec : FreeSpec({
     }
 
     "columns - from a table - mapped" {
-      val names = capture.select {
+      val names = sql.select {
         val p = from(Table<Person>())
         p.firstName to p.lastName
       }
-      val q = capture {
+      val q = sql {
         names.map { (first, last) -> first + " - " + last }
       }
       q.build<SqlServerDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
@@ -211,13 +211,13 @@ class QuerySpec : FreeSpec({
 
     "join - from a join" {
       val join =
-        capture.select {
+        sql.select {
           val p = from(Table<Person>())
           val a = join(Table<Address>()) { a -> a.ownerId == p.id }
           p to a
         }
       val deconstuct =
-        capture.select {
+        sql.select {
           val (p, a) = from(join)
           val r = join(Table<Robot>()) { r -> r.ownerId == p.id }
           Triple(p, a, r)
@@ -235,7 +235,7 @@ class QuerySpec : FreeSpec({
 
   "joins" - {
     "Person, Address - join" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         val a = join(Table<Address>()) { a -> a.ownerId == p.id }
         p to a
@@ -248,7 +248,7 @@ class QuerySpec : FreeSpec({
     }
 
     "Person, Address - left join" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
         p to a
@@ -262,7 +262,7 @@ class QuerySpec : FreeSpec({
     }
 
     "Person, Address - left-join + groupBy(name)" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
         groupBy(p.firstName)
@@ -275,7 +275,7 @@ class QuerySpec : FreeSpec({
     }
 
     "Person, Address - left-join + groupBy(name) + filter" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
         where { p.lastName == "Doggs" || p.lastName == "Roogs" }
@@ -289,7 +289,7 @@ class QuerySpec : FreeSpec({
     }
 
     "Person, address - left-join + groupBy(name) + filter + orderBy" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         val a = joinLeft(Table<Address>()) { a -> a.ownerId == p.id }
         where { p.lastName == "Doggs" || p.lastName == "Roogs" }

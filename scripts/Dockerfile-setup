@@ -4,6 +4,7 @@ MAINTAINER gustavo.amigo@gmail.com
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
+    gnupg \
     mariadb-client \
     netcat \
     postgresql-client \
@@ -18,10 +19,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 ADD https://repo1.maven.org/maven2/sqlline/sqlline/1.12.0/sqlline-1.12.0-jar-with-dependencies.jar /sqlline/sqlline.jar
 ADD https://repo1.maven.org/maven2/com/oracle/ojdbc/ojdbc8/19.3.0.0/ojdbc8-19.3.0.0.jar /sqlline/ojdbc.jar
 
-RUN curl https://packages.microsoft.com/keys/microsoft.asc > /etc/apt/trusted.gpg.d/microsoft.asc && \
-    curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
-    apt-get update && \
-    ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools
+RUN curl --retry 5 --retry-delay 5 --connect-timeout 20 https://packages.microsoft.com/keys/microsoft.asc > /etc/apt/trusted.gpg.d/microsoft.asc && \
+    curl --retry 5 --retry-delay 5 --connect-timeout 20 https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get -o Acquire::https::packages.microsoft.com::Verify-Peer="false" -o Acquire::https::Timeout=20 -o Acquire::http::Timeout=20 update && \
+    ACCEPT_EULA=Y apt-get -o Acquire::https::Timeout=20 -o Acquire::http::Timeout=20 install -y msodbcsql18 mssql-tools
 
 ENV PATH $PATH:/opt/mssql-tools/bin
 

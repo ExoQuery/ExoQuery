@@ -26,7 +26,7 @@ class ExoCompileOptionsBuilder {
 
   fun build(): ExoCompileOptions {
     return ExoCompileOptions(
-      requireNotNull(entitiesBaseDir) { "A non-null base-directory for generated entities (i.e. from the capture.generate block" },
+      requireNotNull(entitiesBaseDir) { "A non-null base-directory for generated entities (i.e. from the sql.generate block" },
       requireNotNull(generationDir) { "A non-null generationDir must be provided" },
       requireNotNull(projectSrcDir) { "A non-null projectSrcDir must be provided" },
       requireNotNull(sourceSetName) { "A non-null sourceSetName must be provided" },

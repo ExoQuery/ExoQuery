@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Person
 
 class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGoldenTest(), {
@@ -8,7 +8,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     val people = listOf(Person(1, "John", 42), Person(2, "Jane", 43), Person(3, "Jack", 44)).asSequence()
 
     "simple" {
-      val q = capture.batch(people) { p ->
+      val q = sql.batch(people) { p ->
         insert<Person> { set(name to param(p.name), age to param(p.age)) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -26,7 +26,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "simple with setParams" {
-      val q = capture.batch(people) { p ->
+      val q = sql.batch(people) { p ->
         insert<Person> { setParams(p) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics().withNonStrictEquality()
@@ -36,7 +36,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "simple with setParams and exclusion" {
-      val q = capture.batch(people) { p ->
+      val q = sql.batch(people) { p ->
         insert<Person> { setParams(p).excluding(id) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -46,7 +46,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "with returning" {
-      val q = capture.batch(people) { p ->
+      val q = sql.batch(people) { p ->
         insert<Person> { set(name to param(p.name), age to param(p.age)) }.returning { p -> p.id }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -57,7 +57,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "with returning and params" {
-      val q = capture.batch(people) { p ->
+      val q = sql.batch(people) { p ->
         insert<Person> { set(name to param(p.name), age to param(p.age)) }.returning { pp -> pp.id to param(p.name) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -68,7 +68,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "with returning keys" {
-      val q = capture.batch(people) { p ->
+      val q = sql.batch(people) { p ->
         insert<Person> { set(name to param(p.name), age to param(p.age)) }.returningKeys { id }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -82,7 +82,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     val updatedPeople = listOf(Person(1, "John-A", 52), Person(2, "Jane-A", 53), Person(3, "Jack-A", 54)).asSequence()
 
     "simple" {
-      val q = capture.batch(updatedPeople) { p ->
+      val q = sql.batch(updatedPeople) { p ->
         update<Person> { set(name to param(p.name), age to param(p.age)) }.filter { pp -> pp.id == param(p.id) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -96,7 +96,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "simple - where clause" {
-      val q = capture.batch(updatedPeople) { p ->
+      val q = sql.batch(updatedPeople) { p ->
         update<Person> { set(name to param(p.name), age to param(p.age)) }.where { id == param(p.id) && age > 50 }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -106,7 +106,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "simple with setParams and exclusion" {
-      val q = capture.batch(updatedPeople) { p ->
+      val q = sql.batch(updatedPeople) { p ->
         update<Person> { setParams(p).excluding(id) }.filter { pp -> pp.id == param(p.id) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -116,7 +116,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
 
     "simple with setParams and exclusion and returning param" {
-      val q = capture.batch(updatedPeople) { p ->
+      val q = sql.batch(updatedPeople) { p ->
         update<Person> { setParams(p).excluding(id) }.filter { pp -> pp.id == param(p.id) }
           .returning { pp -> pp.id to param(p.name) }
       }
@@ -130,7 +130,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
 
   "delete" - {
     "with filter - inside" {
-      val q = capture.batch(listOf(1, 2, 3).asSequence()) { id ->
+      val q = sql.batch(listOf(1, 2, 3).asSequence()) { id ->
         delete<Person>().filter { it.id == param(id) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -143,7 +143,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
     "with filter" {
       val ids = listOf(1, 2, 3).asSequence()
-      val q = capture.batch(ids) { id ->
+      val q = sql.batch(ids) { id ->
         delete<Person>().filter { p -> p.id == param(id) }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()
@@ -153,7 +153,7 @@ class BatchActionReq: GoldenSpecDynamic(BatchActionReqGoldenDynamic, Mode.ExoGol
     }
     "with returning" {
       val ids = listOf(1, 2, 3).asSequence()
-      val q = capture.batch(ids) { id ->
+      val q = sql.batch(ids) { id ->
         delete<Person>().filter { p -> p.id == param(id) }.returning { p -> p.id }
       }
       val b = q.build<PostgresDialect>().determinizeDynamics()

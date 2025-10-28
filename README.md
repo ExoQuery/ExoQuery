@@ -48,7 +48,7 @@ var q = from p in people
 So in Kotlin, let's just do this:
 
 ```kotlin
-val q = capture.select {
+val q = sql.select {
   val p = from(people)
   p.name
 }
@@ -79,15 +79,15 @@ data class Address(val city: String, val personId: Int)
 @Ser
 data class Company(val name: String, val id: Int)
 // Going to use @Ser as a concatenation of @Serializeable for now
-val people: SqlQuery<Person> = capture { Table<Person>() }
-val addresses: SqlQuery<Address> = capture { Table<Address>() }
-val companies: SqlQuery<Company> = capture { Table<Company>() }
+val people: SqlQuery<Person> = sql { Table<Person>() }
+val addresses: SqlQuery<Address> = sql { Table<Address>() }
+val companies: SqlQuery<Company> = sql { Table<Company>() }
 ```
 
 Here is a query with some Joins:
 
 ```kotlin
-capture.select {
+sql.select {
   val p: Person = from(people)
   val a: Address = join(addresses) { a -> a.personId == p.id }
   Data(p.name, a.city)
@@ -106,7 +106,7 @@ var q = from p in people
 Let's add some case-statements:
 
 ```kotlin
-capture.select {
+sql.select {
   val p = from(people)
   val a = join(addresses) { a -> a.personId == p.id }
   Data(p.name, a.city, if (p.age > 18) 'adult' else 'minor')
@@ -117,7 +117,7 @@ capture.select {
 Now let's try a subquery:
 
 ```kotlin
-capture.select {
+sql.select {
   val (c, p) = from(
     select {
       val c: Company = from(companies)
@@ -139,7 +139,7 @@ Notice how the types compose completely fluidly? The output of a subquery is the
 ### *...but wait, how can you use EqEq, or regular `if` or regular case classes in a DSL?*
 ---
 
-By using the `capture` function to deliniate relevant code snippets and a compiler-plugin to
+By using the `sql` construct to delineate relevant code snippets and a compiler-plugin to
 transform them, I can synthesize a SQL query the second your code is compiled in most cases.
 
 <img src="https://github.com/user-attachments/assets/aafeaa92-ea35-4c43-a1fc-a532f66583b6" width=50% height=50%>
@@ -184,17 +184,17 @@ That's right! You can use regular Kotlin constructs that you know and love in or
 - Simple arithmetic, simple functions on datatypes
   ```kotlin
   @CapturedFunction
-  fun peRatioWeighted(stock: Stock, weight: Double): Double = catpure.expression {
+  fun peRatioWeighted(stock: Stock, weight: Double): Double = sql.expression {
     (stock.price / stock.earnings) * weight
   }
-  capture {
+  sql {
     Table<Stock>().map { stock -> peRatioWeighted(stock, stock.marketCap/totalWeight) } 
   }
   //> SELECT (s.price / s.earnings) * s.marketCap / totalWeight FROM Stock s
   ```
 - Pairs and Tuples
   ```kotlin
-  val query: SqlQuery<Pair<String, String>> = capture {
+  val query: SqlQuery<Pair<String, String>> = sql {
     Table<Person>().map { p -> p.name to p.age }  
      // or Triple(p.name, p.age, p.companyId), or MyDataClass(p.name, p.age, p.companyId)
   }
@@ -204,36 +204,33 @@ That's right! You can use regular Kotlin constructs that you know and love in or
   See below for examples.
 
 ---
-### *What is this `capture` thing?*
+### *What is this `sql` thing?*
 ---
 
-The `capture` function is how ExoQuery knows what parts of your application code need to be captured 
-inside of the ExoQuery compiler plugin so they can be transformed into SQL. This is how ExoQuery is able to
-use regular Kotlin constructs like `if`, `when`, and `let` in the DSL. There are a few
-different kinds of things that you can capture:
+The `sql` construct is both a tiny builder-DSL and a compile-time capture. When you enter an `sql { ... }` or `sql.select { ... }` or `sql.expression { ... }` block, the ExoQuery compiler plugin reifies the code you write into a SQL AST at compile time. This is how ExoQuery lets you use regular Kotlin constructs like `if`, `when`, `?:`, and `let` in queries. There are a few different kinds of `sql` blocks you can start with:
 
 - A regular table-expression
   ```kotlin
-  val people: SqlQuery<Person> = capture { Table<Person>() }
+  val people: SqlQuery<Person> = sql { Table<Person>() }
   //> SELECT x.name, x.age FROM Person x
-  val joes: SqlQuery<Person> = capture { Table<Person>().where { p -> p.name == "Joe" } }
+  val joes: SqlQuery<Person> = sql { Table<Person>().where { p -> p.name == "Joe" } }
   //> SELECT p.name, p.age FROM Person p WHERE p.name = 'Joe'
   // (Notice how ExoQuery knows that 'p' should be the variable in this case?)
   ```
 - A table-select function. This is a special syntax for doing joins, groupBy, and other complex expressions.
   ```kotlin
-  val people: SqlQuery<Pair<Person, Address>> = capture.select {
+  val people: SqlQuery<Pair<Person, Address>> = sql.select {
     val p = from(people)
     val a = join(addresses) { a -> a.personId == p.id }
     p to a
   }
   //> SELECT p.id, p.name, p.age, a.personId, a.street, a.zip  FROM Person p JOIN Address a ON a.personId = p.id 
   ```
-  (This is actually just a shortening of the `capture { select { ... } }` expression.)
+  (This is actually just a shortening of the `sql { select { ... } }` expression.)
 
 - An arbitrary code snippet
   ```kotlin
-  val nameIsJoe: SqlExpression<(Person) -> Boolean> = capture.expression {
+  val nameIsJoe: SqlExpression<(Person) -> Boolean> = sql.expression {
     { p: Person -> p.name == "Joe" }
   }
   ```
@@ -241,19 +238,19 @@ different kinds of things that you can capture:
   You can them use them with normal queries like this:
   ```kotlin
   // The .use function changes it from SqlExpression<(Person) -> Boolean> to just (Person) -> Boolean
-  // you can only use it inside of a `capture` block. 
-  capture { Table<Person>().filter { p -> nameIsJoe.use(p) } }
+  // you can only use it inside of a `sql` block. 
+  sql { Table<Person>().filter { p -> nameIsJoe.use(p) } }
   ```
 
 ---
-### *How do I use normal runtime data inside my SQL captures?*
+### *How do I use normal runtime data inside my sql blocks?*
 ---
 
 For most data types use `param(...)`. For example:
 
 ```Kotlin
 val runtimeName = "Joe"
-val q = capture { Table<Person>().filter { p -> p.name == param(runtimeName) } }
+val q = sql { Table<Person>().filter { p -> p.name == param(runtimeName) } }
 q.buildFor.Postgres().runOn(myDatabase)
 //> SELECT p.id, p.name, p.age FROM Person p WHERE p.name = ?
 ```
@@ -316,7 +313,7 @@ val ds: DataSource = ...
 val controller = JdbcControllers.Postgres(ds)
 
 // Create a query:
-val query = capture {
+val query = sql {
   Table<Person>().filter { p -> p.name == "Joe" }
 }
 
@@ -350,7 +347,7 @@ any transformation on any SqlQuery instance work, and work the same way.
 This is also known as an SQL projection. It allows you to select a subset of the columns in a table.
 
 ```Kotlin
-val q = capture {
+val q = sql {
   Table<Person>().map { p -> p.name }
 }
 q.buildFor.Postgres().runOn(myDatabase)
@@ -360,7 +357,7 @@ q.buildFor.Postgres().runOn(myDatabase)
 You can also use the `.map` funtion to perform simple aggreations on tables. For example:
 
 ```kotlin
-val q = capture {
+val q = sql {
   Table<Person>().map { p -> Triple(min(p.age), max(p.age), avg(p.age)) }
 }
 q.buildFor.Postgres().runOn(myDatabase)
@@ -372,7 +369,7 @@ q.buildFor.Postgres().runOn(myDatabase)
 This is also known as a SQL where clause. It allows you to filter the rows in a table.
 
 ```Kotlin
-val q = capture {
+val q = sql {
   Table<Person>().filter { p -> p.name == "Joe" }
 }
 q.buildFor.Postgres().runOn(myDatabase)
@@ -382,10 +379,10 @@ q.buildFor.Postgres().runOn(myDatabase)
 You can also do `.where { name == "Joe" }` for a slightly more SQL-diomatic experience but this function is not as
 powerful.
 
-Also, if you are using a `capture.select` block, you can also use the `where` function to filter the rows:
+Also, if you are using a `sql.select` block, you can also use the `where` function to filter the rows:
 
 ```kotlin
-val q = capture.select {
+val q = sql.select {
   val p = from(Table<Person>())
   where { p.name == "Joe" }
 }
@@ -397,7 +394,7 @@ You can use a combine filter and map functions to create correlated subqueries.
 For example, let's say we want to find all the people over the average age:
 
 ```kotlin
-val q = capture {
+val q = sql {
   Table<Person>().filter { p -> p.age > Table<Person>().map { it.age }.avg() }
 }
 //> SELECT p.id, p.name, p.age FROM Person p WHERE p.age > (SELECT avg(p1.age) FROM Person p1)
@@ -408,14 +405,14 @@ not average but also use that together with another aggreagtor (e.g. the average
 Normally you could use an expression `avg(p.age) + min(p.age)` with a the `.map` function.
 
 ```kotlin
-val customExpr: SqlQuery<Double> = capture.select { Table<Person>().map { p -> avg(p.age) + min(p.age) } }
+val customExpr: SqlQuery<Double> = sql.select { Table<Person>().map { p -> avg(p.age) + min(p.age) } }
 ```
 
 If you want to use a statement like this inside of a correlated subquery, we can use the `.value()`
 function inside of a capture block to convert a `SqlQuery<T>` into just `T`.
 
 ```kotlin
-val q = capture {
+val q = sql {
   Table<Person>().filter { p -> p.age > Table<Person>().map { p -> avg(p.age) + min(p.age) }.value() }
 }
 q.buildFor.Postgres().runOn(myDatabase)
@@ -427,12 +424,12 @@ q.buildFor.Postgres().runOn(myDatabase)
 The kotlin collections `sortedBy` and `sortedByDescending` functions are also available on SqlQuery instances.
 
 ```kotlin
-val q = capture {
+val q = sql {
   Table<Person>().sortedBy { p -> p.name }
 }
 //> SELECT p.id, p.name, p.age FROM Person p ORDER BY p.name
 
-val q = capture {
+val q = sql {
   Table<Person>().sortedByDescending { p -> p.name }
 }
 //> SELECT p.id, p.name, p.age FROM Person p ORDER BY p.name DESC
@@ -442,7 +439,7 @@ When you want to do advanced sorting (e.g. different sorting for different colum
 and the sortBy function inside.
 
 ```kotlin
-val q = capture.select {
+val q = sql.select {
   val p = from(Table<Person>())
   sortBy(p.name to Asc, p.age to Desc)
 }
@@ -451,11 +448,11 @@ val q = capture.select {
 
 ### Joins
 
-Use the `capture.select` to do as many joins as you need.
+Use the `sql.select` to do as many joins as you need.
 
 ```kotlin
 val q: SqlQuery<Pair<Person, Address>> =
-  capture.select {
+  sql.select {
     val p = from(Table<Person>())
     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
     p to a
@@ -468,7 +465,7 @@ Let's add a left-join:
 
 ```kotlin
 val q: SqlQuery<Pair<Person, Address?>> =
-  capture.select {
+  sql.select {
     val p = from(Table<Person>())
     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
     val f = joinLeft(Table<Furnitire>()) { f -> f.locatedAt == a.id }
@@ -481,7 +478,7 @@ val q: SqlQuery<Pair<Person, Address?>> =
 
 Notice that the `Address` table is now nullable. This is because the left-join can return null values.
 
-What can go inside of the `capture.select` function is very carefully controlled by exoquery.
+What can go inside of the `sql.select` function is very carefully controlled by ExoQuery.
 It needs to be one of the following:
 
 - A `from` statement
@@ -494,7 +491,7 @@ You can use all of these features all together. For example:
 
 ```kotlin
 val q: SqlQuery<Pair<Person, Address>> =
-  capture.select {
+  sql.select {
     val p = from(Table<Person>())
     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
     where { p.name == "Joe" }
@@ -509,11 +506,11 @@ q.buildFor.Postgres().runOn(myDatabase)
 //  WHERE p.age > 18 GROUP BY p.age, a.street ORDER BY p.age ASC, a.street DESC
 ```
 
-Also note that you can do implicit joins using the `capture.select` function if desired as well.
+Also note that you can do implicit joins using the `sql.select` function if desired as well.
 For example, the following query is perfectly reasonable:
 
 ```kotlin
-val q = capture.select {
+val q = sql.select {
   val p = from(Table<Person>())
   val a = from(Table<Address>())
   val r = from(Table<Robot>())
@@ -528,11 +525,11 @@ val q = capture.select {
 
 ### GroupBy
 
-Use a `capture.select` function to do groupBy. You can use the `groupBy` function to group by multiple columns.
+Use a `sql.select` function to do groupBy. You can use the `groupBy` function to group by multiple columns.
 
 ```kotlin
 val q: SqlQuery<Pair<Person, Address>> =
-  capture.select {
+  sql.select {
     val p = from(Table<Person>())
     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
     groupBy(p.name, a.street)
@@ -547,7 +544,7 @@ You can use the `having` function to filter the results of a groupBy query.
 
 ```kotlin
 val q: SqlQuery<Pair<Person, Address>> =
-  capture.select {
+  sql.select {
     val p = from(Table<Person>())
     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
     groupBy(p.name, a.street)
@@ -568,7 +565,7 @@ ExoQuery has a simple DSL for performing SQL actions.
 
 ```kotlin
 val q =
-  capture {
+  sql {
     insert<Person> { set(name to "Joe", age to 44, companyId to 123) }
   }
 q.buildFor.Postgres().runOn(myDatabase)
@@ -582,7 +579,7 @@ val nameVal = "Joe"
 val ageVal = 44
 val companyIdVal = 123
 val q =
-  capture {
+  sql {
     insert<Person> { set(name to param(nameVal), age to param(ageVal), companyId to param(companyIdVal)) }
   }
 //> INSERT INTO Person (name, age, companyId) VALUES (?, ?, ?)
@@ -597,7 +594,7 @@ You can insert and entire `person` object using `setParams`.
 ```kotlin
 val person = Person("Joe", 44, 123)
 val q =
-  capture {
+  sql {
     insert<Person> { setParams(person) }
   }
 //> INSERT INTO Person (name, age, companyId) VALUES (?, ?, ?)
@@ -614,7 +611,7 @@ Here is how to do that:
 val person = Person(id = 0, "Joe", 44, 123)
 
 val q =
-  capture {
+  sql {
     insert<Person> { setParams(person).excluding(id) } // you can add multiple exclusions here e.g. exlcuding(id, id1, id2, ...)
   }
 //> INSERT INTO Person (name, age, companyId) VALUES (?, ?, ?)
@@ -630,7 +627,7 @@ data class Person(val id: Int, val name: String, val age: Int, val companyId: In
 
 val person = Person(id = 0, "Joe", 44, 123)
 val q =
-  capture {
+  sql {
     insert<Person> { setParams(person).excluding(id) }.returning { p -> p.id }
   }
 
@@ -656,7 +653,7 @@ data class MyOutputData(val id: Int, val name: String)
 val person = Person(id = 0, "Joe", 44, 123)
 
 val q =
-  capture {
+  sql {
     insert<Person> { setParams(person).excluding(id) }
       .returning { p -> MyOutputData(p.id, p.name + "-suffix") }
   }
@@ -674,7 +671,7 @@ that is being inserted. This will become `EXCLUDED` term in the generated SQL.
 ```kotlin
 val person = Person(id = 0, "Joe", 44, 123)
 val q =
-  capture {
+  sql {
     insert<Person> { setParams(person) }
       onConflictUpdate(id) { excluded -> set(name to excluded.name) }
   }
@@ -689,7 +686,7 @@ The `onConflictUpdate` supports complex expressions as well. For example:
 ```kotlin
 val person = Person(id = 0, "Joe", 44, 123)
 val q =
-  capture {
+  sql {
     insert<Person> { setParams(person) }
     onConflictUpdate(id) { excluded -> set(name to name + "-" + excluded.name) }
   }
@@ -705,7 +702,7 @@ Use `onConflictIgnore` to ignore the insert if a conflict occurs. This is also s
 ```kotlin
 val person = Person(id = 0, "Joe", 44, 123)
 val q =
-  capture {
+  sql {
     insert<Person> { setParams(person) }
     onConflictIgnore(id)
   }
@@ -727,7 +724,7 @@ val joeAge = 44
 val joeId = 123
 
 val q =
-  capture {
+  sql {
     update<Person> {
       set(name to param(joeName), age to param(joeAge))
         .where { id == param(joeId) }
@@ -744,7 +741,7 @@ use the `where` clause to filter your update query.
 ```kotlin
 val person = Person(id = 1, "Joe", 44, 123)
 val q =
-  capture {
+  sql {
     update<Person> { setParams(person).excluding(id) }
       .where { id == param(joeId) }
   }
@@ -758,7 +755,7 @@ You can also use a `returning` clause to return the updated row if your database
 val person = Person(id = 1, "Joe", 44, 123)
 
 val q =
-  capture {
+  sql {
     update<Person> { setParams(person).excluding(id) }
       .where { id == param(joeId) }
       .returning { p -> p.id }
@@ -778,7 +775,7 @@ since no values are being set.
 ```kotlin
 val joeId = 123
 val q =
-  capture {
+  sql {
     delete<Person>.where { id == param(joeId) }
   }
 q.buildFor.Postgres().runOn(myDatabase)
@@ -790,7 +787,7 @@ The Delete DSL also supports `returning` clauses:
 ```kotlin
 val joeId = 123
 val q =
-  capture {
+  sql {
     delete<Person>
       .where { id == param(joeId) }
       .returning { p -> p.id }
@@ -813,8 +810,8 @@ val people = listOf(
   Person(id = 0, name = "Jack", age = 55, companyId = 789)
 )
 val q =
-  capture { p ->
-    capture.batch(people) { p ->
+  sql { p ->
+    sql.batch(people) { p ->
       insert<Person> {
         set(
           name to param(p.name),
@@ -849,7 +846,7 @@ data class CorpCustomer {
   val createdAt: Int
 }
 
-val q = capture { Table<CorpCustomer>() }
+val q = sql { Table<CorpCustomer>() }
 q.buildFor.Postgres().runOn(myDatabase)
 //> 
 ```
@@ -869,7 +866,7 @@ data class CorpCustomer {
   val createdAt: Int
 }
 
-val q = capture { Table<CorpCustomer>() }
+val q = sql { Table<CorpCustomer>() }
 q.buildFor.Postgres().runOn(myDatabase)
 //> SELECT x.name, x.num_orders, x.created_at FROM corp_customer x
 ```
@@ -888,10 +885,10 @@ fun peRatioWeighted(stock: Stock, weight: Double): Double = catpure.expression {
   }
 ```
 
-Once this function is defined you can use it inside a `capture` block like this:
+Once this function is defined you can use it inside an `sql` block like this:
 
 ```kotlin
-capture {
+sql {
   Table<Stock>().map { stock -> peRatioWeighted(stock, stock.marketCap / totalWeight) }
 }
 ```
@@ -908,7 +905,7 @@ fun peRationSimple(stock: Stock): Double = catpure.expression {
 fun peRatioWeighted(stock: Stock, weight: Double): Double = catpure.expression {
   peRationSimple(stock) * weight
 }
-capture {
+sql {
   Table<Stock>().map { stock -> peRatioWeighted(stock, stock.marketCap / totalWeight) }
 }
 ```
@@ -918,10 +915,10 @@ Also note that captured functions can make use of the context-receiver position.
 
 ```kotlin
 @CapturedFunction
-fun Stock.marketCap() = capture.expression {
+fun Stock.marketCap() = sql.expression {
     price * sharesOutstanding
   }
-val q = capture {
+val q = sql {
   val totalWeight = Table<Stock>().map { it.marketCap().use }.sum() // A local variable used in the query!
   Table<Stock>().map { stock -> peRatioWeighted(stock, stock.marketCap().use / totalWeight) }
 }
@@ -951,7 +948,7 @@ data class Address(val id: Int, val street: String, val zip: String)
 // Now let's create a captured function that can be used with any Locateable object:
 @CapturedFunction
 fun <L : Locateable> joinLocation(locateable: SqlQuery<L>): SqlQuery<Pair<L, Address>> =
-  capture.select {
+  sql.select {
     val l = from(locateable)
     val a = join(addresses) { a -> a.id == l.locationId }
     l to a
@@ -961,7 +958,7 @@ fun <L : Locateable> joinLocation(locateable: SqlQuery<L>): SqlQuery<Pair<L, Add
 Now I can use this function with the Person table
 
 ```kotlin
-val people: SqlQuery<Pair<Person, Address>> = capture {
+val people: SqlQuery<Pair<Person, Address>> = sql {
   joinLocation(Table<Person>().filter { p -> p.name == "Joe" })
 }
 people.buildFor.Postgres().runOn(myDatabase)
@@ -971,7 +968,7 @@ people.buildFor.Postgres().runOn(myDatabase)
 As well as the Robot table:
 
 ```kotlin
-val robots: SqlQuery<Pair<Robot, Address>> = capture {
+val robots: SqlQuery<Pair<Robot, Address>> = sql {
   joinLocation(Table<Robot>().filter { r -> r.model == "R2D2" })
 }
 //> SELECT r.model, r.createdOn, r.locationId, a.id, a.street, a.zip FROM Robot r JOIN Address a ON a.id = r.locationId WHERE r.model = 'R2D2'
@@ -985,7 +982,7 @@ Captured functions can also be used to define local variables inside of a `captu
 a query that looked like this:
 
 ```kotlin
-capture {
+sql {
   Table<Stock>().map { stock -> peRatioWeighted(stock, stock.marketCap / totalWeight) }
 }
 ```
@@ -994,7 +991,7 @@ Note how I intentionally left the `totalWeight` variable undefined. Let's try to
 
 ```kotlin
 val q =
-  capture {
+  sql {
     val totalWeight = Table<Stock>().map { it.marketCap().use }.sum()
     Table<Stock>().map { stock -> peRatioWeighted(stock, stock.marketCap / totalWeight) }
   }
@@ -1018,11 +1015,11 @@ Once you have imported a ExoQuery runner project (e.g. exoquery-runner-jdbc) and
 val ds: DataSource = ...
 val controller = JdbcControllers.Postgres(ds)
 
-val getJoes = capture {
+val getJoes = sql {
   Table<Person>().filter { p -> p.name == "Joe" }
 }.buildFor.Postgres()
 
-fun setJoesToJims(ids: List<String>) = capture {
+fun setJoesToJims(ids: List<String>) = sql {
   update<Person> { set(name to "Jim").where { p -> p.id in params(ids) } }
 }.buildFor.Postgres()
 
@@ -1042,7 +1039,7 @@ In situations where you need to use a SQL UDF that is available directly on the 
 to use custom SQL syntax that is not supported by ExoQuery, you can use a free block.
 
 ```kotlin
-val q = capture {
+val q = sql {
   Table<Person>().filter { p -> free("mySpecialDatabaseUDF(${p.name})") == "Joe" }
 }
 //> SELECT p.id, p.name, p.age FROM Person p WHERE mySpecialDatabaseUDF(p.name) = 'Joe'
@@ -1052,7 +1049,7 @@ You can pass param-calls into the free-block as well.
 
 ```kotlin
 val myRuntimeVar = ...
-val q = capture {
+val q = sql {
   Table<Person>().filter { p -> p.name == free("mySpecialDatabaseUDF(${param(myRuntimeVar)})") }
 }
 //> SELECT p.id, p.name, p.age FROM Person p WHERE p.name = mySpecialDatabaseUDF(?)
@@ -1063,7 +1060,7 @@ val q = capture {
 Free blocks are also useful for adding information before/after an entire query. For example:
 
 ```kotlin
-val q = capture {
+val q = sql {
   free("${Table<Person>().filter { p -> p.name == "Joe" }} FOR UPDATE").asPure<SqlQuery<Person>>()
 }
 //> SELECT p.id, p.name, p.age FROM Person p WHERE p.name = 'Joe' FOR UPDATE
@@ -1073,11 +1070,11 @@ This is technique is quite powerful when combined with captured-functions to abs
 
 ```kotlin
 @CapturedFunction
-fun <T : Person> forUpdate(v: SqlQuery<T>) = capture {
+fun <T : Person> forUpdate(v: SqlQuery<T>) = sql {
     free("${v} FOR UPDATE").asPure<SqlQuery<T>>()
   }
 
-val q = capture {
+val q = sql {
   forUpdate(Table<Person>().filter { p -> p.age > 21 })
 }
 //> (SELECT p.id, p.name, p.age FROM Person p WHERE p.age > 21) FOR UPDATE
@@ -1088,10 +1085,10 @@ val q = capture {
 Free blocks can even be used with Action (i.e. insert, update, delete) statements:
 
 ```kotlin
-val q = capture {
+val q = sql {
   insert<Person> { setParams(Person(1, "Joe", "Bloggs", 111)) }
 }
-val qq = capture {
+val qq = sql {
   free("SET IDENTITY_INSERT Person ON ${q} SET IDENTITY_INSERT Person OFF").asPure<SqlAction<Person, Long>>()
 }
 qq.build<SqlServerDialect>().runOn(ctx)
@@ -1108,7 +1105,7 @@ and then specify the window function itself.
 data class Customer(val name: String, val age: Int, val membership: String)
 
 val q = 
-  capture.select {
+  sql.select {
     val c = from(Table<Customer>())
     Pair(
       c.name,
@@ -1125,7 +1122,7 @@ with the `free("...sql...")` function to specify the SQL for the window.
 
 ```kotlin
 val q = 
-  capture.select {
+  sql.select {
     val c = from(Table<Customer>())
     Pair(
       c.name,
@@ -1145,7 +1142,7 @@ It does this in an SQL-injection-proof fashion by using parameterized queries on
 
 ```kotlin
 val runtimeName = "Joe"
-val q = capture { Table<Person>().filter { p -> p.name == param(runtimeName) } }
+val q = sql { Table<Person>().filter { p -> p.name == param(runtimeName) } }
 q.buildFor.Postgres().runOn(myDatabase)
 //> SELECT p.id, p.name, p.age FROM Person p WHERE p.name = ?
 ```
@@ -1175,7 +1172,7 @@ If you want to do in-set SQL checks with runtime collections, use the `params` f
 
 ```kotlin
 val runtimeNames = listOf("Joe", "Jim", "Jack")
-val q = capture { Table<Person>().filter { p -> p.name in params(runtimeNames) } }
+val q = sql { Table<Person>().filter { p -> p.name in params(runtimeNames) } }
 q.buildFor.Postgres().runOn(myDatabase)
 //> SELECT p.id, p.name, p.age FROM Person p WHERE p.name IN (?, ?, ?)
 ```
@@ -1200,7 +1197,7 @@ object EmailSerializer : KSerializer<Email> {
 }
 
 val email: Email = Email.safeEncode("joe@joesplace.com")
-val q = capture {
+val q = sql {
   Table<User>().filter { p -> p.email == paramCustom(email, EmailSerializer) }
 }
 ```
@@ -1274,7 +1271,7 @@ Then you can execute queries using `ByteContent` instances like this:
 
 ```kotlin
 val bc: ByteContent = ByteContent.bytesFrom(File("myfile.txt").inputStream())
-val q = capture {
+val q = sql {
   Table<MyBlobTable>().filter { b -> b.content == paramCtx(bc) }
 }
 q.buildFor.Postgres().runOn(myDatabase)
@@ -1332,7 +1329,7 @@ object DateAsIsoSerializer : KSerializer<LocalDate> {
 // will behave this way by default when a field is marked as @Contextual.
 val ctx = JdbcController.Postgres.fromConfig("mydb")
 val c = Customer(1, "Alice", "Smith", LocalDate.of(2021, 1, 1))
-val q = capture {
+val q = sql {
   insert<Customer> {
     set(
       firstName to param(c.firstName),
@@ -1414,7 +1411,7 @@ Then use the surrogate serializer when reading data from the database.
 
 ```kotlin
 // You can then use the surrogate class when reading/writing information from the database:
-val customers = capture {
+val customers = sql {
   Table<Customer>().filter { c -> c.firstName == "Joe" }
 }.buildFor.Postgres().runOn(ctx, CustomerSurrogateSerializer)
 //> SELECT c.id, c.firstName, c.lastName, c.createdAt FROM customers c WHERE c.firstName = 'Joe'
@@ -1436,7 +1433,7 @@ runtime values are used to choose a particular instance of SqlQuery or SqlExpres
 
 ```kotlin
 val someFlag: Boolean = someRuntimeLogic()
-val q = capture {
+val q = sql {
   if (someFlag) {
     Table<Person>().filter { p -> p.name == "Joe" }
   } else {
@@ -1468,16 +1465,16 @@ restrictions or limitations. For example:
 @CapturedDynamic
 fun filteredIds(robotsAllowed: Boolean, value: SqlExpression<String>) =
   if (robotsAllowed)
-    capture {
+    sql {
       Table<Person>().filter { p -> p.name == value }.map { p -> p.id }
       union
       Table<Robot>().filter { r -> r.model == value }.map { r -> r.id }
     }
   else
-    capture { Table<Person>().filter { p -> p.name == value }.map { r -> r.id } }
+    sql { Table<Person>().filter { p -> p.name == value }.map { r -> r.id } }
 
-val q = capture {
-  Table<Tenants>().filter { c -> filteredIds(true, capture.expression { c.signatureName }) }
+val q = sql {
+  Table<Tenants>().filter { c -> filteredIds(true, sql.expression { c.signatureName }) }
 }
 //> SELECT c.signatureName, c.rentalCode, c.moveInDate FROM Tenants c WHERE c.signatureName IN (SELECT p.id FROM Person p WHERE p.name = ? UNION SELECT r.id FROM Robot r WHERE r.model = ?)
 ```
@@ -1489,7 +1486,7 @@ Note several things:
   ```
   Could not understand the SqlExpression (from the scaffold-call) that you are attempting to call `.use` on...
   ------------ Source ------------
-  filteredIds(true, capture.expression { c.signatureName })
+  filteredIds(true, sql.expression { c.signatureName })
   ```
   or possibly:
   ```
@@ -1525,11 +1522,11 @@ val possibleNames = listOf("Joe", "Jack")
 
 @CapturedDynamic
 fun joinedClauses(p: SqlExpression<Person>) =
-  possibleNames.map { n -> capture.expression { p.use.name == param(n) } }
-    .reduce { a, b -> capture.expression { a.use || b.use } }
+  possibleNames.map { n -> sql.expression { p.use.name == param(n) } }
+    .reduce { a, b -> sql.expression { a.use || b.use } }
 
-val filteredPeople = capture {
-  Table<Person>().filter { p -> joinedClauses(capture.expression { p }).use }
+val filteredPeople = sql {
+  Table<Person>().filter { p -> joinedClauses(sql.expression { p }).use }
 }
 
 filteredPeople.buildFor.Postgres()
@@ -1573,7 +1570,7 @@ Then, add the following code to your source files:
 package my.example.app
 
 fun myFunction() {
-  capture.generate(
+  sql.generate(
     Code.Entities(
       CodeVersion.Fixed("1.0.0"),
       DatabaseDriver.Postgres("jdbc:postgresql://<db-host>:<db-port>/<db-name>"),
@@ -1605,7 +1602,7 @@ These files will automatically be added to your classpath so you can use them in
 package my.example.app
 ...
 fun myQuery() {
-  val q = capture.select {
+  val q = sql.select {
     val p = from(Table<Person>())
     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
     Pair(p, a)
@@ -1644,7 +1641,7 @@ Currently OpenAI and Ollama are supported.
 package my.example.app
 
 fun myFunction() {
-  capture.generate(
+  sql.generate(
     Code.Entities(
       CodeVersion.Fixed("1.0.0"),
       DatabaseDriver.Postgres("jdbc:postgresql://<db-host>:<db-port>/<db-name>"),
@@ -1689,7 +1686,7 @@ nesting of flatMaps is created. This is based on the novel approach of Monadless
 Take for example this query:
 
 ```kotlin
-val q = capture.select {
+val q = sql.select {
   val p = from(Table<Person>())
   val a = join(Table<Address>()) { a -> p.id == a.ownerId }
   val r = join(Table<Robot>()) { r -> p.id == r.ownerId }
@@ -1710,7 +1707,7 @@ Table(Person).flatMap { p ->
 ExoQuery supports a user-accessible flatMap function that can literally be used to create the same exact structure:
 
 ```kotlin
-val q2 = capture {
+val q2 = sql {
   Table<Person>().flatMap { p ->
     internal.flatJoin(Table<Address>()) { a -> p.id == a.ownerId }.flatMap { a ->
       internal.flatJoin(Table<Robot>()) { r -> p.id == r.ownerId }.map { r ->

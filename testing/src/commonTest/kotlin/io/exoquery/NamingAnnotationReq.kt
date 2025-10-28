@@ -19,7 +19,7 @@ class NamingAnnotationReq: GoldenSpecDynamic(NamingAnnotationReqGoldenDynamic, M
     )
 
     "no apply quotes in postgres if all lower-case" {
-      val query = capture {
+      val query = sql {
         Table<PersonAnnotated>().filter { it.firstName == "Joe" && it.lastName == "Bloggs" }
       }
       shouldBeGolden(query.xr, "XR")
@@ -27,7 +27,7 @@ class NamingAnnotationReq: GoldenSpecDynamic(NamingAnnotationReqGoldenDynamic, M
     }
 
     "apply quotes in generic DBs if all lower-case" {
-      val query = capture {
+      val query = sql {
         Table<PersonAnnotated>().filter { it.firstName == "Joe" && it.lastName == "Bloggs" }
       }
       shouldBeGolden(query.xr, "XR")
@@ -61,14 +61,14 @@ class NamingAnnotationReq: GoldenSpecDynamic(NamingAnnotationReqGoldenDynamic, M
     )
 
     "in a query" {
-      val query = capture {
+      val query = sql {
         Table<PersonAnnotated>().filter { it.firstName == "Joe" && it.lastName == "Bloggs" }
       }
       shouldBeGolden(query.xr, "XR")
       shouldBeGolden(query.buildFor.Postgres(), "SQL")
     }
     "in a query - with overrides" {
-      val query = capture {
+      val query = sql {
         Table<PersonAnnotatedOverride>().filter { it.firstName == "Joe" && it.lastName == "Bloggs" }
       }
       shouldBeGolden(query.xr, "XR")
@@ -76,14 +76,14 @@ class NamingAnnotationReq: GoldenSpecDynamic(NamingAnnotationReqGoldenDynamic, M
     }
 
     "in an action" {
-      val action = capture {
+      val action = sql {
         insert<PersonAnnotated> { set(firstName to "Joe", lastName to "Bloggs", age to 42) }
       }
       shouldBeGolden(action.xr, "XR")
       shouldBeGolden(action.buildFor.Postgres(), "SQL")
     }
     "in an action - with overrides" {
-      val action = capture {
+      val action = sql {
         insert<PersonAnnotatedOverride> { set(firstName to "Joe", lastName to "Bloggs", age to 42) }
       }
       shouldBeGolden(action.xr, "XR")
@@ -91,14 +91,14 @@ class NamingAnnotationReq: GoldenSpecDynamic(NamingAnnotationReqGoldenDynamic, M
     }
 
     "in an action with setParams" {
-      val action = capture {
+      val action = sql {
         insert<PersonAnnotated> { setParams(PersonAnnotated("Joe", "Bloggs", 42)) }
       }
       shouldBeGolden(action.determinizeDynamics().xr, "XR")
       shouldBeGolden(action.buildFor.Postgres().determinizeDynamics(), "SQL")
     }
     "in an action with setParams - with overrides" {
-      val action = capture {
+      val action = sql {
         insert<PersonAnnotatedOverride> { setParams(PersonAnnotatedOverride("Joe", "Bloggs", 42)) }
       }
       shouldBeGolden(action.determinizeDynamics().xr, "XR")

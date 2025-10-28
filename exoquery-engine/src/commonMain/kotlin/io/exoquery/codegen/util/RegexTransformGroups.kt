@@ -2,7 +2,7 @@ package io.exoquery.codegen.util
 
 
 /**
- * TODO use this in the NameParser.UsingRegex in order to be able to transform capture groups
+ * TODO use this in the NameParser.UsingRegex in order to be able to transform sql groups
  *      in custom ways e.g. to uppercase.
  */
 fun transformGroups(

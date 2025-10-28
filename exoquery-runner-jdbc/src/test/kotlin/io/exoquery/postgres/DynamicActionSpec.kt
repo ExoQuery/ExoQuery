@@ -1,12 +1,11 @@
 package io.exoquery.postgres
 
 import io.exoquery.testdata.Person
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.SqlExpression
 import io.exoquery.TestDatabases
 import io.exoquery.annotation.CapturedDynamic
-import io.exoquery.capture
-import io.exoquery.controller.jdbc.JdbcController
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.george
 import io.exoquery.insertAllPeople
@@ -36,16 +35,16 @@ class DynamicActionSpec : FreeSpec({
     @CapturedDynamic
     fun conditionClause(p: SqlExpression<Person>) =
       namesToModify
-        .map { n -> capture.expression { p.use.lastName == param(n) } }
-        .reduce { a, b -> capture.expression { a.use || b.use } }
+        .map { n -> sql.expression { p.use.lastName == param(n) } }
+        .reduce { a, b -> sql.expression { a.use || b.use } }
 
     ctx.insertAllPeople()
     val update =
-      capture {
+      sql {
         update<Person> {
           set(firstName to firstName + "-A")
         }.filter { p ->
-          conditionClause(capture.expression { p }).use
+          conditionClause(sql.expression { p }).use
         }
       }
 

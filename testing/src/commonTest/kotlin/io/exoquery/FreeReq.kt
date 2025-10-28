@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Person
 
 class FreeReq: GoldenSpecDynamic(FreeReqGoldenDynamic, Mode.ExoGoldenTest(), {
@@ -8,43 +8,43 @@ class FreeReq: GoldenSpecDynamic(FreeReqGoldenDynamic, Mode.ExoGoldenTest(), {
   // TODO if 'free' not follorwed by anything there should be some kidn of compile error
   "static free" - {
     "simple sql function" {
-      shouldBeGolden(capture { Table<Person>().filter { p -> free("MyFunction(${p.age})")<Boolean>() } }.build<PostgresDialect>())
+      shouldBeGolden(sql { Table<Person>().filter { p -> free("MyFunction(${p.age})")<Boolean>() } }.build<PostgresDialect>())
     }
     "simple sql function - pure" {
-      shouldBeGolden(capture { Table<Person>().filter { p -> free("MyFunction(${p.age})").asPure<Boolean>() } }.build<PostgresDialect>())
+      shouldBeGolden(sql { Table<Person>().filter { p -> free("MyFunction(${p.age})").asPure<Boolean>() } }.build<PostgresDialect>())
     }
     "simple sql function - condition" {
-      shouldBeGolden(capture { Table<Person>().filter { p -> free("MyFunction(${p.age})").asConditon() } }.build<PostgresDialect>())
+      shouldBeGolden(sql { Table<Person>().filter { p -> free("MyFunction(${p.age})").asConditon() } }.build<PostgresDialect>())
     }
     "simple sql function - condition" {
-      shouldBeGolden(capture { Table<Person>().filter { p -> free("MyFunction(${p.age})").asPureConditon() } }.build<PostgresDialect>())
+      shouldBeGolden(sql { Table<Person>().filter { p -> free("MyFunction(${p.age})").asPureConditon() } }.build<PostgresDialect>())
     }
   }
 
   "query with free" - {
     "static query in free" {
-      val query = capture {
+      val query = sql {
         Table<Person>().filter { p -> p.name == "Joe" }
       }
-      val free = capture {
+      val free = sql {
         free("beforeStuff() ${query} afterStuff()").asPure<SqlAction<Person, Long>>()
       }
       shouldBeGolden(free.build<PostgresDialect>())
     }
 
     "dynamic query in free" {
-      val query = capture {
+      val query = sql {
         Table<Person>().filter { p -> p.name == "Joe" }
       }.dyanmic()
 
-      val free = capture {
+      val free = sql {
         free("beforeStuff() ${query} afterStuff()").asPure<SqlAction<Person, Long>>()
       }
       shouldBeGolden(free.build<PostgresDialect>())
     }
 
     "direct query in free" {
-      val free = capture {
+      val free = sql {
         free("beforeStuff() ${Table<Person>().filter { p -> p.name == "Joe" }} afterStuff()").asPure<SqlAction<Person, Long>>()
       }
       shouldBeGolden(free.build<PostgresDialect>())
@@ -53,26 +53,26 @@ class FreeReq: GoldenSpecDynamic(FreeReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
   "action with free" - {
     "static action in free" {
-      val action = capture {
+      val action = sql {
         insert<Person> { setParams(Person(1, "Joe", 123)) }
       }
-      val free = capture {
+      val free = sql {
         free("beforeStuff() ${action} afterStuff()").asPure<SqlAction<Person, Long>>()
       }
       shouldBeGolden(free.build<PostgresDialect>().determinizeDynamics())
     }
     "dynamic action in free" {
-      val action = capture {
+      val action = sql {
         insert<Person> { setParams(Person(1, "Joe", 123)) }
       }.dyanmic()
 
-      val free = capture {
+      val free = sql {
         free("beforeStuff() ${action} afterStuff()").asPure<SqlAction<Person, Long>>()
       }
       shouldBeGolden(free.build<PostgresDialect>().determinizeDynamics())
     }
     "direct action in free" {
-      val free = capture {
+      val free = sql {
         free(
           "beforeStuff() ${
             insert<Person> {
@@ -90,7 +90,7 @@ class FreeReq: GoldenSpecDynamic(FreeReqGoldenDynamic, Mode.ExoGoldenTest(), {
       shouldBeGolden(free.build<PostgresDialect>().determinizeDynamics())
     }
     "whole action in free" {
-      val action = capture {
+      val action = sql {
         free(
           """
             CREATE TABLE Launch (

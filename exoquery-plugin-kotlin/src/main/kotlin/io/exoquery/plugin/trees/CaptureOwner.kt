@@ -40,9 +40,9 @@ import org.jetbrains.kotlin.ir.util.kotlinFqName
 
 
 // In situations where you've got
-//   fun foo() = capture { Table<Person>() }
-// and then later you use it in a capture expression
-//   fun bar() = capture { foo().filter { p -> p.name == "Joe" } }
+//   fun foo() = sql { Table<Person>() }
+// and then later you use it in a sql expression
+//   fun bar() = sql { foo().filter { p -> p.name == "Joe" } }
 // The TransformCaptureQuery will change the `fun foo() = ...` part to
 //   fun foo() = SqlQuery(...)
 // Which will hopefully come first (we have a trick if it doesn't...)
@@ -50,21 +50,21 @@ import org.jetbrains.kotlin.ir.util.kotlinFqName
 // we need to change the `foo()` invocation (in `foo().filter...`) to SqlQuery(..., foo().runtimes, foo().params)
 // so that when we're doing TransformCaptureQuery on `bar()` the `foo()` part will already be a Uprootable and we'll know it's a static query.
 // Note that this chain can have multiple steps, for example we could have:
-//   fun foo() = capture { Table<Person>() }
-//   fun bar() = capture { foo().filter { p -> p.name == "Joe" } }
-//   fun baz() = capture { bar().filter { p -> p.age > 20 } }
+//   fun foo() = sql { Table<Person>() }
+//   fun bar() = sql { foo().filter { p -> p.name == "Joe" } }
+//   fun baz() = sql { bar().filter { p -> p.age > 20 } }
 // Stuff in the middle can be a variable for example:
-//   fun foo() = capture { Table<Person>() }
-//   val bar = capture { foo().filter { p -> p.name == "Joe" } }
-//   fun baz() = capture { bar.filter { p -> p.age > 20 } }
+//   fun foo() = sql { Table<Person>() }
+//   val bar = sql { foo().filter { p -> p.name == "Joe" } }
+//   fun baz() = sql { bar.filter { p -> p.age > 20 } }
 // Now when these come one after another for each one we'll first do a TransformCaptureQuery on the `foo() = (..here..)` part, then a TransformProjectCapture on the
 // `foo()` invocation in `val bar` and then call TransformProjectCapture on `val bar = (..here..)` part then repeat the process for `baz()`.
 //
 // Now, the tricky part comes when these are out of order which they can be for example of they are object members, let's say we have an object
 //  object Foo {
-//    fun baz() = capture { bar().filter { p -> p.age > 20 } }
-//    fun bar() = capture { foo().filter { p -> p.name == "Joe" } }
-//    fun foo() = capture { Table<Person>() }
+//    fun baz() = sql { bar().filter { p -> p.age > 20 } }
+//    fun bar() = sql { foo().filter { p -> p.name == "Joe" } }
+//    fun foo() = sql { Table<Person>() }
 //  }
 // That's a problem because we'll come to TransformProjectCapture on `baz()` before we've even made `bar()` into a SqlQuery(...) uprootable.
 // TODO describe this process
@@ -113,7 +113,7 @@ sealed interface OwnerChain {
        * Replant the expression side the uprootable. Note that an uprootable without an Expr is really just
        * a encoded query. The only component that involves an expression is the source of the params.
        * That means that outside of this replanting, the uprootable is actually an invariant.
-       * So in order to replant it in the capture-project process we just replace the expression.
+       * So in order to replant it in the sql-project process we just replace the expression.
        * Then we just bubble it up to the next level up. We could technically just take the root
        * expression of the entire sequence but that parameter might not actually be visible to the code
        * at hand so we need to do a game of propagation.
@@ -147,10 +147,10 @@ sealed interface OwnerChain {
      * For example.
      * ```
      * ModuleA: foo.kt
-     * inline fun getPeopleQuery(): SqlQuery<Person> = capture { Table<Person>() }
+     * inline fun getPeopleQuery(): SqlQuery<Person> = sql { Table<Person>() }
      *
      * ModuleB: bar.kt
-     * fun getPeopleNamedJoe(): SqlQuery<Person> = capture { getPeopleQuery().filter { it.name == "Joe" } }
+     * fun getPeopleNamedJoe(): SqlQuery<Person> = sql { getPeopleQuery().filter { it.name == "Joe" } }
      *
      * Note that cross-file functions MUST be inline functions the reason for this is the following. The backend IR is ephemeral
      * therefore we cannot stored any kind of compile-time extracted IR in a persistent way inside of it. Normally that is okay
@@ -298,9 +298,9 @@ sealed interface OwnerChain {
           // ===== Continue with the normal processing =====
           owner.match(
             // E.g. a class field used in a lift
-            //   class Foo { val x = capture { 123 } } which should have become:
+            //   class Foo { val x = sql { 123 } } which should have become:
             //   val foo = Foo()
-            //   capture { 2 + foo.x.use }
+            //   sql { 2 + foo.x.use }
             // Which will become:
             //   SqlExpression(Int(2) + Int(123), lifts=foo.x.lifts)
             caseEarly(exprType == ContainerType.Query)(Ir.Field[Is(), Is()]).then { _, nextStep ->
@@ -334,16 +334,16 @@ sealed interface OwnerChain {
           )
         },
         // E.g. something like
-        //   val x = capture { 123 + lift(456) }` // i.e. SqlExpression(XR.Int(123), ...)  // (actually it will be serialized so: `val x = SqlExpression(unpackExpr("jksnfksjdnf"), ...)`)
-        //   capture { 2 + x.use }
+        //   val x = sql { 123 + lift(456) }` // i.e. SqlExpression(XR.Int(123), ...)  // (actually it will be serialized so: `val x = SqlExpression(unpackExpr("jksnfksjdnf"), ...)`)
+        //   sql { 2 + x.use }
         // Which should become:
         //   SqlExpression(..., lifts=x.lifts)
         //   in more detail:
         //   SqlExpression(Int(2) + Int(123) + ScalarTag(UUID), lifts=x.lifts) // Where x.lifts is ScalarLift(UUID, x) which lives behind the IrVariable("x")
         // so effectively:
-        //   capture { 2 + x.use } ->                                                                   // can be thought of something like:
-        //     capture { 2 + capture { 123 + lift(x.lifts[UUID_A]) } } ->                               // which is actually:
-        //     capture { 2 + SqlExpression(Int(123) + ScalarTag(UUID_A), lifts=ScalarLift(UUID, x)) }   // which becomes:
+        //   sql { 2 + x.use } ->                                                                   // can be thought of something like:
+        //     sql { 2 + sql { 123 + lift(x.lifts[UUID_A]) } } ->                               // which is actually:
+        //     sql { 2 + SqlExpression(Int(123) + ScalarTag(UUID_A), lifts=ScalarLift(UUID, x)) }   // which becomes:
         //     SqlExpression(Int(2) + SqlExpression(Int(123) + ScalarTag(UUID_A), lifts=ScalarLift(x))) // which then becomes:
         //     SqlExpression(Int(2) + Int(123) + ScalarTag(UUID_A), lifts=ScalarLift(x))
         case(Ir.GetValue[Is()]).thenIf { expression.isContainerOfXR() }.then { field ->

@@ -1,5 +1,5 @@
-import io.exoquery.capture
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.sql
+import io.exoquery.PostgresDialect
 
 ////@file:TracesEnabled(TraceType.SqlNormalizations::class, TraceType.Normalizations::class)
 //
@@ -21,29 +21,29 @@ import io.exoquery.sql.PostgresDialect
 //  data class Person(val id: Int, val name: String, val age: Int)
 //  data class Address(val ownerId: Int, val street: String, val zip: Int)
 //
-//  val joes = capture { Table<Person>().filter { p -> p.name == param("joe") } }
+//  val joes = sql { Table<Person>().filter { p -> p.name == param("joe") } }
 //
 //  // TODO introduce a spec for these
 //
 //  @CapturedFunction
 //  fun isJoe(name: String) =
-//    capture.expression { name == "joe" }
+//    sql.expression { name == "joe" }
 //
-//  val result = capture {
+//  val result = sql {
 //    joes.filter { isJoe(it.name).use }.map { it.name }
 //  }
 //
 //
 ////  @CapturedFunction
 ////  fun <T> joinPeopleToAddress(people: SqlQuery<T>, otherValue: String, f: (T) -> Int) =
-////    capture.select {
+////    sql.select {
 ////      val p = from(people)
 ////      val a = join(Table<Address>()) { a -> a.ownerId == f(p) && a.street == otherValue } // should have a verification that param(otherValue) fails
 ////      p to a
 ////    }
 ////
 ////  val r = "foobar"
-////  val result = capture {
+////  val result = sql {
 ////    joinPeopleToAddress(joes, param(r)) { it.id }.map { kv -> kv.first.name to kv.second.street }
 ////  }
 //
@@ -52,18 +52,18 @@ import io.exoquery.sql.PostgresDialect
 //
 ////  @CapturedFunction
 ////  fun <T> joinPeopleToAddress(people: SqlQuery<T>, f: (T, Address) -> Boolean) =
-////    capture.select {
+////    sql.select {
 ////      val p = from(people)
 ////      val a = join(Table<Address>()) { a -> f(p, a) }
 ////      p to a
 ////    }
 ////
-////  val joinFunction = capture.expression {
+////  val joinFunction = sql.expression {
 ////    { p: Person, a: Address -> p.id == a.ownerId }
 ////  }
 ////  // TODO captured-function for SqlExpression
 ////
-////  val result = capture {
+////  val result = sql {
 ////    joinPeopleToAddress(joes) { p, a -> joinFunction.use(p, a) /*p.id == a.ownerId*/ }.map { kv -> kv.first.name + " lives at " + kv.second.street }
 ////  }
 //
@@ -86,7 +86,7 @@ import io.exoquery.sql.PostgresDialect
 ////   }
 ////  println("hello")
 ////
-////  val x = capture {
+////  val x = sql {
 ////    joinPeopleToAddress2.use.invoke(joes)
 ////  }
 ////  println(x.buildPretty(PostgresDialect()).value) // helloo
@@ -143,7 +143,7 @@ fun main() {
 //  }
 //  println(s)
 
-  val q = capture {
+  val q = sql {
     Table<Person>().map { p -> p.name?.first ?: "John" }
   }
   println(q.build<PostgresDialect>())

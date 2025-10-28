@@ -1,12 +1,12 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "compile-time queries should work for" - {
     "regular functions" - {
       "inline functions defined in previous compilation units" {
-        val q = capture {
+        val q = sql {
           crossFileSelect().filter { pair -> pair.first.name == "JoeOuter" }
         }
         val result = q.build<PostgresDialect>()
@@ -15,7 +15,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
         shouldBeGolden(result.debugData.phase.toString(), "Phase")
       }
       "inline functions defined in previous-previous compilation units" {
-        val q = capture {
+        val q = sql {
           crossFileSelectSelect().filter { pair -> pair.first.first.name == "JoeOuter" }
         }
         val result = q.build<PostgresDialect>()
@@ -24,7 +24,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
         shouldBeGolden(result.debugData.phase.toString(), "Phase")
       }
       "inline functions defined in previous-previous compilation units" {
-        val q = capture {
+        val q = sql {
           crossFileSelectExpr().filter { pair -> pair.first.name == "JoeOuter" }
         }
         val result = q.build<PostgresDialect>()
@@ -56,7 +56,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
     }
     "captured functions" - {
       "inline captured functions defined in previous compilation units" {
-        val q = capture {
+        val q = sql {
           crossFileCapSelect(Table<PersonCrs>().filter { p -> p.name == "JoeInner" })
             .filter { pair -> pair.name == "JoeOuter" }
         }
@@ -66,7 +66,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
         shouldBeGolden(result.debugData.phase.toString(), "Phase")
       }
       "inline captured functions defined in previous-previous compilation units" {
-        val q = capture {
+        val q = sql {
           crossFileCapSelectCapSelect(
             Table<PersonCrs>().filter { p -> p.name == "JoeInner" }
           ).filter { pair -> pair.first.name == "JoeOuter" }
@@ -77,7 +77,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
         shouldBeGolden(result.debugData.phase.toString(), "Phase")
       }
       "inline captured functions defined in previous-previous(expr) compilation units" {
-        val q = capture {
+        val q = sql {
           crossFileCapSelectCapExpr(
             Table<PersonCrs>().filter { p -> p.name == "JoeInner" }
           ).filter { pair -> pair.name == "JoeOuter" }
@@ -91,7 +91,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
     // TODO not currently supported, need to think about how to allow this
     //"runtime functions" - {
     //  "inline runtime functions defined in previous compilation units" {
-    //    val q = capture {
+    //    val q = sql {
     //      crossFileDynSelect(Table<PersonCrs>().filter { p -> p.name == "JoeInner" })
     //        .filter { pair -> pair.name == "JoeOuter" }
     //    }
@@ -101,7 +101,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
     //    shouldBeGolden(result.debugData.phase.toString(), "Phase")
     //  }
     //  "inline runtime functions defined in previous-previous compilation units" {
-    //    val q = capture {
+    //    val q = sql {
     //      crossFileDynSelectDynSelect(
     //        Table<PersonCrs>().filter { p -> p.name == "JoeInner" }
     //      ).filter { pair -> pair.first.name == "JoeOuter" }
@@ -116,7 +116,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
 
   "compile-time expressions should work for" - {
     "inline functions defined in previous compilation units" {
-      val q = capture {
+      val q = sql {
         crossFileExpr().filter { it.name == "JoeExprOuter"  }
       }
       val result = q.build<PostgresDialect>()
@@ -125,7 +125,7 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
       shouldBeGolden(result.debugData.phase.toString(), "Phase")
     }
     "inline functions defined in previous-previous compilation units" {
-      val q = capture {
+      val q = sql {
         crossFileExprExpr().filter { it.name == "JoeExprOuter"  }
       }
       val result = q.build<PostgresDialect>()

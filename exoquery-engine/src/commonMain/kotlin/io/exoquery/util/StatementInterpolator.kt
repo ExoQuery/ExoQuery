@@ -1,9 +1,9 @@
 package io.exoquery.util
 
-import io.exoquery.sql.Statement
-import io.exoquery.sql.StringToken
-import io.exoquery.sql.Token
-import io.exoquery.sql.token
+import io.exoquery.lang.Statement
+import io.exoquery.lang.StringToken
+import io.exoquery.lang.Token
+import io.exoquery.lang.token
 import io.exoquery.terpal.Interpolator
 import io.exoquery.terpal.InterpolatorBackend
 import io.exoquery.terpal.InterpolatorFunction

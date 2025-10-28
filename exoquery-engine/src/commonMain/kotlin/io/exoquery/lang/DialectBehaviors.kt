@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.lang
 
 sealed interface EqualityBehavior {
   object AnsiEquality : EqualityBehavior

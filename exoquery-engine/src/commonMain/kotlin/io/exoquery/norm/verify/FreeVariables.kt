@@ -36,7 +36,7 @@ data class State(val seen: Set<IdentName>, val free: Set<IdentName>) {
 
 fun XR.Ident.asIdName(): IdentName = IdentName(this.name, this)
 
-// Not sure if this check is actually necessary because in the parse has detects with GetValue instances come from inside and outside the capture block
+// Not sure if this check is actually necessary because in the parse has detects with GetValue instances come from inside and outside the sql block
 data class FreeVariables(override val state: State) : StatefulTransformer<State> {
   override fun invoke(xr: XR.Expression): Pair<XR.Expression, StatefulTransformer<State>> =
     when {

@@ -1,7 +1,7 @@
 package io.exoquery
 
-import io.exoquery.sql.BooleanLiteralSupport
-import io.exoquery.sql.SqlIdiom
+import io.exoquery.lang.BooleanLiteralSupport
+import io.exoquery.lang.SqlIdiom
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
 

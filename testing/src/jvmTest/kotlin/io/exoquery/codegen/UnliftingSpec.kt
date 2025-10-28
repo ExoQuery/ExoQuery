@@ -1,6 +1,6 @@
 package io.exoquery.codegen
 
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.codegen.model.LLM
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.codegen.model.UnrecognizedTypeStrategy
@@ -17,7 +17,7 @@ import io.kotest.matchers.shouldBe
 class UnliftingSpec: FreeSpec({
   "unlift version" - {
     "fixed" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B")
@@ -28,7 +28,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "floating" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Floating,
           DatabaseDriver.Custom("A", "B")
@@ -41,7 +41,7 @@ class UnliftingSpec: FreeSpec({
   }
   "unlift driver" - {
     "postgres" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Postgres("A")
@@ -52,7 +52,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "mysql" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.MySQL("A")
@@ -63,7 +63,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "sqlite" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.SQLite("A")
@@ -74,7 +74,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "h2" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.H2("A")
@@ -85,7 +85,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "oracle" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Oracle("A")
@@ -96,7 +96,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "sqlserver" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.SqlServer("A")
@@ -107,7 +107,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "custom" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B")
@@ -120,7 +120,7 @@ class UnliftingSpec: FreeSpec({
   }
   "unlift NameParser" - {
     "literal" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -133,7 +133,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "snake case" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -147,7 +147,7 @@ class UnliftingSpec: FreeSpec({
     }
     "using llm" -  {
       "ollama" {
-        capture.generateJustReturn(
+        sql.generateJustReturn(
           Code.Entities(
             CodeVersion.Fixed("0"),
             DatabaseDriver.Custom("A", "B"),
@@ -160,7 +160,7 @@ class UnliftingSpec: FreeSpec({
         )
       }
       "openai" {
-        capture.generateJustReturn(
+        sql.generateJustReturn(
           Code.Entities(
             CodeVersion.Fixed("0"),
             DatabaseDriver.Custom("A", "B"),
@@ -177,7 +177,7 @@ class UnliftingSpec: FreeSpec({
 
   "unlift TableGrouping" - {
     "schema per package" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -190,7 +190,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "single package" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -206,7 +206,7 @@ class UnliftingSpec: FreeSpec({
 
   "unlift UnrecognizedTypeStrategy" - {
     "throw" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -219,7 +219,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "skip column" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -232,7 +232,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "use string" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -248,7 +248,7 @@ class UnliftingSpec: FreeSpec({
 
   "unlift TypeMap" - {
     "using just column" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -265,7 +265,7 @@ class UnliftingSpec: FreeSpec({
       )
     }
     "using all fields" {
-      capture.generateJustReturn(
+      sql.generateJustReturn(
         Code.Entities(
           CodeVersion.Fixed("0"),
           DatabaseDriver.Custom("A", "B"),
@@ -285,7 +285,7 @@ class UnliftingSpec: FreeSpec({
 
   // test out plugging in values into all of the nullable/defaultable arguments oc Code.Entities
   "top level Code.Entities constants" {
-    capture.generateJustReturn(
+    sql.generateJustReturn(
       Code.Entities(
         CodeVersion.Fixed("0"),
         DatabaseDriver.Custom("A", "B"),

@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.lang
 
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer

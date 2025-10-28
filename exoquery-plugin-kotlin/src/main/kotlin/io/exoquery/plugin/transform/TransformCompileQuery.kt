@@ -12,10 +12,10 @@ import io.exoquery.plugin.trees.SqlActionExpr
 import io.exoquery.plugin.trees.SqlBatchActionExpr
 import io.exoquery.plugin.trees.SqlQueryExpr
 import io.exoquery.plugin.trees.simpleTypeArgs
-import io.exoquery.sql.PostgresDialect
-import io.exoquery.sql.Renderer
-import io.exoquery.sql.SqlIdiom
-import io.exoquery.sql.Token
+import io.exoquery.PostgresDialect
+import io.exoquery.lang.Renderer
+import io.exoquery.lang.SqlIdiom
+import io.exoquery.lang.Token
 import io.exoquery.util.TraceConfig
 import io.exoquery.xr.XR
 import io.exoquery.xr.encode
@@ -98,10 +98,10 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
         val (traceConfig, writeSource) = ComputeEngineTracing.invoke(fileLabel, dialectType)
         val (construct, clsPackageName) = extractDialectConstructor(dialectType)
 
-        // If sqlQueryExprRaw is an Uprootable then we need to do superTransformer.visitCall on that which typically will happen if you call .build on a capture directly
-        // e.g. in `capture { Table<Person>() }.build<PostgresDialect>()` sqlQueryExprRaw will be the IrCall `capture { Table<Person>() }` on which we need to call the superTransformer.visitCall.
+        // If sqlQueryExprRaw is an Uprootable then we need to do superTransformer.visitCall on that which typically will happen if you call .build on a sql directly
+        // e.g. in `sql { Table<Person>() }.build<PostgresDialect>()` sqlQueryExprRaw will be the IrCall `sql { Table<Person>() }` on which we need to call the superTransformer.visitCall.
         // In the case that sqlQueryExprRaw is some kind of expression e.g.
-        // val cap = capture { Table<Person>() }; cap.build<PostgresDialect>() then the uprootable has already been created by the variable declaration
+        // val cap = sql { Table<Person>() }; cap.build<PostgresDialect>() then the uprootable has already been created by the variable declaration
         // and is something like `val cap = SqlQuery(xr=...)`. That means that we need to do a TransformProjectCapture on the `cap` varaible that is being called
         // which is invoked by the `superTransformer.visitExpression`.
         // In both of these cases superTransformer.recurse delegates-out to the correct transformer based on the type-match of the expression.

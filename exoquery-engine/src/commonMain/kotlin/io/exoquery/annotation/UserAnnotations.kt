@@ -8,7 +8,7 @@ package io.exoquery.annotation
  * ```
  * data class MyDate(val year: Int, val month: Int, val day: Int)
  * data class Customer(name: String, lastOrder: MyDate)
- * capture { Table<Customer>() }
+ * sql { Table<Customer>() }
  * // Would be broken down into something like:
  * // SELECT name, lastOrder_year, lastOrder_month, lastOrder_day FROM Customer
  * // However, if we annotate MyDate with ExoValue i.e. data class `Customer(name: String, lastOrder: @ExoValue MyDate)`
@@ -34,8 +34,8 @@ annotation class ExoValue
  * Use it like this:
  * ```
  * data class Person(@ExoField("first_name") val firstName: String, @ExoField("last_name") val lastName: String)
- * // Then when you capture a query like:
- * capture { Table<Person>().filter { it.firstName == "Joe" }
+ * // Then when you sql a query like:
+ * sql { Table<Person>().filter { it.firstName == "Joe" }
  * // It will come out as:
  * // SELECT first_name, last_name FROM Person WHERE first_name = 'Joe'
  * ```

@@ -29,6 +29,7 @@ import io.exoquery.innerdsl.SqlActionFilterable
 import io.exoquery.innerdsl.set
 import io.exoquery.innerdsl.setParams
 import io.exoquery.serial.ParamSerializer
+import io.exoquery.util.TraceConfig
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationStrategy
@@ -39,8 +40,10 @@ class MissingCaptureError(val msg: String) : IllegalStateException(msg)
 
 fun errorCap(message: Any): Nothing = throw MissingCaptureError(message.toString())
 
+@Deprecated("Use sql instead", ReplaceWith("sql"))
+typealias capture = sql
 
-object capture {
+object sql {
 
   // TODO When context recivers are finally implemented in KMP, make this have a context-reciver that allows `use` to be used, otherwise don't allow it
   @ExoCaptureExpression
@@ -48,7 +51,7 @@ object capture {
     errorCap("Compile time plugin did not transform the tree")
 
   // Very interesting thing happen to the annotation if we do this. I.e. when something like a conditional
-  // happens e.g. `if (foo) capture { query } else throw ...` then instead of being @Captured SqlQuery it will be just SqlQuery which
+  // happens e.g. `if (foo) sql { query } else throw ...` then instead of being @Captured SqlQuery it will be just SqlQuery which
   // is actually the behavior that we wanted since the start.
   @ExoCapture
   operator fun <SqlContainer : ContainerOfXR> invoke(block: CapturedBlock.() -> SqlContainer): @Captured SqlContainer =
@@ -59,7 +62,7 @@ object capture {
    * For example:
    * ```
    * val people: SqlQuery<<Pair<Person, Address>> =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
    *     p to a
@@ -67,10 +70,10 @@ object capture {
    * ```
    * The `from` and `join` clauses can use SqlQuery instances that are already created. For example:
    * ```
-   * val joes = capture { Table<Person>().filter { it.first.name == "Joe" } }
-   * val addressesInNYC = capture { Table<Address>().filter { it.city == "New York" } }
+   * val joes = sql { Table<Person>().filter { it.first.name == "Joe" } }
+   * val addressesInNYC = sql { Table<Address>().filter { it.city == "New York" } }
    * val joesInNYC =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(joes)
    *     val a = join(addressesInNYC) { a -> a.ownerId == p.id }
    *     p to a
@@ -85,7 +88,7 @@ object capture {
    * There are several additional constructs that can be used in a select-clause for example. You can add a `where` clause to filter the whole block:
    * ```
    * val joesInNYC =
-   *  capture.select {
+   *  sql.select {
    *    val p = from(Table<Person>())
    *    val a = join(Table<Address>()) { a -> a.ownerId == p.id }
    *    where { p.name == "Joe" && a.city == "New York" }
@@ -95,7 +98,7 @@ object capture {
    * You can also add a `groupBy` clause to group the results:
    * ```
    * val countPeopleByCity =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
    *     groupBy { a.city }
@@ -109,7 +112,7 @@ object capture {
    * You can also use sortBy:
    * ```
    * val peopleSortedByAge =
-   *  capture.select {
+   *  sql.select {
    *    val p = from(Table<Person>())
    *    sortBy(p.age to Asc)
    *  }
@@ -140,7 +143,7 @@ object capture {
     errorCap("The `generate` function was not inlined")
 }
 
-//fun <T> capture(block: CapturedBlock.() -> SqlQuery<T>): @Captured SqlQuery<T> = errorCap("Compile time plugin did not transform the tree")
+//fun <T> sql(block: CapturedBlock.() -> SqlQuery<T>): @Captured SqlQuery<T> = errorCap("Compile time plugin did not transform the tree")
 
 interface StringSqlDsl {
   @DslFunctionCall(DslFunctionCallType.PureFunction::class)
@@ -189,13 +192,13 @@ interface CapturedBlock {
    * Create a SqlQuery instance from a data-class. For example:
    * ```
    * data class Person(val id: Int, val name: String, val age: Int)
-   * val people = capture { TableQuery<Person>() }
+   * val people = sql { TableQuery<Person>() }
    * // SQL: SELECT p.id, p.name, p.age FROM people p
    * ```
    *
    * Use this with things like `map`, `filter`, `union`, etc.. to compose your query:
    * ```
-   * val joes = capture { people.filter { it.name == "Joe" } }
+   * val joes = sql { people.filter { it.name == "Joe" } }
    * // SQL: SELECT p.id, p.name, p.age FROM people p WHERE p.name = 'Joe'
    * ```
    */
@@ -207,25 +210,25 @@ interface CapturedBlock {
    *
    * Project to a primitive:
    * ```
-   * val ages = capture { p -> people.map { p.age } }
+   * val ages = sql { p -> people.map { p.age } }
    * // SQL: SELECT p.age FROM people p
    * ```
    *
    * Project do a tuple (or triple)
    * ```
-   * val namesAndAges = capture { p -> people.map { p.name to p.age } }
+   * val namesAndAges = sql { p -> people.map { p.name to p.age } }
    * // SQL: SELECT p.name, p.age FROM people p
    * ```
    *
    * Project to a data-class:
    * ```
    * data class NamesAndAges(val name: String, val age: Int)
-   * val namesAndAges = capture { people.map { p -> NamesAndAges(p.name, p.age) } }
+   * val namesAndAges = sql { people.map { p -> NamesAndAges(p.name, p.age) } }
    * // SQL: SELECT p.name, p.age FROM people p
    * ```
    * Note that the name of the variable that you use will be directly translated into SQL including the `it` variable:
    * ```
-   * val namesAndAges = capture { people.map { NamesAndAges(it.name, it.age) } }
+   * val namesAndAges = sql { people.map { NamesAndAges(it.name, it.age) } }
    * // SQL: SELECT it.name, it.age FROM people it
    * ```
    *
@@ -244,12 +247,12 @@ interface CapturedBlock {
   /**
    * Filter a SqlQuery based on a predicate
    * ```
-   * val joes = capture { people.filter { it.name == "Joe" } }
+   * val joes = sql { people.filter { it.name == "Joe" } }
    * ```
    * If you are starting with just a data-class use it like this:
    * ```
    * data class Person(val id: Int, val name: String, val age: Int)
-   * val joes = capture { TableQuery<Person>().filter { it.name == "Joe" } }
+   * val joes = sql { TableQuery<Person>().filter { it.name == "Joe" } }
    * ```
    */
   @Dsl
@@ -259,12 +262,12 @@ interface CapturedBlock {
   /**
    * Filter a SqlQuery based on a predicate (same as `.filter` using a receiver for more compact expressions)
    * ```
-   * val joes = capture { people.where { name == "Joe" } }
+   * val joes = sql { people.where { name == "Joe" } }
    * ```
    * If you are starting with just a data-class use it like this:
    * ```
    * data class Person(val id: Int, val name: String, val age: Int)
-   * val joes = capture { TableQuery<Person>().where { name == "Joe" } }
+   * val joes = sql { TableQuery<Person>().where { name == "Joe" } }
    * ```
    */
   @Dsl
@@ -274,14 +277,14 @@ interface CapturedBlock {
   /**
    * Make a union of two queries. Both queries must be SqlQuery<T> instances with the same T.
    * ```
-   * val allPeople = capture { somePeople.union(otherPeople) }
+   * val allPeople = sql { somePeople.union(otherPeople) }
    * ```
    * For example:
    * ```
    * data class Person(val id: Int, val name: String, val age: Int)
-   * val joes = capture { TableQuery<Person>().filter { it.name == "Joe" } }
-   * val jacks = capture { TableQuery<Person>().filter { it.name == "Jack" } }
-   * val joesAndJacks = capture { joes.union(jacks) }
+   * val joes = sql { TableQuery<Person>().filter { it.name == "Joe" } }
+   * val jacks = sql { TableQuery<Person>().filter { it.name == "Jack" } }
+   * val joesAndJacks = sql { joes.union(jacks) }
    */
   @Dsl
   infix fun <T> SqlQuery<T>.union(other: SqlQuery<T>): SqlQuery<T> =
@@ -290,14 +293,14 @@ interface CapturedBlock {
   /**
    * Same as Union but UnionAll in SQL
    * ```
-   * val allPeople = capture { somePeople.unionAll(otherPeople) }
+   * val allPeople = sql { somePeople.unionAll(otherPeople) }
    * ```
    * For example:
    * ```
    * data class Person(val id: Int, val name: String, val age: Int)
-   * val joes = capture { TableQuery<Person>().filter { it.name == "Joe" } }
-   * val jacks = capture { TableQuery<Person>().filter { it.name == "Jack" } }
-   * val joesAndJacks = capture { joes.unionAll(jacks) }
+   * val joes = sql { TableQuery<Person>().filter { it.name == "Joe" } }
+   * val jacks = sql { TableQuery<Person>().filter { it.name == "Jack" } }
+   * val joesAndJacks = sql { joes.unionAll(jacks) }
    * ```
    */
   @Dsl
@@ -321,7 +324,7 @@ interface CapturedBlock {
    * people.map { p -> p.name.sql.right(3) }
    * // SQL: SELECT RIGHT(p.name, 3) FROM people p
    * ```
-   * Aside from substring and concatenation, most Kotlin string methods cannot be used inside of capture clauses.
+   * Aside from substring and concatenation, most Kotlin string methods cannot be used inside of sql clauses.
    */
   @DslNestingIgnore
   val String.sql @DslNestingIgnore get(): StringSqlDsl = errorCap("The `sql-dsl` expression of the Query was not inlined")
@@ -406,13 +409,13 @@ interface CapturedBlock {
   /**
    * Use this in the select or map clauses to do a `COUNT(*)` query. For example:
    * ```
-   * val peopleCount = capture { people.map { count() } }
+   * val peopleCount = sql { people.map { count() } }
    * // SQL: SELECT COUNT(*) FROM people p
    * ```
    * Or:
    * ```
    * val peopleCount =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     count()
    *   }
@@ -665,7 +668,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
   /**
    * Use this to delcare a new `FROM MyTable t` SQL clause and return the `t`. For example:
    * ```
-   * val people = capture.select {
+   * val people = sql.select {
    *   val p = from(Table<Person>())
    *   p
    * }
@@ -674,7 +677,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
    * You can use multiple `from` clauses in to do full joins. For example:
    * ```
    * val allPeopleAllAddresses =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val a = from(Table<Address>())
    *     p to a
@@ -689,7 +692,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
    * Use this to join a table. For example:
    * ```
    * val peopleWithAddresses =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
    *     p to a
@@ -705,7 +708,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
    * Use this to left-join a table. For example:
    * ```
    * val peopleWithAddresses =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val aa: Address? = joinLeft(Table<Address>()) { a: Address -> aa.ownerId == p.id }
    *     p to aa
@@ -723,7 +726,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
    * Use this to filter the whole block. For example:
    * ```
    * val joesInNYC =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
    *     where { p.name == "Joe" && a.city == "New York" }
@@ -738,7 +741,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
    * Use this to filter grouped results. For example:
    * ```
    * val citiesWithManyPeople =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
    *     groupBy { a.city }
@@ -755,7 +758,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
    * Use this to group by one or multiple columns. For example:
    * ```
    * val countPeopleByCity =
-   *   capture.select {
+   *   sql.select {
    *     val p = from(Table<Person>())
    *     val a = join(Table<Address>()) { a -> a.ownerId == p.id }
    *     groupBy { a.city }
@@ -773,7 +776,7 @@ interface SelectClauseCapturedBlock : CapturedBlock {
    * Use this to sort by one or multiple columns. For example:
    * ```
    * val peopleSortedByAge =
-   *  capture.select {
+   *  sql.select {
    *    val p = from(Table<Person>())
    *    orderBy(p.age to Ord.Asc, p.name to Ord.Desc)
    *    p
@@ -788,6 +791,20 @@ interface SelectClauseCapturedBlock : CapturedBlock {
   /** Synonym for [orderBy] */
   @Dsl
   fun sortBy(vararg orderings: Pair<*, Ord>): Unit = errorCap("The `sortBy` expression of the Query was not inlined")
+
+  /* -------------------------------------------------------------------------------------------------------------------- */
+  /* ----------------------------------------- Deprecated Dialect Support ----------------------------------------------- */
+  /* -------------------------------------------------------------------------------------------------------------------- */
+
+
+  @Deprecated("This is added for backward compat and will soon be removed. Switch to io.exoquery.MySqlDialect instead.", ReplaceWith("io.exoquery.MySqlDialect"))
+  class MySqlDialect(override val traceConf: TraceConfig = TraceConfig.empty): io.exoquery.MySqlDialect(traceConf)
+
+  @Deprecated("This is added for backward compat and will soon be removed. Switch to io.exoquery.PostgresDialect instead.", ReplaceWith("io.exoquery.PostgresDialect"))
+  class PostgresDialect(override val traceConf: TraceConfig = TraceConfig.empty): io.exoquery.PostgresDialect(traceConf)
+
+  @Deprecated("This is added for backward compat and will soon be removed. Switch to io.exoquery.SqlServerDialect instead.", ReplaceWith("io.exoquery.SqlServerDialect"))
+  class SqlServerDialect(override val traceConf: TraceConfig = TraceConfig.empty): io.exoquery.SqlServerDialect(traceConf)
 }
 
 interface ValueWithSerializer<T : Any> {

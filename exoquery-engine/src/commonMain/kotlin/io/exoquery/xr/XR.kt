@@ -3,9 +3,9 @@ package io.exoquery.xr
 import io.exoquery.BID
 import io.exoquery.pprint.PPrinterConfig
 import io.exoquery.printing.PrintXR
-import io.exoquery.sql.MirrorIdiom
-import io.exoquery.sql.Renderer
-import io.exoquery.sql.Token
+import io.exoquery.lang.MirrorIdiom
+import io.exoquery.lang.Renderer
+import io.exoquery.lang.Token
 import io.exoquery.util.NumbersToWords
 import io.exoquery.util.ShowTree
 import io.exoquery.xr.XR.U.QueryOrExpression
@@ -66,7 +66,7 @@ sealed interface XR {
      * This is used specifically for detecting situations where there is a FlatJoin
      * in both head and tail position. Something like:
      * ```
-     *     capture {
+     *     sql {
      *       people.flatMap { p ->
      *         flatJoin(addresses, p.id = ...).map { a -> p to a }
      *           .flatMap { pa ->

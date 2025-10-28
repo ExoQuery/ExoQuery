@@ -6,7 +6,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     data class Status(val name: String, val value: Boolean)
 
     "filter - simple" {
-      val q = capture {
+      val q = sql {
         Table<Ent>().filter { e -> e.b }
       }
       shouldBeGolden(q.xr, "XR")
@@ -14,7 +14,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "where - simple" {
-      val q = capture.select {
+      val q = sql.select {
         val e = from(Table<Ent>())
         where { e.b }
         e.name
@@ -24,7 +24,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "where - combined" {
-      val q = capture.select {
+      val q = sql.select {
         val e = from(Table<Ent>())
         where { e.b || e.name == "Joe" }
         e.name
@@ -34,7 +34,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "where - combined complex 1" {
-      val q = capture.select {
+      val q = sql.select {
         val e = from(Table<Ent>())
         where { e.b || e.name == "Joe" || e.bb }
         e.name
@@ -44,7 +44,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "where - combined complex 2" {
-      val q = capture.select {
+      val q = sql.select {
         val e = from(Table<Ent>())
         where { e.b || if (e.bb) e.bc || e.b else e.num > 1 }
         e.name
@@ -55,7 +55,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
 
 
     "condition" {
-      val q = capture {
+      val q = sql {
         Table<Ent>().map { e -> e.name to if (e.b == e.bb) e.bc else e.b == e.bb }
       }
       shouldBeGolden(q.xr, "XR")
@@ -63,7 +63,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "map-clause" {
-      val q = capture {
+      val q = sql {
         Table<Ent>().map { e -> e.bb == true }
       }
       shouldBeGolden(q.xr, "XR")
@@ -71,7 +71,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "map-clause with int" {
-      val q = capture {
+      val q = sql {
         Table<Ent>().map { e -> e.num > 10 }
       }
       shouldBeGolden(q.xr, "XR")
@@ -79,7 +79,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "tuple" {
-      val q = capture {
+      val q = sql {
         Table<Ent>().map { e -> "foo" to (e.bb == true) }
       }
       shouldBeGolden(q.xr, "XR")
@@ -87,7 +87,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "tuple-multi" {
-      val q = capture {
+      val q = sql {
         Table<Ent>().map { e -> (e.bb == true) to (e.bc == false) to (e.num > 1) }
       }
       shouldBeGolden(q.xr, "XR")
@@ -95,7 +95,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "case-class" {
-      val q = capture {
+      val q = sql {
         Table<Ent>().map { e -> Status("foo", e.bb == true) }
       }
       shouldBeGolden(q.xr, "XR")
@@ -181,7 +181,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
 
     "expressify asCondition" - {
       "filter-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>().filter { e -> free("${e.i} > 123").asConditon() }
         }
         shouldBeGolden(q.xr, "XR")
@@ -189,7 +189,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "pure filter-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>().filter { e -> free("${e.i} > 123").asPureConditon() }
         }
         shouldBeGolden(q.xr, "XR")
@@ -197,7 +197,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "map-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>().map { e -> free("${e.i} > 123").asConditon() }
         }
         shouldBeGolden(q.xr, "XR")
@@ -205,7 +205,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "distinct map-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>()
             .map { e -> "foo" to free("${e.i} > 123").asConditon() }
             .distinct()
@@ -216,7 +216,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "distinct tuple map-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>()
             .map { e -> "foo" to free("${e.i} > 123").asPureConditon() }
             .distinct()
@@ -226,7 +226,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "pure map-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>().map { e -> free("${e.i} > 123").asPureConditon() }
         }
         shouldBeGolden(q.xr, "XR")
@@ -234,7 +234,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "pure distinct map-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>()
             .map { e -> "foo" to free("${e.i} > 123").asPureConditon() }
             .distinct()
@@ -245,7 +245,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "pure map-clause - double element" {
-        val q = capture {
+        val q = sql {
           Table<Ent>()
             .map { e -> free("${e.i} > 123").asPureConditon() }
             .distinct()
@@ -297,7 +297,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       data class Ent(val name: String, val i: Int, val b: Boolean)
 
       "filter-clause" {
-        val q = capture {
+        val q = sql {
           Table<Ent>().filter { e -> free("SomeUdf(${e.i})")<Boolean>() }
         }
         shouldBeGolden(q.xr, "XR")
@@ -305,7 +305,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "map-clause - impure" {
-        val q = capture {
+        val q = sql {
           Table<Ent>()
             .map { e -> free("SomeUdf(${e.i})")<Int>() }
             .map { x -> x + 1 }
@@ -315,7 +315,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
 
       "map-clause - pure" {
-        val q = capture {
+        val q = sql {
           Table<Ent>()
             .map { e -> free("SomeUdf(${e.i})").asPure<Int>() }
             .map { x -> x + 1 }
@@ -361,7 +361,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     data class Product(val id: Long, val desc: String, val sku: Int)
 
     "first parameter" {
-      val q = capture {
+      val q = sql {
         Table<Product>().filter { p -> param("1").toInt() == p.sku }
       }.determinizeDynamics()
       shouldBeGolden(q.xr, "XR")
@@ -369,7 +369,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "second parameter" {
-      val q = capture {
+      val q = sql {
         Table<Product>().filter { p -> p.sku == param("1").toInt() }
       }.determinizeDynamics()
       shouldBeGolden(q.xr, "XR")
@@ -377,7 +377,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "both parameters" {
-      val q = capture {
+      val q = sql {
         Table<Product>().filter { p -> param("2").toInt() == param("1").toInt() }
       }.determinizeDynamics()
       shouldBeGolden(q.xr, "XR")
@@ -390,7 +390,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     data class TestEntity2(val i: Int, val s: String)
 
     "for-comprehension with constant" {
-      val q = capture.select {
+      val q = sql.select {
         val t1 = from(Table<TestEntity>())
         val t2 = join(Table<TestEntity>()) { t -> true }
         t1 to t2
@@ -400,7 +400,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "for-comprehension with field" {
-      val q = capture.select {
+      val q = sql.select {
         val t1 = from(Table<TestEntity>())
         val t2 = join(Table<TestEntity>()) { t -> t.b }
         t1 to t2
@@ -414,7 +414,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     data class TestEntity(val s: String, val i: Int, val l: Long, val o: Boolean?, val b: Boolean)
 
     "exists" {
-      val q = capture {
+      val q = sql {
         Table<TestEntity>()
           .filter { t -> if (t.o ?: false) false else true }
           .map { t -> t.b to true }
@@ -424,7 +424,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "exists - lifted contains" {
-      val q = capture {
+      val q = sql {
         Table<TestEntity>()
           // if (if (x == null) null else f(x)) == null) null else g(if (x == null) null else f(x))
           .filter { t -> t.o?.let { it == true } ?: false }
@@ -437,7 +437,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "exists - lifted not contains" {
-      val q = capture {
+      val q = sql {
         Table<TestEntity>()
           .filter { t -> t.o?.let { param(true) } ?: false } // { it -> true }.apply(t.o) -> true
           .map { t -> t.b to true }
@@ -449,7 +449,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
     }
 
     "exists - lifted complex" {
-      val q = capture {
+      val q = sql {
         Table<TestEntity>()
           .filter { t -> t.o?.let { if (param(false)) param(false) else param(true) } ?: false }
           .map { t -> t.b to true }

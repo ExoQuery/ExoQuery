@@ -396,7 +396,7 @@ fun XR.Action.toActionKind(): ActionKind = when (this) {
   is XR.OnConflict -> this.insert.toActionKind()
   is XR.Free ->
     // TODO This is not exactly the best implementaiton. We should probably introduce a FreeKind to the XR
-    //      that we will capture by doing free("...").asInsert/Update/Delete
+    //      that we will sql by doing free("...").asInsert/Update/Delete
     CollectXR.byType<XR.U.CoreAction>(this).firstOrNull()?.let { it.toActionKind() } ?: ActionKind.Unknown
   is XR.TagForSqlAction -> ActionKind.Unknown
 }

@@ -1,18 +1,13 @@
 package io.exoquery.postgres
 
-import io.exoquery.testdata.Address
-import io.exoquery.Ord
 import io.exoquery.testdata.Person
-import io.exoquery.sql.PostgresDialect
-import io.exoquery.testdata.Robot
+import io.exoquery.PostgresDialect
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.jdbc.runOn
 import io.kotest.core.spec.style.FreeSpec
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import kotlinx.serialization.Serializable
 import kotlin.to
 
 
@@ -35,7 +30,7 @@ class AggSpec : FreeSpec({
   }
 
   "simple" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       groupBy(p.firstName)
       having { avg(p.age) < 100 }

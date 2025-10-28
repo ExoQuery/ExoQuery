@@ -1,10 +1,10 @@
 package io.exoquery
 
 import io.exoquery.printing.PrintMisc
-import io.exoquery.sql.ParamBatchTokenRealized
-import io.exoquery.sql.SqlQueryModel
-import io.exoquery.sql.StatelessTokenTransformer
-import io.exoquery.sql.Token
+import io.exoquery.lang.ParamBatchTokenRealized
+import io.exoquery.lang.SqlQueryModel
+import io.exoquery.lang.StatelessTokenTransformer
+import io.exoquery.lang.Token
 import io.exoquery.xr.XR
 
 sealed interface Phase {
@@ -28,7 +28,7 @@ sealed interface ActionKind {
  * ```
  * val ds: DataSource = ...
  * val controller = JdbcControllers.Postgres(ds)
- * val myQuery: SqlQuery<Person> = capture { Table<Person>().filter { p -> p.name == "Joe" } }
+ * val myQuery: SqlQuery<Person> = sql { Table<Person>().filter { p -> p.name == "Joe" } }
  * val result: List<Person> = myQuery.buildFor.Postgres().runOn(controller)
  * ```
  */

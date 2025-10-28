@@ -1,12 +1,11 @@
 package io.exoquery.postgres
 
 import io.exoquery.testdata.Person
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.controller.transaction
-import io.exoquery.printSource
 import io.exoquery.jdbc.runOn
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
@@ -28,12 +27,12 @@ class TransactionSpec : FreeSpec({
   val jack = Person(2, "Jack", "Roogs", 222)
 
   suspend fun select() =
-    capture { Table<Person>() }.build<PostgresDialect>().runOn(ctx)
+    sql { Table<Person>() }.build<PostgresDialect>().runOn(ctx)
 
   "transaction support" - {
     "success" {
       ctx.transaction {
-        capture {
+        sql {
           insert<Person> { setParams(joe) }
         }.build<PostgresDialect>().runOnTransaction()
       }
@@ -42,12 +41,12 @@ class TransactionSpec : FreeSpec({
 
     "failure" {
       // Insert joe record
-      capture { insert<Person> { setParams(joe) } }.build<PostgresDialect>().runOn(ctx)
+      sql { insert<Person> { setParams(joe) } }.build<PostgresDialect>().runOn(ctx)
 
 
       shouldThrow<IllegalStateException> {
         ctx.transaction {
-          capture {
+          sql {
             insert<Person> { setParams(jack) }
           }.build<PostgresDialect>().runOnTransaction()
           throw IllegalStateException()
@@ -57,7 +56,7 @@ class TransactionSpec : FreeSpec({
     }
 
     "nested" {
-      val cap = capture {
+      val cap = sql {
         insert<Person> { setParams(joe) }
       }.build<PostgresDialect>()
 

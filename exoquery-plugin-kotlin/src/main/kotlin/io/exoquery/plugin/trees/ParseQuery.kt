@@ -113,7 +113,7 @@ object ParseQuery {
           // Since there's no splice-operator for SqlQuery like there is .use for SqlExpression (i.e. the variable/function-call is used directly)
           // if nothing else matches the expression, we need to look at it in a couple of different ways and then find out if it is a dynamic query
           // TODO When QueryMethodCall and QueryGlobalCall are introduced need to revisit this to see what happens if there is a dynamic call on a query
-          //      and how to differentitate it from something that we want to capture. Perhaps we would need some kind of "query-method whitelist"
+          //      and how to differentitate it from something that we want to sql. Perhaps we would need some kind of "query-method whitelist"
           case(SqlQueryExpr.Uprootable[Is()]).thenThis { uprootable ->
             val sqlQueryIr = this
             // Add all binds from the found SqlQuery instance, this will be truned into something like `currLifts + SqlQuery.lifts` late
@@ -152,7 +152,7 @@ object ParseQuery {
                 """.trimMargin()
 
               expr is IrGetValue ->
-                """|It looks like the variable `${expr.symbol.safeName}` is coming from outside the capture/select block
+                """|It looks like the variable `${expr.symbol.safeName}` is coming from outside the sql/select block
                    |but it could not be parsed as a static or dynamic query call of type SqlQuery<T>. We detected that
                    |it's type is ${expr.type.dumpKotlinLike()} which cannot be used (${expr.type.isClass<SqlQuery<*>>()}, ${expr.symbol.owner.type.annotations.map { it.dumpKotlinLike() }}).
                    |
@@ -187,8 +187,8 @@ object ParseQuery {
         val whereBody = BetaReduction(whereBodyRaw, ident to identX).asExpr()
         XR.Filter(parse(head), identX, whereBody, expr.loc)
       },
-      // There are some situations where someone could do capture.expression { ... SqlQuery } and we need to handle that
-      // later injecting that into a query-capture with a .use function. For example capture.expression { { p: Person -> flatJoin(addresses, ...) } }.
+      // There are some situations where someone could do sql.expression { ... SqlQuery } and we need to handle that
+      // later injecting that into a query-sql with a .use function. For example sql.expression { { p: Person -> flatJoin(addresses, ...) } }.
       // we need to handle those cases.
       case(ExtractorsDomain.Call.UseExpression.Receiver[Is()]).thenThis { head ->
         ParseExpression.parse(head).asQuery()
@@ -254,7 +254,7 @@ object ParseQuery {
       case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<CapturedBlock>(), Is("Table")]).thenThis { _, _ ->
         entityFromType(this.typeArguments[0] ?: parseError("Type arguemnt of Table() call was not found>"), this.location())
       },
-      // This is the select defined in the capture-block (that returns SqlQuery<T> as opposed to the top-level one which returns @Captured SqlQuery<T>.
+      // This is the select defined in the sql-block (that returns SqlQuery<T> as opposed to the top-level one which returns @Captured SqlQuery<T>.
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<CapturedBlock>(), Is("select"), Ir.FunctionExpression[Is()]]).thenThis { _, (selectLambda) ->
         XR.CustomQueryRef(ParseSelectClause.parseSelectLambda(selectLambda))
       }

@@ -1,12 +1,12 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGoldenTest(), {
   data class Person(val id: Int, val name: String, val age: Int)
   "paritionBy, orderBy" - {
     "rank" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         Pair(
           p.name,
@@ -17,7 +17,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
     "avg" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         Pair(
           p.name,
@@ -28,7 +28,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
     "rowNumber" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         Pair(
           p.name,
@@ -39,7 +39,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
     "count" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         Pair(
           p.name,
@@ -50,7 +50,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
     "count star" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         Pair(
           p.name,
@@ -63,7 +63,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
   }
   "just partitionBy" - {
     "rank" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         Pair(
           p.name,
@@ -76,7 +76,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
   }
   "just orderBy" - {
     "rank" {
-      val q = capture.select {
+      val q = sql.select {
         val p = from(Table<Person>())
         Pair(
           p.name,
@@ -88,7 +88,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
     }
   }
   "empty over" {
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<Person>())
       Pair(
         p.name,

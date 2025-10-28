@@ -8,16 +8,16 @@ package io.exoquery
 //
 //
 //  @CapturedFunction
-//  fun Person.joinAddress() = capture {
+//  fun Person.joinAddress() = sql {
 //    flatJoin(Table<Address>()) { a -> this@Person.id == a.ownerId }
 //  }
 //
 //  @CapturedFunction
-//  fun Person.joinRobot() = capture {
+//  fun Person.joinRobot() = sql {
 //    flatJoin(Table<Robot>()) { r -> this@Person.id == r.ownerId }
 //  }
 //
-//  val cap = capture.select {
+//  val cap = sql.select {
 //    val p = from(Table<Person>())
 //    val a = from(p.joinAddress())
 //    val r = from(p.joinRobot())
@@ -36,16 +36,16 @@ package io.exoquery
 //
 //
 //  @CapturedFunction
-//  fun Person.joinAddress() = capture {
+//  fun Person.joinAddress() = sql {
 //    flatJoin(Table<Address>()) { a -> this@Person.id == a.ownerId }
 //  }
 //
 //  @CapturedFunction
-//  fun Person.joinRobot() = capture {
+//  fun Person.joinRobot() = sql {
 //    flatJoin(Table<Robot>()) { r -> this@Person.id == r.ownerId }
 //  }
 //
-//  val cap = capture.select {
+//  val cap = sql.select {
 //    val p = from(Table<Person>())
 //    val a = from(p.joinAddress())
 //    val r = from(p.joinRobot())

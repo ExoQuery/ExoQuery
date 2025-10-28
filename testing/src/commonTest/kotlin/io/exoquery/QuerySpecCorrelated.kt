@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 // Note that the 1st time you overwrite the golden file it will still fail because the compile is using teh old version
 // Also note that it won't actually override the BasicQuerySanitySpecGolden file unless you change this one
@@ -13,14 +13,14 @@ class QuerySpecCorrelated : GoldenSpecDynamic(QuerySpecCorrelatedGoldenDynamic, 
 
   "query with co-releated in filter - isNotEmpty" {
     val people =
-      capture { Table<Person>().filter { p -> Table<Address>().filter { a -> a.ownerId == p.id }.isNotEmpty() } }
+      sql { Table<Person>().filter { p -> Table<Address>().filter { a -> a.ownerId == p.id }.isNotEmpty() } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
 
   "query with co-releated in filter - isEmpty" {
     val people =
-      capture { Table<Person>().filter { p -> Table<Address>().filter { a -> a.ownerId == p.id }.isEmpty() } }
+      sql { Table<Person>().filter { p -> Table<Address>().filter { a -> a.ownerId == p.id }.isEmpty() } }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
@@ -28,7 +28,7 @@ class QuerySpecCorrelated : GoldenSpecDynamic(QuerySpecCorrelatedGoldenDynamic, 
   // Single-value expressions are not supported yet (i.e. this is the equlivalent of run-query-single)
   //"query aggregation - top-level" - {
   //  "min" {
-  //    val people = capture { Table<Address>().map { a -> a.ownerId }.min() }
+  //    val people = sql { Table<Address>().map { a -> a.ownerId }.min() }
   //    shouldBeGolden(people.xr, "XR")
   //    shouldBeGolden(people.buildRuntime(PostgresDialect(), "test"))
   //  }
@@ -36,7 +36,7 @@ class QuerySpecCorrelated : GoldenSpecDynamic(QuerySpecCorrelatedGoldenDynamic, 
 
   "query aggregation" - {
     "min" {
-      val people = capture { Table<Person>().filter { p -> Table<Address>().map { a -> a.ownerId }.min() == p.id } }
+      val people = sql { Table<Person>().filter { p -> Table<Address>().map { a -> a.ownerId }.min() == p.id } }
       shouldBeGolden(people.xr, "XR")
       shouldBeGolden(people.buildRuntime(PostgresDialect(), "test"))
     }
@@ -44,7 +44,7 @@ class QuerySpecCorrelated : GoldenSpecDynamic(QuerySpecCorrelatedGoldenDynamic, 
 
   "select aggregation" - {
     "min" {
-      val people = capture { Table<Address>().map { a -> min(a.ownerId) } }
+      val people = sql { Table<Address>().map { a -> min(a.ownerId) } }
       shouldBeGolden(people.xr, "XR")
       shouldBeGolden(people.build<PostgresDialect>())
     }

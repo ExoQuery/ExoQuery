@@ -88,7 +88,7 @@ data class ParamBind(val bid: BID, val value: IrExpression, val paramSerializer:
       context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValue: IrExpression, lifter: Lifter) =
         with(lifter) {
           // Remember that the transformer (called below) that replaces the batch_varaible mutates the Ir so we need to make
-          // copies of it in case the actual batch-variable is being reused for multiple expression (as it happens when we use capture.batch(people) { p -> ... setParams(p)... })
+          // copies of it in case the actual batch-variable is being reused for multiple expression (as it happens when we use sql.batch(people) { p -> ... setParams(p)... })
           // I.e. since during the eleboration phase, the actual `p` parameter gets copied so once we mutate it, it will be the same underlying instance for all
           // expressions in the elaboration. Therefore when we need to actually replace the underlying symbol we need to copy all of them.
           // If you don't do that you'll get strange `No mapping for symbol: VALUE_PARAMETER name:p` errors. This is especially confusing then the `p` variable
@@ -116,7 +116,7 @@ data class ParamBind(val bid: BID, val value: IrExpression, val paramSerializer:
             isAssignable = batchVariable.isAssignable,
             symbol = newSymbol,
             isNoinline = batchVariable.isNoinline,
-            // batch variable is the `p` in capture.batch(people) { p -> ... } it always a Regular parameter
+            // batch variable is the `p` in sql.batch(people) { p -> ... } it always a Regular parameter
             kind = IrParameterKind.Regular
           )
 
@@ -346,7 +346,7 @@ object SqlExpressionExpr {
 
     // re-create the SqlExpression instance. Note that we need a varaible from which to take params
     // So for example say we have something like:
-    // val x = capture { 123 } // i.e. SqlExpression(unpack(xyz), params=...)
+    // val x = sql { 123 } // i.e. SqlExpression(unpack(xyz), params=...)
     // val y = x
     // we want to change `val y` to:
     // val y = SqlExpression(unpack(xyz), lifts=x.lifts)

@@ -2,7 +2,7 @@
 
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 class AtomicValueSelectSpec: GoldenSpec(AtomicValueSelectSpecGolden, {
   data class Person(val id: Int, val name: String, val age: Int)
@@ -12,9 +12,9 @@ class AtomicValueSelectSpec: GoldenSpec(AtomicValueSelectSpecGolden, {
   "parsing features spec" - {
     // apply-map takes care of the non-nested case (should have that too)
     "from(atom.nested) + join -> (p, r)" {
-      val names = capture { Table<Person>().map { p -> p.name }.nested() }
+      val names = sql { Table<Person>().map { p -> p.name }.nested() }
       val people =
-        capture.select {
+        sql.select {
           val n = from(names)
           val r = join(Table<Robot>()) { r -> n == r.model }
           n to r
@@ -22,9 +22,9 @@ class AtomicValueSelectSpec: GoldenSpec(AtomicValueSelectSpecGolden, {
       people.buildPretty<PostgresDialect>("from(atom.nested) + join -> (p, r)").shouldBeGolden()
     }
     "from(atom.nested.nested) + join -> (p, r)" {
-      val names = capture { Table<Person>().map { p -> p.name }.nested().nested() }
+      val names = sql { Table<Person>().map { p -> p.name }.nested().nested() }
       val people =
-        capture.select {
+        sql.select {
           val n = from(names)
           val r = join(Table<Robot>()) { r -> n == r.model }
           n to r
@@ -32,12 +32,12 @@ class AtomicValueSelectSpec: GoldenSpec(AtomicValueSelectSpecGolden, {
       people.buildPretty<PostgresDialect>("from(atom.nested.nested) + join -> (p, r)").shouldBeGolden()
     }
     "groupBy(n.nested) -> join(n)" {
-      val names = capture.select {
+      val names = sql.select {
         val n = from(Table<Person>().map { p -> p.name }.nested())
         groupBy(n)
         n
       }
-      val addresses = capture.select {
+      val addresses = sql.select {
         val n = from(names)
         val a = join(Table<Address>()) { a -> n == a.street }
         n to a

@@ -1,7 +1,7 @@
 package io.exoquery.annotation
 
 import io.exoquery.serial.ParamSerializer
-import io.exoquery.sql.SqlIdiom
+import io.exoquery.lang.SqlIdiom
 import io.exoquery.util.TraceType
 import kotlin.reflect.KClass
 
@@ -135,7 +135,7 @@ sealed interface ParamKind {
   }
 }
 
-// Using annotations to identify what functions capture queries/expressions/etc...
+// Using annotations to identify what functions sql queries/expressions/etc...
 // instead of parsing them by name is a more flexible approach.
 @ExoInternal
 @Target(AnnotationTarget.FUNCTION)

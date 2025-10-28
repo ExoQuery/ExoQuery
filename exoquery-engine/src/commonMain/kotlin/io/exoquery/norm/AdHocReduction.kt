@@ -21,7 +21,7 @@ class AdHocReduction(val traceConfig: TraceConfig) {
    * ```
    * You cannot use this pattern if the body of the FlatMap has a head that is a FlatJoin. For example:
    * ```
-   * capture {
+   * sql {
    *   select {
    *     val p = from(Table<Person>())
    *     val a = joinLeft(Table<Address>()) { it.ownerId == p.id }
@@ -32,7 +32,7 @@ class AdHocReduction(val traceConfig: TraceConfig) {
    *
    * Same kind of thing if there is a flatFilter
    * ```
-   * capture.select {
+   * sql.select {
    *   val p = from(Table<Person>())
    *   where { p.age > 18 }
    *   p

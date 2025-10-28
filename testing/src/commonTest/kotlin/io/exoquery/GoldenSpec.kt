@@ -3,7 +3,7 @@ package io.exoquery
 import io.exoquery.annotation.ExoExtras
 import io.exoquery.printing.PrintableValue
 import io.exoquery.printing.QueryFileKotlinMaker
-import io.exoquery.sql.Renderer
+import io.exoquery.lang.Renderer
 import io.exoquery.xr.XR
 import io.kotest.core.spec.DslDrivenSpec
 import io.kotest.core.spec.style.FreeSpec

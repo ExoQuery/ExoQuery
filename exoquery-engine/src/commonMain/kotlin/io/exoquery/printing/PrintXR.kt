@@ -16,17 +16,17 @@ import io.exoquery.kmp.pprint.PPrinter
 import io.exoquery.kmp.pprint.PPrinterManual
 import io.exoquery.pprint.PPrinterConfig
 import io.exoquery.pprint.Tree
-import io.exoquery.sql.ParamBatchToken
-import io.exoquery.sql.ParamBatchTokenRealized
-import io.exoquery.sql.ParamMultiToken
-import io.exoquery.sql.ParamMultiTokenRealized
-import io.exoquery.sql.ParamSingleToken
-import io.exoquery.sql.ParamSingleTokenRealized
-import io.exoquery.sql.SetContainsToken
-import io.exoquery.sql.Statement
-import io.exoquery.sql.StringToken
-import io.exoquery.sql.Token
-import io.exoquery.sql.TokenContext
+import io.exoquery.lang.ParamBatchToken
+import io.exoquery.lang.ParamBatchTokenRealized
+import io.exoquery.lang.ParamMultiToken
+import io.exoquery.lang.ParamMultiTokenRealized
+import io.exoquery.lang.ParamSingleToken
+import io.exoquery.lang.ParamSingleTokenRealized
+import io.exoquery.lang.SetContainsToken
+import io.exoquery.lang.Statement
+import io.exoquery.lang.StringToken
+import io.exoquery.lang.Token
+import io.exoquery.lang.TokenContext
 import io.exoquery.util.ShowTree
 import io.exoquery.xr.*
 import kotlinx.serialization.SerializationStrategy
@@ -74,7 +74,7 @@ class PrintMisc(config: PPrinterConfig = PPrinterConfig()) : PPrinterManual<Any?
     when (x) {
       is XR -> PrintXR(XR.serializer(), config.copy(defaultShowFieldNames = false)).treeifyThis(x, elementName)
       is XRType -> PrintXR(XRType.serializer(), config).treeifyThis(x, elementName)
-      is io.exoquery.sql.SqlQueryModel -> PrintXR(io.exoquery.sql.SqlQueryModel.serializer(), config).treeifyThis(x, elementName)
+      is io.exoquery.lang.SqlQueryModel -> PrintXR(io.exoquery.lang.SqlQueryModel.serializer(), config).treeifyThis(x, elementName)
       is SqlExpression<*> -> Tree.Apply("SqlExpression", iteratorOf(treeifyThis(x.xr, "xr"), treeifyThis(x.runtimes, "runtimes"), treeifyThis(x.params, "params")))
       is SqlQuery<*> -> Tree.Apply("SqlQuery", iteratorOf(treeifyThis(x.xr, "xr"), treeifyThis(x.runtimes, "runtimes"), treeifyThis(x.params, "params")))
       is SqlAction<*, *> -> Tree.Apply("SqlAction", iteratorOf(treeifyThis(x.xr, "xr"), treeifyThis(x.runtimes, "runtimes"), treeifyThis(x.params, "params")))
@@ -178,7 +178,7 @@ class PrintXR<T>(serializer: SerializationStrategy<T>, config: PPrinterConfig = 
 
       // A bunch of FlattenSqlQuery child-elements could be null, don't print them. Also because it has so many different kinds of things in it it really helps to know the headings
       // (There seems to be a bug in pprint where the headings of a null values are not printed when showFieldNames is true. Need to look into that.)
-      is io.exoquery.sql.FlattenSqlQuery ->
+      is io.exoquery.lang.FlattenSqlQuery ->
         when (val treet = super.treeifyComposite(elem, elementName, true)) {
           is Tree.Apply -> {
             val superNodes = treet.body.asSequence()
@@ -188,7 +188,7 @@ class PrintXR<T>(serializer: SerializationStrategy<T>, config: PPrinterConfig = 
           else -> treet
         }
 
-      is io.exoquery.sql.SqlQueryModel -> super.treeifyComposite(elem, elementName, true)
+      is io.exoquery.lang.SqlQueryModel -> super.treeifyComposite(elem, elementName, true)
 
       else -> super.treeifyComposite(elem, elementName, showFieldNames)
     }

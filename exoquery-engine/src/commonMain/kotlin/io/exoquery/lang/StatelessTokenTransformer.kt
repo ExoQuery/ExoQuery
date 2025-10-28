@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.lang
 
 interface StatelessTokenTransformer {
   fun invoke(token: Token): Token =

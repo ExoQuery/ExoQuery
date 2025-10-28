@@ -12,7 +12,7 @@ import io.exoquery.plugin.stableIdentifier
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.call
 import io.exoquery.plugin.transform.callDispatch
-import io.exoquery.sql.*
+import io.exoquery.lang.*
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import org.jetbrains.kotlin.ir.builders.*

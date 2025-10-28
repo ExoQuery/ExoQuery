@@ -105,7 +105,7 @@ class VisitTransformExpressions(
   override fun visitFileNew(file: IrFile, data: VisitorContext): IrFile {
     // Not sure if we should transfer any symbols from the previous and where they can be. Genrally transfer of symbols
     // should only be cumulative in a captured context for example something like:
-    // capture {
+    // sql {
     //   people.flatMap { p ->
     //     val foo = "Blah"
     //     addresses.map { a ->
@@ -215,9 +215,9 @@ class VisitTransformExpressions(
 
         transformProjectCapture.matches(expression) ->
           transformProjectCapture.transform(expression) ?: run {
-            // In many situations where the capture cannot be projected e.g.
-            // val x = if(x) capture { 123 } else capture { 456 } we need to go further into the expression
-            // and transform the `capture { ... }` expressions inside into SqlExpession instances. Calling
+            // In many situations where the sql cannot be projected e.g.
+            // val x = if(x) sql { 123 } else sql { 456 } we need to go further into the expression
+            // and transform the `sql { ... }` expressions inside into SqlExpession instances. Calling
             // the super-transformer does that.
             super.visitExpression(expression, data)
           }
@@ -242,7 +242,7 @@ class VisitTransformExpressions(
     val builderContext = CX.Builder(scopeCtx)
 
     val transformPrint = TransformPrintSource(this)
-    // TODO just for Expression capture or also for Query capture? Probably both
+    // TODO just for Expression sql or also for Query sql? Probably both
     val transformCapture = TransformCapturedExpression(this)
     val transformCaptureQuery = TransformCapturedQuery(this, "[ExoQuery: VisitTransformExpressions-VisitCall]")
     val transformSelectClause = TransformSelectClause(this)

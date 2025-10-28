@@ -1,6 +1,7 @@
-package io.exoquery.sql
+package io.exoquery
 
-import io.exoquery.sql.SqlIdiom.Companion.DefaultMethodMappings
+import io.exoquery.lang.*
+import io.exoquery.lang.SqlIdiom.Companion.DefaultMethodMappings
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
 import io.exoquery.util.unaryPlus
@@ -9,7 +10,7 @@ import io.exoquery.xr.OP
 import io.exoquery.xr.XR
 import io.exoquery.xrError
 
-class MySqlDialect(override val traceConf: TraceConfig = TraceConfig.empty) : SqlIdiom {
+open class MySqlDialect(override val traceConf: TraceConfig = TraceConfig.empty) : SqlIdiom {
   override val useActionTableAliasAs = SqlIdiom.ActionTableAliasBehavior.UseAs
 
   override val trace: Tracer by lazy { Tracer(traceType, traceConf, 1) }

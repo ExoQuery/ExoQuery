@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 
 // Note that the 1st time you overwrite the golden file it will still fail because the compile is using teh old version
 // Also note that it won't actually override the BasicQuerySanitySpecGolden file unless you change this one
@@ -51,19 +51,19 @@ class BasicQuerySanitySpec : GoldenSpecDynamic(BasicQuerySanitySpecGoldenDynamic
 
 
   "basic query" {
-    val people = capture { Table<Person>() }
+    val people = sql { Table<Person>() }
     people.build<PostgresDialect>("basic query").shouldBeGolden()
   }
   "query with map" {
-    val people = capture { Table<Person>().map { p -> p.name } }
+    val people = sql { Table<Person>().map { p -> p.name } }
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with filter" {
-    val people = capture { Table<Person>().filter { p -> p.age > 18 } }
+    val people = sql { Table<Person>().filter { p -> p.age > 18 } }
     shouldBeGolden(people.build<PostgresDialect>())
   }
   "query with flatMap" {
-    val people = capture { Table<Person>().flatMap { p -> Table<Address>().filter { a -> a.ownerId == p.id } } }
+    val people = sql { Table<Person>().flatMap { p -> Table<Address>().filter { a -> a.ownerId == p.id } } }
     shouldBeGolden(people.build<PostgresDialect>())
   }
 })

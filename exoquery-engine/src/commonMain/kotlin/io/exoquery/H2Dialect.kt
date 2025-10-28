@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.sql.SqlIdiom
+import io.exoquery.lang.SqlIdiom
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
 
@@ -10,7 +10,7 @@ import io.exoquery.util.Tracer
  * TODO the only major difference with the standard SqlIdiom/Postgres is on-conflict rendering,
  *      need to add then when OnConflict is implemented.
  */
-class H2Dialect(override val traceConf: TraceConfig = TraceConfig.empty) : SqlIdiom {
+open class H2Dialect(override val traceConf: TraceConfig = TraceConfig.empty) : SqlIdiom {
   override val concatFunction: String = "||"
   override val useActionTableAliasAs = SqlIdiom.ActionTableAliasBehavior.UseAs
   override val reservedKeywords: Set<String> = setOf(

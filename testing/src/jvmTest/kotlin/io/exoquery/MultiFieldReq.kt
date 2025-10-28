@@ -6,7 +6,7 @@ class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGolde
     data class Address(val ownerId: Int, val street: String, val city: String)
 
     "by whole record" {
-      val people = capture.select {
+      val people = sql.select {
         val p = from(Table<Person>())
         val a = join(Table<Address>()) { a -> a.ownerId == p.id }
         groupBy(p)
@@ -17,12 +17,12 @@ class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGolde
     }
 
     "multiple-nested" {
-      val a = capture.select {
+      val a = sql.select {
         val p = from(Table<Person>())
         val a = join(Table<Address>()) { a -> a.ownerId == p.id }
         Pair(Pair(p, a.street), a)
       }
-      val b = capture.select {
+      val b = sql.select {
         val av = from(a)
         groupBy(av.first)
         av.first to count(av.second.street)
@@ -37,12 +37,12 @@ class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGolde
       data class OuterProduct(val pws: PersonWithStreet, val address: Address)
       data class GroupedProduct(val pws: PersonWithStreet, val streetCount: Int)
 
-      val a = capture.select {
+      val a = sql.select {
         val p = from(Table<Person>())
         val a = join(Table<Address>()) { a -> a.ownerId == p.id }
         OuterProduct(PersonWithStreet(p, a.street), a)
       }
-      val b = capture.select {
+      val b = sql.select {
         val av = from(a)
         groupBy(av.pws)
         GroupedProduct(av.pws, count(av.address.street))

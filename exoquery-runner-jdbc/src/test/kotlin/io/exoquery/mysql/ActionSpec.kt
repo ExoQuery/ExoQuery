@@ -1,9 +1,9 @@
 package io.exoquery.mysql
 
 import io.exoquery.testdata.Person
-import io.exoquery.sql.MySqlDialect
+import io.exoquery.MySqlDialect
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.jdbc.JdbcController
 import io.exoquery.controller.runActions
 import io.exoquery.joe
@@ -29,28 +29,28 @@ class ActionSpec : FreeSpec({
 
   "insert" - {
     "simple" {
-      val q = capture {
+      val q = sql {
         insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 1
       ctx.people() shouldBe listOf(joe)
     }
     "simple with params" {
-      val q = capture {
+      val q = sql {
         insert<Person> { set(firstName to param("Joe"), lastName to param("Bloggs"), age to param(111)) }
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 1
       ctx.people() shouldBe listOf(joe)
     }
     "simple with setParams" {
-      val q = capture {
+      val q = sql {
         insert<Person> { setParams(Person(1, "Joe", "Bloggs", 111)) }
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 1
       ctx.people() shouldBe listOf(joe)
     }
     "simple with setParams and exclusion" {
-      val q = capture {
+      val q = sql {
         insert<Person> { setParams(Person(1, "Joe", "Bloggs", 111)).excluding(id) }
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 1
@@ -58,7 +58,7 @@ class ActionSpec : FreeSpec({
     }
     // Not supported in MySQL
     //"with returning" {
-    //  val q = capture {
+    //  val q = sql {
     //    insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returning { p -> p.id + 100 }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -67,7 +67,7 @@ class ActionSpec : FreeSpec({
     //}
     //"with returning using param" {
     //  val n = 1000
-    //  val q = capture {
+    //  val q = sql {
     //    insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returning { p -> p.id + 100 + param(n) }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -75,7 +75,7 @@ class ActionSpec : FreeSpec({
     //  ctx.people() shouldBe listOf(joe)
     //}
     //"with returning - multiple" {
-    //  val q = capture {
+    //  val q = sql {
     //    insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returning { p -> p.id to p.firstName }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -83,7 +83,7 @@ class ActionSpec : FreeSpec({
     //  ctx.people() shouldBe listOf(joe)
     //}
     "with returning keys" {
-      val q = capture {
+      val q = sql {
         insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returningKeys { id }
       }
       val build = q.build<MySqlDialect>()
@@ -92,7 +92,7 @@ class ActionSpec : FreeSpec({
     }
     // Not valid because firstName is not an inserted value
     //"with returning keys multiple" {
-    //  val q = capture {
+    //  val q = sql {
     //    insert<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.returningKeys { id to firstName }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -116,7 +116,7 @@ class ActionSpec : FreeSpec({
   "update" - {
     "simple" {
       ctx.insertGeorgeAndJim()
-      val q = capture {
+      val q = sql {
         update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 1
@@ -124,7 +124,7 @@ class ActionSpec : FreeSpec({
     }
     "no condition" {
       ctx.insertGeorgeAndJim()
-      val q = capture {
+      val q = sql {
         update<Person> { set(firstName to param("Joe"), lastName to param("Bloggs"), age to 111) }.all()
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 2
@@ -136,7 +136,7 @@ class ActionSpec : FreeSpec({
     "with setParams" {
       ctx.insertGeorgeAndJim()
       val updateCall = Person(1, "Joe", "Bloggs", 111)
-      val q = capture {
+      val q = sql {
         // TODO need to make a warning when this situation happens, can't have param instances here
         // update<Person> { setParams(Person(1, param("Joe"), param("Bloggs"), 111)) }.filter { p -> p.id == 1 }
         update<Person> { setParams(updateCall) }.filter { p -> p.id == 1 }
@@ -148,7 +148,7 @@ class ActionSpec : FreeSpec({
       ctx.insertGeorgeAndJim()
       // Set a large Id that should specifically be excluded from insertion
       val updateCall = Person(1000, "Joe", "Bloggs", 111)
-      val q = capture {
+      val q = sql {
         // Set the ID to 0 so we can be sure
         update<Person> { setParams(updateCall).excluding(id) }.filter { p -> p.id == 1 }
       }
@@ -158,7 +158,7 @@ class ActionSpec : FreeSpec({
     // Not supported in MySQL
     //"with returning" {
     //  ctx.insertGeorgeAndJim()
-    //  val q = capture {
+    //  val q = sql {
     //    update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }.returning { p -> p.id + 100 }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -167,7 +167,7 @@ class ActionSpec : FreeSpec({
     //}
     //"with returning - multiple" {
     //  ctx.insertGeorgeAndJim()
-    //  val q = capture {
+    //  val q = sql {
     //    update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }.returning { p -> p.id to p.firstName }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -176,7 +176,7 @@ class ActionSpec : FreeSpec({
     //}
     //"with returningKeys" {
     //  ctx.insertGeorgeAndJim()
-    //  val q = capture {
+    //  val q = sql {
     //    update<Person> { set(firstName to "Joe", lastName to "Bloggs", age to 111) }.filter { p -> p.id == 1 }.returningKeys { id }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -188,7 +188,7 @@ class ActionSpec : FreeSpec({
   "delete" - {
     "simple" {
       ctx.insertGeorgeAndJim()
-      val q = capture {
+      val q = sql {
         delete<Person>().filter { p -> p.id == 1 }
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 1
@@ -196,7 +196,7 @@ class ActionSpec : FreeSpec({
     }
     "no condition" {
       ctx.insertGeorgeAndJim()
-      val q = capture {
+      val q = sql {
         delete<Person>().all()
       }
       q.build<MySqlDialect>().runOn(ctx) shouldBe 2
@@ -205,7 +205,7 @@ class ActionSpec : FreeSpec({
     // Not supported in MySQL
     //"with returning" {
     //  ctx.insertGeorgeAndJim()
-    //  val q = capture {
+    //  val q = sql {
     //    delete<Person>().filter { p -> p.id == 1 }.returning { p -> p.id + 100 }
     //  }
     //  val build = q.build<MySqlDialect>()
@@ -214,7 +214,7 @@ class ActionSpec : FreeSpec({
     //}
     //"with returningKeys" {
     //  ctx.insertGeorgeAndJim()
-    //  val q = capture {
+    //  val q = sql {
     //    delete<Person>().filter { p -> p.id == 1 }.returningKeys { id }
     //  }
     //  val build = q.build<MySqlDialect>()

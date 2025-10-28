@@ -4,7 +4,7 @@ package io.exoquery
 
 import io.exoquery.Ord.Asc
 import io.exoquery.Ord.Desc
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.xr.*
 import io.exoquery.xr.XR.Expression
 import io.exoquery.xr.XR.Product.Companion.TupleSmartN
@@ -31,13 +31,13 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
   infix fun Expression.prop(propName: String): Expression = XR.Property(this, propName)
 
   "parsing features spec" - {
-    val people = capture { Table<Person>() }
+    val people = sql { Table<Person>() }
 
     data class Custom(val person: Person, val robot: Robot?)
 
     "from + join -> (p, r)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(people)
           val r = join(Table<Robot>()) { r -> p.id == r.ownerId }
           p to r
@@ -54,7 +54,7 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
 
     "from + join + leftJoin -> Custom(p, r)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(people)
           val r = join(Table<Robot>()) { r -> p.id == r.ownerId }
           val a = joinLeft(Table<Address>()) { a -> p.id == a.ownerId }
@@ -76,7 +76,7 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
 
     "from + leftJoin -> Custom(p, r)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(people)
           val r = joinLeft(Table<Robot>()) { r -> p.id == r.ownerId }
           Custom(p, r)
@@ -93,7 +93,7 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
 
     "from + join + where" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(people)
           val r = join(Table<Robot>()) { r -> p.id == r.ownerId }
           where { p.name == "Joe" }
@@ -111,7 +111,7 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
     }
     "from + sort(Asc,Desc)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(people)
           sortBy(
             p.age to Asc,
@@ -136,7 +136,7 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
     }
     "from + sort(Asc)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(people)
           sortBy(p.age to Asc)
           p.name
@@ -154,7 +154,7 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
 
     "from + groupBy(a)" {
       val people =
-        capture.select {
+        sql.select {
           val p = from(people)
           groupBy(p.age)
           p.age
@@ -173,8 +173,8 @@ class BasicSelectClauseQuotationSpec: GoldenSpec(BasicSelectClauseQuotationSpecG
 
   "from + groupBy(a, b)" {
     val people =
-      capture.select {
-        val p = from(capture { Table<Person>() })
+      sql.select {
+        val p = from(sql { Table<Person>() })
         groupBy(p.age, p.name)
         p.age
       }

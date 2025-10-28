@@ -33,7 +33,7 @@ object ParseAction {
   // Parse an action, normally dynamic splicing of actions is not allowed, the only exception to this is from a free(... action ...) call where `action` is dynamic (see the ParseFree in ParserOps)
   fun parse(expr: IrExpression, dynamicCallsAllowed: Boolean = false): XR.Action =
     on(expr).match<XR.Action>(
-      // the `insert` part of capture { insert<Person> { set ... } }
+      // the `insert` part of sql { insert<Person> { set ... } }
       case(ParseFree.match()).thenThis { (components), _ ->
         ParseFree.parse(expr, components, funName)
       },

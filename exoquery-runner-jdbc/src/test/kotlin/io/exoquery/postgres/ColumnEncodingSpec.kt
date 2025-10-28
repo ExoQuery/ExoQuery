@@ -2,14 +2,13 @@ package io.exoquery.postgres
 
 import io.exoquery.testdata.PersonId
 import io.exoquery.testdata.PersonWithIdCtx
-import io.exoquery.sql.PostgresDialect
+import io.exoquery.PostgresDialect
 import io.exoquery.TestDatabases
-import io.exoquery.capture
+import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.jdbc.runOn
 import io.exoquery.peopleWithId
 import io.exoquery.peopleWithIdCtx
-import io.exoquery.testdata.Address
 import io.exoquery.testdata.AddressWithId
 import io.exoquery.testdata.AddressWithIdCtx
 import io.exoquery.testdata.PersonWithId
@@ -32,7 +31,7 @@ class ColumnEncodingSpec : FreeSpec({
 
   "simple - contextual param" {
     val joeWithId = PersonWithIdCtx(PersonId(1), "Joe", "Bloggs", 123)
-    val q = capture {
+    val q = sql {
       insert<PersonWithIdCtx> { set(id to paramCtx(joeWithId.id), firstName to param(joeWithId.firstName), lastName to "Bloggs", age to 123) }
     }
     q.build<PostgresDialect>().runOn(ctx) shouldBe 1
@@ -41,7 +40,7 @@ class ColumnEncodingSpec : FreeSpec({
 
   "setParams - contextual param" {
     val joeWithId = PersonWithIdCtx(PersonId(1), "Joe", "Bloggs", 123)
-    val q = capture {
+    val q = sql {
       insert<PersonWithIdCtx> { setParams(joeWithId) }
     }
     q.build<PostgresDialect>().runOn(ctx) shouldBe 1
@@ -50,7 +49,7 @@ class ColumnEncodingSpec : FreeSpec({
 
   "simple - param" {
     val joeWithId = PersonWithId(PersonId(1), "Joe", "Bloggs", 123)
-    val q = capture {
+    val q = sql {
       insert<PersonWithId> { set(id to param(joeWithId.id), firstName to param(joeWithId.firstName), lastName to "Bloggs", age to 123) }
     }
     q.build<PostgresDialect>().runOn(ctx) shouldBe 1
@@ -59,7 +58,7 @@ class ColumnEncodingSpec : FreeSpec({
 
   "setParams - param with id" {
     val joeWithId = PersonWithId(PersonId(1), "Joe", "Bloggs", 123)
-    val q = capture {
+    val q = sql {
       insert<PersonWithId> { setParams(joeWithId) }
     }
     q.build<PostgresDialect>().runOn(ctx) shouldBe 1
@@ -70,7 +69,7 @@ class ColumnEncodingSpec : FreeSpec({
   // https://github.com/ExoQuery/terpal-sql/commit/789512ec6d21970c9d1c4909bb9439b20f47130f
   "null join decode - contextual" {
     // NOTE:
-    // CANNOT DO .build<PostgresDialect>().runOn(ctx) directly on a capture.batch or it will cause the following error
+    // CANNOT DO .build<PostgresDialect>().runOn(ctx) directly on a sql.batch or it will cause the following error
     // The root cause java.lang.ClassCastException was thrown at: unknown
     //   at org.jetbrains.kotlin.backend.common.CodegenUtil.reportBackendException(CodegenUtil.kt:107)
     //   at org.jetbrains.kotlin.backend.common.CodegenUtil.reportBackendException$default(CodegenUtil.kt:90)
@@ -82,17 +81,17 @@ class ColumnEncodingSpec : FreeSpec({
     val people = listOf(joe, jim)
     val addresses = listOf(a1)
 
-    val insertPeople = capture.batch(people.asSequence()) { p ->
+    val insertPeople = sql.batch(people.asSequence()) { p ->
       insert<PersonWithIdCtx> { setParams(p) }
     }
     insertPeople.build<PostgresDialect>().runOn(ctx) shouldBe listOf(1, 1)
 
-    val insertAddresses = capture.batch(addresses.asSequence()) { a ->
+    val insertAddresses = sql.batch(addresses.asSequence()) { a ->
       insert<AddressWithIdCtx> { setParams(a) }
     }
     insertAddresses.build<PostgresDialect>().runOn(ctx) shouldBe listOf(1)
 
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<PersonWithIdCtx>())
       val a = joinLeft(Table<AddressWithIdCtx>()) { a -> p.id == a.ownerId }
       val aa = joinLeft(Table<AddressWithIdCtx>()) { aa -> param(PersonId(1)) == aa.ownerId }
@@ -112,17 +111,17 @@ class ColumnEncodingSpec : FreeSpec({
     val people = listOf(joe, jim)
     val addresses = listOf(a1)
 
-    val insertPeople = capture.batch(people.asSequence()) { p ->
+    val insertPeople = sql.batch(people.asSequence()) { p ->
       insert<PersonWithId> { setParams(p).excluding(id) }
     }
     insertPeople.build<PostgresDialect>().runOn(ctx) shouldBe listOf(1, 1)
 
-    val insertAddresses = capture.batch(addresses.asSequence()) { a ->
+    val insertAddresses = sql.batch(addresses.asSequence()) { a ->
       insert<AddressWithId> { setParams(a) }
     }
     insertAddresses.build<PostgresDialect>().runOn(ctx) shouldBe listOf(1)
 
-    val q = capture.select {
+    val q = sql.select {
       val p = from(Table<PersonWithId>())
       val a = joinLeft(Table<AddressWithId>()) { a -> p.id == a.ownerId }
       val aa = joinLeft(Table<AddressWithId>()) { aa -> param(PersonId(1)) == aa.ownerId }

@@ -1,7 +1,7 @@
 package io.exoquery.norm
 
 import io.decomat.*
-import io.exoquery.sql.ProtractQuat
+import io.exoquery.lang.ProtractQuat
 import io.exoquery.xr._NotEq_
 import io.exoquery.xr._And_
 import io.exoquery.xr.EqEq
