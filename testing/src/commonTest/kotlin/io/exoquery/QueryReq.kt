@@ -8,7 +8,7 @@ import io.exoquery.testdata.Robot
 // Also note that it won't actually override the BasicQuerySanitySpecGolden file unless you change this one
 
 // build the file BasicQuerySanitySpecGolden.kt, is that as the constructor arg
-class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenOverride(), {
+class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
   data class Person(val id: Int, val name: String, val age: Int)
   data class Address(val ownerId: Int, val street: String, val city: String)
 

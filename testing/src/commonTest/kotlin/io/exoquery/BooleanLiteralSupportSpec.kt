@@ -1,6 +1,6 @@
 package io.exoquery
 
-class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGoldenDynamic, Mode.ExoGoldenOverride(), {
+class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGoldenDynamic, Mode.ExoGoldenTest(), {
   "value-fy boolean expression where needed" - {
     data class Ent(val name: String, val b: Boolean, val bb: Boolean, val bc: Boolean, val num: Int)
     data class Status(val name: String, val value: Boolean)
