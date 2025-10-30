@@ -140,7 +140,7 @@ object CallParser {
           head = Parser.parseArg(reciever),
           name = nameOverride ?: expr.symbol.safeName,
           args = extractArgs(expr.regularArgs),
-          originalHostType = expr.type.classId()?.toXR() ?: XR.ClassId.Empty,
+          originalHostType = reciever.type.classId()?.toXR() ?: XR.ClassId.Empty,
           type = tpe,
           loc = expr.loc,
           isKotlinSynthetic = reciever.hasSameOffsetsAs(expr),

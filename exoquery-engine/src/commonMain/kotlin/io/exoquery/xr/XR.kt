@@ -282,6 +282,23 @@ sealed interface XR {
 
       val Empty = ClassId(FqName.Empty, FqName.Empty, emptyList(), false)
     }
+
+    override fun toString(): String =
+      buildString {
+        append(packageFqName.toString())
+        if (packageFqName.path.isNotEmpty()) {
+          append(".")
+        }
+        append(relativeClassName.toString())
+        if (typeArgs.isNotEmpty()) {
+          append("<")
+          append(typeArgs.joinToString(", ") { it.toString() })
+          append(">")
+        }
+        if (nullable) {
+          append("?")
+        }
+      }
   }
 
   /**

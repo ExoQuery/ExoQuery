@@ -63,6 +63,30 @@ class ExpressionFunctionReq : GoldenSpecDynamic(ExpressionFunctionReqGoldenDynam
       val q = sql { Table<Person>().map { p -> p.name.sql.lowercase() } }
       shouldBeGolden(q.build<PostgresDialect>())
     }
+    "trim" {
+      val q = sql { Table<Person>().map { p -> p.name.trim() } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "trimBoth" {
+      val q = sql { Table<Person>().map { p -> p.name.sql.trimBoth("x") } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "trimRight" {
+      val q = sql { Table<Person>().map { p -> p.name.sql.trimRight("x") } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "trimLeft" {
+      val q = sql { Table<Person>().map { p -> p.name.sql.trimLeft("x") } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "like" {
+      val q = sql { Table<Person>().map { p -> p.name.like("J%") } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "ilike" {
+      val q = sql { Table<Person>().map { p -> p.name.ilike("j%") } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
   }
   "StringInterpolation" - {
     "multiple elements" {

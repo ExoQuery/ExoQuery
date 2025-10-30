@@ -117,6 +117,11 @@ val IrCall.regularArgs get() = run {
   val args = this.arguments
   params.filter { param -> param.kind == IrParameterKind.Regular }.map { args[it] }
 }
+
+val IrCall.allArgsCount get() = run {
+  this.symbol.owner.parameters.size
+}
+
 val IrCall.regularArgsCount get() = run {
   val params = this.symbol.owner.parameters
   params.count { param -> param.kind == IrParameterKind.Regular }

@@ -163,6 +163,15 @@ interface StringSqlDsl {
 
   @DslFunctionCall(DslFunctionCallType.PureFunction::class)
   fun lowercase(): String = errorCap("The `upperCase` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  fun trimBoth(charsToTrim: String): String = errorCap("The `trimBoth` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  fun trimRight(charsToTrim: String): String = errorCap("The `trimRight` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  fun trimLeft(charsToTrim: String): String = errorCap("The `trimLeft` expression of the Query was not inlined")
 }
 
 
@@ -332,6 +341,12 @@ interface CapturedBlock {
    */
   @DslNestingIgnore
   val String.sql @DslNestingIgnore get(): StringSqlDsl = errorCap("The `sql-dsl` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  fun String.like(pattern: String): Boolean = errorCap("The `like` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  fun String.ilike(pattern: String): Boolean = errorCap("The `like` expression of the Query was not inlined")
 
   @Dsl
   fun <T> SqlQuery<T>.nested(): SqlQuery<T> = errorCap("The `nested` expression of the Query was not inlined")

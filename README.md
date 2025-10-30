@@ -931,6 +931,51 @@ be used arbitrarily. They can only contain a single `capture`, `capture.select`,
 They cannot have any other kind of control logic (e.g. `if`, `when`, `for`, etc.) inside of them. If you want
 a more flexible mechanism for writing queries see the [dynamic queries](#dynamic-queries) section below.
 
+### Common SQL Functions
+
+This section summarizes the most common string functions you can use directly inside captured SQL blocks. There are two sources of functions:
+
+- Kotlin String methods that are whitelisted by the compiler plugin (via MethodWhiteList) and translated by SqlIdiom
+- Additional helper methods available via the StringSqlDsl
+
+Supported Kotlin String methods (via MethodWhiteList):
+- substring(start, end) → SUBSTRING(column, start, end)
+- uppercase() → UPPER(column)
+- lowercase() → LOWER(column)
+- length → LENGTH/CHAR_LENGTH (dialect-dependent; may be rendered as LEN in some dialects)
+- trim() → TRIM(column)
+  - Note: Only the zero-argument variation is supported. If you need to trim specific characters or trim only one side, use the StringSqlDsl helpers below.
+
+StringSqlDsl helpers you can call on string expressions inside a captured block:
+- left(n: Int) → LEFT(column, n)
+- right(n: Int) → RIGHT(column, n)
+- replace(old: String, new: String) → REPLACE(column, old, new)
+- substring(start: Int, end: Int) → SUBSTRING(column, start, end)
+- uppercase() → UPPER(column)
+- lowercase() → LOWER(column)
+- trimBoth(charsToTrim: String) → TRIM(BOTH charsToTrim FROM column)
+- trimRight(charsToTrim: String) → TRIM(TRAILING charsToTrim FROM column)
+- trimLeft(charsToTrim: String) → TRIM(LEADING charsToTrim FROM column)
+
+Examples:
+```kotlin
+sql.select {
+  val p = from(Table<Person>())
+  // Kotlin String methods (whitelisted)
+  val a = p.name.substring(1, 3)      // SUBSTRING(p.name, 1, 3)
+  val b = p.name.uppercase()           // UPPER(p.name)
+  val c = p.name.lowercase()           // LOWER(p.name)
+  val d = p.name.trim()                // TRIM(p.name) – only zero-arg is supported
+  val e = p.name.length                // LENGTH(p.name) or LEN(p.name) depending on dialect
+
+  // StringSqlDsl helpers
+  val f = p.name.left(5)               // LEFT(p.name, 5)
+  val g = p.name.right(2)              // RIGHT(p.name, 2)
+  val h = p.name.replace(" ", "_")   // REPLACE(p.name, ' ', '_')
+  val i = p.name.trimBoth("_")        // TRIM(BOTH '_' FROM p.name)
+}
+```
+
 ### Polymorphic Query Abstraction
 
 Continuing from the section on [captured-functions](#captured-functions) above, captured functions can use generics and

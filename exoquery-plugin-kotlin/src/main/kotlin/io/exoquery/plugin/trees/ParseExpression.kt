@@ -143,9 +143,9 @@ object ParseExpression {
 
       // TODO cannot assume all whitelisted methods are pure functions. Need to introduce purity/impurity to the whitelist
       case(Ir.Call.FunctionMemN[Is { it.type.classId()?.let { MethodWhitelist.allowedHost(it) } ?: false }, Is(), Is()])
-        .thenIfThis { _, _ -> MethodWhitelist.allowedMethodForHost(this.type.classId(), funName) }
+        .thenIfThis { _, _ -> MethodWhitelist.allowedMethodForHost(this.type.classId(), funName, this.allArgsCount) }
         .thenThis { head, args ->
-          val classId = this.type.classId() ?: parseError("Cannot determine the classId of the type ${this.type.dumpKotlinLike()} of this expression.", this)
+          val classId = head.type.classId() ?: parseError("Cannot determine the classId of the type ${this.type.dumpKotlinLike()} of this expression.", this)
           val argsXR = args.map { parse(it) }
           val isKotlinSynthetic = this.hasSameOffsetsAs(head)
           XR.MethodCall(parse(head), funName, argsXR, XR.CallType.PureFunction, classId.toXR(), isKotlinSynthetic, XRType.Value, expr.loc)

@@ -284,10 +284,16 @@ interface SqlIdiom : HasPhasePrinting {
             name == "startsWith" -> stringStartsWith(head, args.first())
             name == "uppercase" -> +"UPPER(${head.token})"
             name == "lowercase" -> +"LOWER(${head.token})"
+            name == "like" -> +"${head.token} LIKE ${args.first().token}"
+            name == "ilike" -> +"${head.token} ILIKE ${args.first().token}"
+            name == "trim" -> +"TRIM(${head.token})"
+            name == "trimBoth" -> +"TRIM(BOTH ${args.first().token} FROM ${head.token})"
+            name == "trimRight" -> +"TRIM(TRAILING ${args.first().token} FROM ${head.token})"
+            name == "trimLeft" -> +"TRIM(LEADING ${args.first().token} FROM ${head.token})"
             name == "left" -> +"LEFT(${head.token}, ${args.first().token})"
             name == "right" -> +"RIGHT(${head.token}, ${args.first().token})"
             name == "replace" -> +"REPLACE(${head.token}, ${args.first().token}, ${args.last().token})"
-            else -> xrError("Unknown or invalid XR.MethodCall method: ${name} in the expression:\n${this.showRaw()}")
+            else -> xrError("Unknown or invalid XR.MethodCall String method: `${name}` in the expression:\n${this.showRaw()}")
           }
         }
         head is XR.Query && name == "isNotEmpty" -> +"EXISTS (${head.token})"
@@ -304,7 +310,7 @@ interface SqlIdiom : HasPhasePrinting {
         // Need to think about situations where it is a CallType.PureFunction/ImpureFunction and see how it needs to be expanded. Something with sub-expansion
         // might be necessary e.g. sub-expading the XR.Query with SqlQuery if needed
 
-        else -> xrError("Unknown or invalid XR.MethodCall method: ${name} in the expression:\n${this.showRaw()}")
+        else -> xrError("Unknown or invalid XR.MethodCall method (from ${originalHostType.toString()}): `${name}` in the expression:\n${this.showRaw()}")
       }
     }
 
