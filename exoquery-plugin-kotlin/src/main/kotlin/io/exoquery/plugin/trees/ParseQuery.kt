@@ -59,8 +59,8 @@ object ParseQuery {
             ParseFree.parse(expr, components, funName)
           },
 
-          // TODO need to make sure 1st arg is SqlQuery instance and also the owner function has a @CapturedFunction annotate
-          //     (also parser should check for any IrFunction that has a @CapturedFunction annotation that doesn't have scaffolding and immediately report an error on that)
+          // TODO need to make sure 1st arg is SqlQuery instance and also the owner function has a @SqlFunction annotate
+          //     (also parser should check for any IrFunction that has a @SqlFunction annotation that doesn't have scaffolding and immediately report an error on that)
           case(Ir.Call.FunctionUntethered2[Is(PT.io_exoquery_util_scaffoldCapFunctionQuery), Is(), Ir.Vararg[Is()]]).thenThis { sqlQueryArg, (args) ->
             val loc = this.loc
             val warppedQueryCall =
@@ -104,7 +104,7 @@ object ParseQuery {
           case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isCapturedVariable() }.thenThis { sym ->
             val elem = this.symbol.owner
             if (elem is IrFunction && elem.isVirginCapturedFunction())
-              parseError("The function `${elem.symbol.safeName}` is a captured function that has not been transformed:\n${elem.dumpKotlinLike()}", this)
+              parseError("The function `${elem.symbol.safeName}` is a Sql Fragment function that has not been transformed:\n${elem.dumpKotlinLike()}", this)
 
             if (this.isBatchParam()) parseError(Messages.UsingBatchParam, expr)
             XR.Ident(sym.sanitizedSymbolName(), TypeParser.of(this), this.locationXR())

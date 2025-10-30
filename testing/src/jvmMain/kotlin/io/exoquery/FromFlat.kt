@@ -7,12 +7,12 @@ package io.exoquery
 //  data class Robot(val ownerId: Int, val name: String, val model: String)
 //
 //
-//  @CapturedFunction
+//  @SqlFunction
 //  fun Person.joinAddress() = sql {
 //    flatJoin(Table<Address>()) { a -> this@Person.id == a.ownerId }
 //  }
 //
-//  @CapturedFunction
+//  @SqlFunction
 //  fun Person.joinRobot() = sql {
 //    flatJoin(Table<Robot>()) { r -> this@Person.id == r.ownerId }
 //  }
@@ -35,12 +35,12 @@ package io.exoquery
 //  data class Robot(val ownerId: Int, val name: String, val model: String)
 //
 //
-//  @CapturedFunction
+//  @SqlFunction
 //  fun Person.joinAddress() = sql {
 //    flatJoin(Table<Address>()) { a -> this@Person.id == a.ownerId }
 //  }
 //
-//  @CapturedFunction
+//  @SqlFunction
 //  fun Person.joinRobot() = sql {
 //    flatJoin(Table<Robot>()) { r -> this@Person.id == r.ownerId }
 //  }

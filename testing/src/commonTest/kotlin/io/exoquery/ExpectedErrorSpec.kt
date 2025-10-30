@@ -3,7 +3,7 @@ package io.exoquery
 import io.kotest.core.spec.style.FreeSpec
 
 //object CapturedFunctionParamError {
-//  @CapturedFunction
+//  @SqlFunction
 //  fun capFunc(value: Int) =
 //    sql.expression { param(value) } // Error: Captured function cannot have non-expression parameters
 //

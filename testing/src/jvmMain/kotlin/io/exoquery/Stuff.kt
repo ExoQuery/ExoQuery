@@ -25,7 +25,7 @@ import io.exoquery.PostgresDialect
 //
 //  // TODO introduce a spec for these
 //
-//  @CapturedFunction
+//  @SqlFunction
 //  fun isJoe(name: String) =
 //    sql.expression { name == "joe" }
 //
@@ -34,7 +34,7 @@ import io.exoquery.PostgresDialect
 //  }
 //
 //
-////  @CapturedFunction
+////  @SqlFunction
 ////  fun <T> joinPeopleToAddress(people: SqlQuery<T>, otherValue: String, f: (T) -> Int) =
 ////    sql.select {
 ////      val p = from(people)
@@ -50,7 +50,7 @@ import io.exoquery.PostgresDialect
 //  //println("-------- Result ------\n${result.params.lifts.map { it.showValue() }}")
 //
 //
-////  @CapturedFunction
+////  @SqlFunction
 ////  fun <T> joinPeopleToAddress(people: SqlQuery<T>, f: (T, Address) -> Boolean) =
 ////    sql.select {
 ////      val p = from(people)

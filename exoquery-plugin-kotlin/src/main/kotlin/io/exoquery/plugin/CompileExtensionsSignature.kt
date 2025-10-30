@@ -45,11 +45,11 @@ fun IrFunction.refinedStableIdentifier() = run {
   //      between functions that have the same types but different param kinds (e.g. extension-param vs regular-param)
   // If it is a processed captured-function (i.e. it was processed in this compilation unit) then the arguments
   // have been removed. The way to find them and the types (which is required for the stable-identifier) is to look at the
-  // @CapturedFunctionSketch annotation contents
+  // @SqlFunctionSketch annotation contents
   if (function.hasAnnotation<CapturedFunctionSketch>()) {
     function.getAnnotation<CapturedFunctionSketch>()?.let {
       this.callableId.toString() + "(${Unlifter.unliftCapturedFunctionSketch(it).sketch.map { it.stableIdent }.joinToString(",")})"
-    } ?: parseError("Illegal @CapturedFunctionSketch was created on function `${function.symbol.safeName}`", function)
+    } ?: parseError("Illegal @SqlFunctionSketch was created on function `${function.symbol.safeName}`", function)
   }
   else function.stableIdentifier()
 }

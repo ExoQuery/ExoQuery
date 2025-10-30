@@ -44,7 +44,7 @@ class BatchActionSpec : FreeSpec({
     }
 
     // TODO Catpured functions are not allowed to return SqlActions instances yet. Need to do some refactoring to allow this.
-    //@CapturedFunction
+    //@SqlFunction
     //fun <T> SqlAction<Person, T>.allowIdentityInsert() =
     //  sql {
     //    free("SET IDENTITY_INSERT Person ON\n${this}\nSET IDENTITY_INSERT Person OFF").asPure<SqlAction<Person, T>>()

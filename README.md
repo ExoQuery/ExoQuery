@@ -183,7 +183,7 @@ That's right! You can use regular Kotlin constructs that you know and love in or
   ```
 - Simple arithmetic, simple functions on datatypes
   ```kotlin
-  @CapturedFunction
+  @SqlFragment
   fun peRatioWeighted(stock: Stock, weight: Double): Double = sql.expression {
     (stock.price / stock.earnings) * weight
   }
@@ -871,16 +871,16 @@ q.buildFor.Postgres().runOn(myDatabase)
 //> SELECT x.name, x.num_orders, x.created_at FROM corp_customer x
 ```
 
-### Captured Functions
+### SQL Fragment Functions
 
-Captured functions allow you to use kotlin functions inside of blocks. Writing a captured function is as simple as
+SQL fragment functions allow you to use Kotlin functions inside of sql blocks. Writing a SQL fragment function is as simple as
 adding
-the `@CapturedFunction` annotation to a function that returns a `SqlQuery<T>` or `SqlExpression<T>` instance.
-Recall that in the introduction we saw a captured function that calculated the P/E ratio of a stock:
+the `@SqlFragment` annotation to a function that returns a `SqlQuery<T>` or `SqlExpression<T>` instance.
+Recall that in the introduction we saw a SQL fragment function that calculated the P/E ratio of a stock:
 
 ```kotlin
-  @CapturedFunction
-fun peRatioWeighted(stock: Stock, weight: Double): Double = catpure.expression {
+  @SqlFragment
+fun peRatioWeighted(stock: Stock, weight: Double): Double = sql.expression {
     (stock.price / stock.earnings) * weight
   }
 ```
@@ -893,16 +893,16 @@ sql {
 }
 ```
 
-Note that captured functions can call other captured functions, for example:
+Note that SQL fragment functions can call other SQL fragment functions, for example:
 
 ```kotlin
-@CapturedFunction
-fun peRationSimple(stock: Stock): Double = catpure.expression {
+@SqlFragment
+fun peRationSimple(stock: Stock): Double = sql.expression {
     stock.price / stock.earnings
   }
 
-@CapturedFunction
-fun peRatioWeighted(stock: Stock, weight: Double): Double = catpure.expression {
+@SqlFragment
+fun peRatioWeighted(stock: Stock, weight: Double): Double = sql.expression {
   peRationSimple(stock) * weight
 }
 sql {
@@ -910,11 +910,11 @@ sql {
 }
 ```
 
-Also note that captured functions can make use of the context-receiver position. For example, let's make the
+Also note that SQL fragment functions can make use of the context-receiver position. For example, let's make the
 `marketCap` field into a function:
 
 ```kotlin
-@CapturedFunction
+@SqlFragment
 fun Stock.marketCap() = sql.expression {
     price * sharesOutstanding
   }
@@ -926,7 +926,7 @@ println(q.buildFor.Postgres().value)
 // SELECT (stock.price / stock.earnings) * ((this.price * this.sharesOutstanding) / (SELECT sum(this.price * this.sharesOutstanding) FROM Stock it)) AS value FROM Stock stock
 ```
 
-Since captured-functions guarantee that the code inside of them leads to a compile-time generated query they cannot
+Since Sql Fragment Functions guarantee that the code inside of them leads to a compile-time generated query they cannot
 be used arbitrarily. They can only contain a single `capture`, `capture.select`, or `capture.expression` block.
 They cannot have any other kind of control logic (e.g. `if`, `when`, `for`, etc.) inside of them. If you want
 a more flexible mechanism for writing queries see the [dynamic queries](#dynamic-queries) section below.
@@ -978,7 +978,7 @@ sql.select {
 
 ### Polymorphic Query Abstraction
 
-Continuing from the section on [captured-functions](#captured-functions) above, captured functions can use generics and
+Continuing from the section on [SQL Fragment Functions](#sql-fragment-functions) above, captured functions can use generics and
 polymorphism in order to create highly abstractable query components.
 For example:
 
@@ -991,7 +991,7 @@ data class Robot(val model: String, val createdOn: LocalDate, val locationId: In
 data class Address(val id: Int, val street: String, val zip: String)
 
 // Now let's create a captured function that can be used with any Locateable object:
-@CapturedFunction
+@SqlFragment
 fun <L : Locateable> joinLocation(locateable: SqlQuery<L>): SqlQuery<Pair<L, Address>> =
   sql.select {
     val l = from(locateable)
@@ -1111,10 +1111,10 @@ val q = sql {
 //> SELECT p.id, p.name, p.age FROM Person p WHERE p.name = 'Joe' FOR UPDATE
 ```
 
-This is technique is quite powerful when combined with captured-functions to abstract out logic:
+This is technique is quite powerful when combined with SQL Fragment Functions to abstract out logic:
 
 ```kotlin
-@CapturedFunction
+@SqlFragment
 fun <T : Person> forUpdate(v: SqlQuery<T>) = sql {
     free("${v} FOR UPDATE").asPure<SqlQuery<T>>()
   }
@@ -1507,7 +1507,7 @@ Dynamic queries effectively allow you pass around `SqlQuery<T>` and `SqlExpressi
 restrictions or limitations. For example:
 
 ```kotlin
-@CapturedDynamic
+@SqlDynamic
 fun filteredIds(robotsAllowed: Boolean, value: SqlExpression<String>) =
   if (robotsAllowed)
     sql {
@@ -1526,7 +1526,7 @@ val q = sql {
 
 Note several things:
 
-* The `@CapturedFunction` annotation is used to mark the function as a dynamic function, otherwise
+* The `@SqlFragment` annotation is used to mark the function as a dynamic function, otherwise
   a parsing error along the lines of:
   ```
   Could not understand the SqlExpression (from the scaffold-call) that you are attempting to call `.use` on...
@@ -1541,8 +1541,8 @@ Note several things:
   a capture block, otherwise "Backend Lowering Exceptions" can occur which are notoriously hard to debug.
 * Captured functions will typically have one or two runtime flags and the other parameters
   going in should be `SqlQuery<T>` or `SqlExpression<T>` objects. If you do not need to pass around
-  `SqlQuery<T>` or `SqlExpression<T>` objects like this, you probably do not need captured-dynamics at all
-  and instead should use compile-time [captured functions](#captured-functions).
+  `SqlQuery<T>` or `SqlExpression<T>` objects like this, you probably do not need SQL-Dynamics at all
+  and instead should use compile-time [SQL Fragment Functions](#sql-fragment-functions).
 * Notice how above I used `capture.expression { c.signatureName }` nested inside another `capture` block.
   This is required because `c.signatureName` is merely a `String`, not a `SqlExpression<String>` type.
   More importantly, it is a compile-time *symbolic* value (i.e. literally the expression `"c.signatureName"`)
@@ -1565,7 +1565,7 @@ set of clauses from the list.
 ```kotlin
 val possibleNames = listOf("Joe", "Jack")
 
-@CapturedDynamic
+@SqlDynamic
 fun joinedClauses(p: SqlExpression<Person>) =
   possibleNames.map { n -> sql.expression { p.use.name == param(n) } }
     .reduce { a, b -> sql.expression { a.use || b.use } }

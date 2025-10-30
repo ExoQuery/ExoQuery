@@ -9,7 +9,7 @@ package io.exoquery
 //data class Address(val ownerId: Int, val street: String, val zip: Int)
 //
 //fun main() {
-//  @CapturedFunction
+//  @SqlFunction
 //  fun <T: HasId> myFunction(input: SqlQuery<T>, selector: (T) -> String) =
 //    sql.select {
 //      val p = from(input)

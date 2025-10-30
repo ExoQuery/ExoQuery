@@ -263,7 +263,7 @@ val query = select { Table<Person>().filter { p -> p.name == param(nameVariable)
 > This will create the query:
 > SELECT p.id, p.name, p.age FROM Person p WHERE p.name = ?
 
-If this is a value that some other captured-query is plugging into a function, you need to use the @CapturedFunction
+If this is a value that some other captured-query is plugging into a function, you need to use the @SqlFunction
 to mark function for ExoQuery to introspect. For example:
 
 val people = sql.select {
@@ -272,8 +272,8 @@ val people = sql.select {
   where { getName(p) == "Joe" }
   p
 }
-// ...so we need to add the @CapturedFunction to this function: 
-@CapturedFunction
+// ...so we need to add the @SqlFunction to this function: 
+@SqlFunction
 fun getName(p: Person): SqlQuery<Person> = sql.expression { p.name }
 
 
@@ -285,13 +285,13 @@ fun VariableComingFromNonCapturedFunction(expr: IrExpression, funName: String) =
 """
 It appears that the expression `${expr.source()}` is an argument coming from a function call which will force
 the whole surrounding query to become dynamic. If the whole function `${funName}` just returns a SqlQuery and does nothing
-else, annotate it as @CapturedFunction and you can then use it to build compile-time functions.
+else, annotate it as @SqlFunction and you can then use it to build compile-time functions.
 ================= For example: =================
 
 fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
 val myJoes = joes(Table<Person>()) // This will be dynamic
 
-@CapturedFunction
+@SqlFunction
 fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
 val myJoes = joes(Table<Person>()) // Now it will be static
 """.trimIndent()
@@ -319,14 +319,14 @@ fun CapturedFunctionFormWrong(msg: String) =
 """
 $msg
 
-The form of the function annotated with @CapturedFunction is incorrect. It must be a function with a 
+The form of the function annotated with @SqlFunction is incorrect. It must be a function with a 
 single output expression that returns a SqlQuery<T> instance.
 ================= For example: =================
 
-@CapturedFunction
+@SqlFunction
 fun myFunction(): SqlQuery<Int> = sql { Table<Person>().map { it.age } }
 
-@CapturedFunction
+@SqlFunction
 fun myFunction(): SqlQuery<Int> = select { 
   val p = from(Table<Person>())
   p.age
