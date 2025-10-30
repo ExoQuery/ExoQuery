@@ -260,7 +260,14 @@ interface SqlIdiom : HasPhasePrinting {
       val argsToken = (listOf(head) + args).map { it -> it.token }.mkStmt()
       when {
         // NOTE: Perhaps we should check that io.exoquery.Params is the host-type? Need to think about various implications of being more strict
-        name == "contains" -> +"${args.first().token} ${"IN".token} (${head.token})"
+        name == "contains" -> {
+          val headToken = when {
+            // don't put parens around subqueries since the QueryToExpr tokenizer already does that
+            head is XR.QueryToExpr -> head.token
+            else -> +"(${head.token})"
+          }
+          +"${args.first().token} ${"IN".token} ${headToken}"
+        }
 
         // rely on implicit-casts for numeric conversion
         originalHostType.isWholeNumber() && name.isConverterFunction() ->

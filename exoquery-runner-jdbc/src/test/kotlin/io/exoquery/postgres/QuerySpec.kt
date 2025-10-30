@@ -204,6 +204,17 @@ class QuerySpec : FreeSpec({
     )
   }
 
+  "x IN subquery" {
+    val q = sql {
+      Table<Person>()
+        .filter { it.age in Table<Person>().filter { it.firstName == "Joe" }.map { it.age } }
+    }
+    q.build<PostgresDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
+      Person(1, "Joe", "Bloggs", 111),
+      Person(2, "Joe", "Doggs", 222)
+    )
+  }
+
 
 //  "joins" - {
 //    @Serializable

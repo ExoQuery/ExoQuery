@@ -120,6 +120,30 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "filter + correlated + value" to cr(
       "SELECT p.id, p.name, p.age FROM Person p WHERE p.age > (SELECT avg(p1.age) - min(p1.age) FROM Person p1)"
     ),
+    "correlated contains/- correlated contains - simple/XR" to kt(
+      "Table(Person).filter { p -> Table(Address).map { p -> p.ownerId }.toExpr.contains_MC(p.id) }"
+    ),
+    "correlated contains/- correlated contains - simple" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.id IN (SELECT p1.ownerId AS ownerId FROM Address p1)"
+    ),
+    "correlated contains/- correlated contains - different var names 1/XR" to kt(
+      "Table(Person).filter { p -> Table(Address).map { it -> it.ownerId }.toExpr.contains_MC(p.id) }"
+    ),
+    "correlated contains/- correlated contains - different var names 1" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.id IN (SELECT it.ownerId AS ownerId FROM Address it)"
+    ),
+    "correlated contains/- correlated contains - different var names 2/XR" to kt(
+      "Table(Person).filter { p -> Table(Address).map { pp -> pp.ownerId }.toExpr.contains_MC(p.id) }"
+    ),
+    "correlated contains/- correlated contains - different var names 2" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.id IN (SELECT pp.ownerId AS ownerId FROM Address pp)"
+    ),
+    "correlated contains/- correlated contains - only it vars/XR" to kt(
+      "Table(Person).filter { it -> Table(Address).map { it -> it.ownerId }.toExpr.contains_MC(it.id) }"
+    ),
+    "correlated contains/- correlated contains - only it vars" to cr(
+      "SELECT it.id, it.name, it.age FROM Person it WHERE it.id IN (SELECT it1.ownerId AS ownerId FROM Address it1)"
+    ),
     "query with flatMap/XR" to kt(
       "Table(Person).flatMap { p -> Table(Address).filter { a -> a.ownerId == p.id } }"
     ),

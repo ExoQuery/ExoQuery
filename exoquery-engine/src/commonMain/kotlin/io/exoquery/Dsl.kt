@@ -318,6 +318,10 @@ interface CapturedBlock {
   fun <T, R> SqlQuery<T>.distinctOn(f: (T) -> R): SqlQuery<T> =
     errorCap("The `distinctBy` expression of the Query was not inlined")
 
+  @Dsl
+  operator fun <T> SqlQuery<T>.contains(value: T): Boolean =
+    errorCap("The `contains` expression of the Query was not inlined")
+
   /**
    * Use this to call specialized functions on Strings that are specific to SQL. For example:
    * ```

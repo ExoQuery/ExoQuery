@@ -352,6 +352,11 @@ object ParseExpression {
         XR.MethodCall(parse(head), "contains", listOf(parse(params)), XR.CallType.PureFunction, cid, false, XRType.Value, expr.loc)
       },
 
+      case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlQuery<*>>(), Is("contains"), Is()]).thenThis { head, params ->
+        val cid = head.type.classId()?.toXR() ?: parseError("Could not find classId for the head of the contains call", head)
+        XR.MethodCall(parse(head), "contains", listOf(parse(params)), XR.CallType.PureFunction, cid, false, XRType.Value, expr.loc)
+      },
+
       // Unlike a ParseFree, this is just a plain string-interpolation that lives inside the expression block (i.e. it's not preceeded by a "free" block)
       case(Ir.StringConcatenation[Is()]).then { components ->
         val componentExprs = components.map { ParseExpression.parse(it) }

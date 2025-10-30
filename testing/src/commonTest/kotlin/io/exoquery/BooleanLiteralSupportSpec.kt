@@ -1,6 +1,6 @@
 package io.exoquery
 
-class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGoldenDynamic, Mode.ExoGoldenTest(), {
+class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGoldenDynamic, Mode.ExoGoldenOverride(), {
   "value-fy boolean expression where needed" - {
     data class Ent(val name: String, val b: Boolean, val bb: Boolean, val bc: Boolean, val num: Int)
     data class Status(val name: String, val value: Boolean)
@@ -412,6 +412,7 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
 
   "optionals" - {
     data class TestEntity(val s: String, val i: Int, val l: Long, val o: Boolean?, val b: Boolean)
+    data class TestOther(val v: String)
 
     "exists" {
       val q = sql {
@@ -432,6 +433,18 @@ class BooleanLiteralSupportSpec: GoldenSpecDynamic(BooleanLiteralSupportSpecGold
       }
       println(q.xr.showRaw())
 
+      shouldBeGolden(q.xr, "XR")
+      shouldBeGolden(q.buildRuntime(BooleanLiteralTestDialect(), "SQL"), "SQL")
+    }
+
+    // Crazy test where we compare a column value to whether another column value is contained in a subquery
+    "exists - lifted contains with sub-filter" {
+      val q = sql {
+        Table<TestEntity>()
+          .filter { t -> t.o?.let { it == t.s in Table<TestOther>().map { it.v } } ?: false }
+          .map { t -> t.b to true }
+      }
+      println(q.xr.showRaw())
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.buildRuntime(BooleanLiteralTestDialect(), "SQL"), "SQL")
     }

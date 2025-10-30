@@ -183,6 +183,12 @@ object BooleanLiteralSupportSpecGoldenDynamic: GoldenQueryFile {
     "optionals/exists - lifted contains/SQL" to cr(
       "SELECT t.b AS first, 1 AS second FROM TestEntity t WHERE t.o IS NULL AND 1 = 0 OR t.o IS NOT NULL AND 1 = t.o"
     ),
+    "optionals/exists - lifted contains with sub-filter/XR" to kt(
+      "Table(TestEntity).filter { t -> { val tmp1_elvis_lhs = { val tmp0_safe_receiver = t.o; if (tmp0_safe_receiver == null) null else { it -> it == Table(TestOther).map { it -> it.v }.toExpr.contains_MC(t.s) }.apply(tmp0_safe_receiver) }; if (tmp1_elvis_lhs == null) false else tmp1_elvis_lhs } }.map { t -> Tuple(first = t.b, second = true) }"
+    ),
+    "optionals/exists - lifted contains with sub-filter/SQL" to cr(
+      "SELECT t.b AS first, 1 AS second FROM TestEntity t WHERE 1 = CASE WHEN CASE WHEN t.o IS NULL THEN null ELSE CASE WHEN t.o = t.s IN (SELECT it.v AS v FROM TestOther it) THEN 1 ELSE 0 END END IS NULL THEN 0 ELSE CASE WHEN t.o IS NULL THEN null ELSE CASE WHEN t.o = t.s IN (SELECT it1.v AS v FROM TestOther it1) THEN 1 ELSE 0 END END END"
+    ),
     "optionals/exists - lifted not contains/XR" to kt(
       """Table(TestEntity).filter { t -> { val tmp1_elvis_lhs = { val tmp0_safe_receiver = t.o; if (tmp0_safe_receiver == null) null else { it -> TagP("0") }.apply(tmp0_safe_receiver) }; if (tmp1_elvis_lhs == null) false else tmp1_elvis_lhs } }.map { t -> Tuple(first = t.b, second = true) }"""
     ),
