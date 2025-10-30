@@ -1,7 +1,7 @@
 package io.exoqueryCapturedFunctionParamKinds
 
 import io.exoquery.*
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.PostgresDialect
 
 data class MyPerson(val id: Long, val name: String)
@@ -13,10 +13,10 @@ val q = sql.select {
 
 
 object MyCaptureAheadObject {
-  @CapturedFunction
+  @SqlFragment
   fun peopleNested(filter: String) = sql { Table<MyPerson>().filter { p -> p.name == filter } }
 
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql { peopleNested(filter) }
 }
 

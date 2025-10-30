@@ -1,6 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedDynamic
 import io.exoquery.annotation.ExoBuildFunctionLabel
 import io.exoquery.annotation.ExoInternal
 import io.exoquery.norm.NormalizeCustomQueries

@@ -1,33 +1,21 @@
 package io.exoquery.plugin.trees
 
 import io.decomat.Is
-import io.decomat.Pattern
 import io.decomat.case
 import io.decomat.caseEarly
-import io.decomat.customPattern1
 import io.decomat.match
 import io.exoquery.SqlAction
 import io.exoquery.SqlBatchAction
 import io.exoquery.SqlExpression
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.CapturedDynamic
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlDynamic
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.config.enableCrossFileStoreOrDefault
-import io.exoquery.parseError
-import io.exoquery.plugin.fullName
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.isClass
-import io.exoquery.plugin.printing.dumpSimple
-import io.exoquery.plugin.safeName
 import io.exoquery.plugin.transform.CX
 import io.exoquery.pprint.PPrinterConfig
-import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationBase
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
-import org.jetbrains.kotlin.ir.declarations.IrExternalPackageFragment
 import org.jetbrains.kotlin.ir.declarations.IrField
-import org.jetbrains.kotlin.ir.declarations.IrFile
-import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -36,7 +24,6 @@ import org.jetbrains.kotlin.ir.expressions.IrGetField
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
-import org.jetbrains.kotlin.ir.util.kotlinFqName
 
 
 // In situations where you've got
@@ -208,13 +195,13 @@ sealed interface OwnerChain {
       }
       return expression.match(
         // Bubble up to the owner call, make sure to skip captured-functions for now since they need to be handled slightly differently (i.e. the call needs to be scaffolded)
-        case(Ir.Call[Is()]).thenIf { call -> expression.isContainerOfXR() && call.symbol.owner is IrSimpleFunction && !call.symbol.owner.hasAnnotation<CapturedDynamic>() }.then { call ->
+        case(Ir.Call[Is()]).thenIf { call -> expression.isContainerOfXR() && call.symbol.owner is IrSimpleFunction && !call.symbol.owner.hasAnnotation<SqlDynamic>() }.then { call ->
           val owner = call.symbol.owner
           // TODO what about a class-member? (need to check the parent's parent?) Also need to do this for an IrField
           // ===== SPECIAL CASE: Specifically for IrFunctions and IrFields, need to check that if it is a cross-file-compatible function (i.e. it's an inline function) if not immediately need to throw an error =====
           CrossFile.validatePossibleCrossFileFunction(owner, expression)
           // ===== Continue with the normal processing =====
-          val isCap = owner.hasAnnotation<CapturedFunction>()
+          val isCap = owner.hasAnnotation<SqlFragment>()
 
 
           //logger.warn("------------- IN OUTER MATCH FOR -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpKotlinLike() } ?: "<NOT A CALL>"}")

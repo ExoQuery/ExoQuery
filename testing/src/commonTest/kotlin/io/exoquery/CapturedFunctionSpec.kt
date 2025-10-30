@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.testdata.Person
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
@@ -11,7 +11,7 @@ import io.kotest.core.spec.style.FreeSpec
 class CapturedFunctionSpec : FreeSpec({
   "static function sql - structural tests" - {
     "proto function-sql i.e. call without sql" {
-      @CapturedFunction
+      @SqlFragment
       fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
       val people = sql { Table<Person>() }
       shouldThrow<MissingCaptureError> { joes(people) }

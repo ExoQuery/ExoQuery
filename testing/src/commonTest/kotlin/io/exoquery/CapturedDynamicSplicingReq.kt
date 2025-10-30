@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedDynamic
+import io.exoquery.annotation.SqlDynamic
 import io.exoquery.testdata.Person
 
 class CapturedDynamicSplicingReq : GoldenSpecDynamic(CapturedDynamicSplicingReqGoldenDynamic, Mode.ExoGoldenTest(), {
@@ -36,7 +36,7 @@ class CapturedDynamicSplicingReq : GoldenSpecDynamic(CapturedDynamicSplicingReqG
     //}
 
 
-    @CapturedDynamic
+    @SqlDynamic
     fun nameLowerCaseSql(name: SqlExpression<String>) =
       sql.expression { name.use.sql.lowercase() }
 

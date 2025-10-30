@@ -1,7 +1,7 @@
 package io.exoquery.sample
 
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.sql
 import io.exoquery.PostgresDialect
 
@@ -15,7 +15,7 @@ fun main() {
   data class Robot(override val name: String, val model: String, val factoryId: Int): Nameable
   data class Factory(val id: Int, val name: String)
 
-  @CapturedFunction
+  @SqlFragment
   fun <N: Nameable> nameIsJoe(input: SqlQuery<N>) =
     sql {
       input.filter { p -> p.name == "Joe" }.map { p -> p.name }
@@ -34,7 +34,7 @@ fun main() {
 //    )
 //  }
 
-  @CapturedFunction
+  @SqlFragment
   fun robotsWithFactoryName(factoryName: String) =
     sql {
       Table<Robot>().filter { r ->

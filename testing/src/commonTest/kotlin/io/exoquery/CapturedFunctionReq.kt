@@ -1,7 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
-import io.exoquery.PostgresDialect
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 
@@ -10,7 +9,7 @@ object LimitedContainer {
   val people = sql { Table<Person>() }
   fun allPeople() = sql { people }
 
-  @CapturedFunction
+  @SqlFragment
   fun peopleWithName(name: String) =
     sql { people.filter { p -> p.name == name } }
   fun allJoes() =
@@ -18,7 +17,7 @@ object LimitedContainer {
 }
 
 class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, Mode.ExoGoldenTest(), {
-  @CapturedFunction
+  @SqlFragment
   fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
   val foo: Boolean = true
 
@@ -47,34 +46,34 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
       shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
     }
     "cap { capFunA { capFunB } }" {
-      @CapturedFunction
+      @SqlFragment
       fun jacks(people: SqlQuery<Person>) = sql { joes(people.filter { p -> p.name == "Jack" }) }
       val capJoes = sql { jacks(Table<Person>()) }
       shouldBeGolden(capJoes.xr, "XR")
       shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
     }
     "cap { capFunA(x) -> capFunB }" {
-      @CapturedFunction
+      @SqlFragment
       fun namedX(people: SqlQuery<Person>, name: String) = sql { joes(people.filter { p -> p.name == name }) }
       val capJoes = sql { namedX(Table<Person>(), "Jack") }
       shouldBeGolden(capJoes.xr, "XR")
       shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
     }
     "cap { capFunA(x) -> capFunB(x) -> capFunC }" {
-      @CapturedFunction
+      @SqlFragment
       fun namedX(people: SqlQuery<Person>, name: String) = sql { joes(people.filter { p -> p.name == name }) }
 
-      @CapturedFunction
+      @SqlFragment
       fun namedY(people: SqlQuery<Person>, name: String) = sql { namedX(people, name) }
       val capJoes = sql { namedY(Table<Person>(), "Jack") }
       shouldBeGolden(capJoes.xr, "XR")
       shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
     }
     "cap { capFunA(capFunB(x)) -> capFunC }" {
-      @CapturedFunction
+      @SqlFragment
       fun namedX(people: SqlQuery<Person>, name: String) = sql { people.filter { p -> p.name == name } }
 
-      @CapturedFunction
+      @SqlFragment
       fun namedY(people: SqlQuery<Person>, name: String) = sql { people.filter { p -> p.name == name } }
       val capJoes = sql { namedY(namedX(Table<Person>(), "Joe"), "Jack") }
       shouldBeGolden(capJoes.xr, "XR")
@@ -85,7 +84,7 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
   "advanced cases" - {
     val joes = sql { Table<Person>().filter { p -> p.name == param("joe") } }
     "passing in a param" {
-      @CapturedFunction
+      @SqlFragment
       fun <T> joinPeopleToAddress(people: SqlQuery<T>, otherValue: String, f: (T) -> Int) =
         sql.select {
           val p = from(people)
@@ -104,7 +103,7 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
     "subtype polymorphicsm" {
       val joes = sql { Table<SubtypePoly.Person>().filter { p -> p.name == param("joe") } }
 
-      @CapturedFunction
+      @SqlFragment
       fun <T: SubtypePoly.HasId> joinPeopleToAddress(people: SqlQuery<T>): SqlQuery<Pair<T, Address>> =
         sql.select {
           val p = from(people)
@@ -120,7 +119,7 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
     }
 
     "lambda polymorphism - A" {
-      @CapturedFunction
+      @SqlFragment
       fun <T> joinPeopleToAddress(people: SqlQuery<T>, f: (T) -> Int) =
         sql.select {
           val p = from(people)
@@ -136,7 +135,7 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
     }
 
     "lambda polymorphism - B" {
-      @CapturedFunction
+      @SqlFragment
       fun <T> joinPeopleToAddress(people: SqlQuery<T>, f: (T, Address) -> Boolean) =
         sql.select {
           val p = from(people)
@@ -158,7 +157,7 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
     }
 
     "lambda polymorphism - C + captured expression" {
-      @CapturedFunction
+      @SqlFragment
       fun <T> joinPeopleToAddress(people: SqlQuery<T>, f: (T, Address) -> Boolean) =
         sql.select {
           val p = from(people)
@@ -166,7 +165,7 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
           p to a
         }
 
-      @CapturedFunction
+      @SqlFragment
       fun joinFunction(p: Person, a: Address) =
         sql.expression { p.id == a.ownerId }
 
@@ -193,7 +192,7 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
 
   "shadowing" - {
     "query with variable shadow" {
-      @CapturedFunction
+      @SqlFragment
       fun calculateScoresForPerson(personId: Int) =
         sql {
           Table<Person>()

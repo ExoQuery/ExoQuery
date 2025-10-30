@@ -1,8 +1,7 @@
 package io.exoquery.plugin.trees
 
-import io.exoquery.annotation.CapturedDynamic
+import io.exoquery.annotation.SqlDynamic
 import io.exoquery.parseError
-import io.exoquery.plugin.getAnnotation
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.transform.CX
@@ -59,7 +58,7 @@ object CrossFile {
   context(CX.Scope)
   fun isCrossFile(function: IrFunction): Boolean =
     function.returnType.hasAnnotation(FqName("io.exoquery.Captured")) &&
-      !function.hasAnnotation<CapturedDynamic>() &&
+      !function.hasAnnotation<SqlDynamic>() &&
       (function.parent is IrExternalPackageFragment || function.findRoot().isNotCurrentFile()) &&
       function.isInline
 

@@ -2,7 +2,7 @@
 
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.annotation.TracesEnabled
 import io.exoquery.util.TraceType
 
@@ -19,7 +19,7 @@ class CaptureSelectFilterReq: GoldenSpecDynamic(CaptureSelectFilterReqGoldenDyna
       val now = sql.expression {
         free("now()")<Long>()
       }
-      @CapturedFunction
+      @SqlFragment
       fun IntervalDay(days: Int) = sql.expression {
         free("interval '$days days'")<Long>()
       }

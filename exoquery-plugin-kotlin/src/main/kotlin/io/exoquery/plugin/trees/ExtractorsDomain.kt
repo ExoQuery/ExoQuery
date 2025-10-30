@@ -120,7 +120,7 @@ object ExtractorsDomain {
           case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
           case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlExpression() }.then { _ -> true },
           case(Ir.Call[Is()]).thenIf { call ->
-            (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedDynamic>()
+            (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<SqlDynamic>()
           }.then { _ -> true }
         ) ?: false
         if (matches)
@@ -138,7 +138,7 @@ object ExtractorsDomain {
           case(Ir.GetField.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
           case(Ir.GetValue.Symbol[Is()]).thenIfThis { this.isExternal() && expr.isSqlAction() }.then { _ -> true },
           case(Ir.Call[Is()]).thenIf { call ->
-            (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<CapturedDynamic>()
+            (call.regularArgsCount == 0 && call.symbol.owner is IrSimpleFunction) || call.someOwnerHasAnnotation<SqlDynamic>()
           }.then { _ -> true }
         ) ?: false
         if (matches)

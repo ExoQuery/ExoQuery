@@ -1,7 +1,7 @@
 package io.exoquery.sample
 
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.sql
 
 fun main() {
@@ -10,7 +10,7 @@ fun main() {
   data class Robot(val ownerId: Int, val model: String)
 
 
-  @CapturedFunction
+  @SqlFragment
   fun <T: Person> forUpdate(v: SqlQuery<T>) = sql {
     free("${v} FOR UPDATE").asPure<SqlQuery<T>>()
   }

@@ -4,7 +4,7 @@ import io.decomat.Is
 import io.decomat.case
 import io.decomat.match
 import io.exoquery.*
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.annotation.ChangeReciever
 import io.exoquery.annotation.ParamKind
@@ -394,10 +394,10 @@ inline fun <reified T> IrElement.hasAnnotation() =
   }
 
 fun IrFunction.isCapturedFunction() =
-  this.hasAnnotation<CapturedFunction>()
+  this.hasAnnotation<SqlFragment>()
 
 fun IrFunction.isVirginCapturedFunction() =
-  this.hasAnnotation<CapturedFunction>() && !this.hasAnnotation<CapturedFunctionSketch>()
+  this.hasAnnotation<SqlFragment>() && !this.hasAnnotation<CapturedFunctionSketch>()
 
 inline fun IrElement.hasAnnotation(fqName: FqName) =
   when (this) {

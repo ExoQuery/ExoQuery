@@ -55,7 +55,10 @@ annotation class ExoEntity(val name: String)
 
 @Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.LOCAL_VARIABLE)
 @Retention(AnnotationRetention.BINARY)
-annotation class CapturedDynamic
+annotation class SqlDynamic
+
+@Deprecated("Renamed to SqlDynamic", ReplaceWith("SqlDynamic"))
+typealias CapturedDynamic = SqlDynamic
 
 /**
  * This annotation means that the construct e.g. the SqlQuery represents a value captured during compile-time by the
@@ -63,7 +66,10 @@ annotation class CapturedDynamic
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-annotation class CapturedFunction
+annotation class SqlFragment
+
+@Deprecated("Renamed to SqlFragment", ReplaceWith("SqlFragment"))
+typealias CapturedFunction = SqlFragment
 
 @Target(AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)

@@ -1,6 +1,6 @@
 package io.exoquery.plugin.transform
 
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.annotation.paramKindParsed
 import io.exoquery.fansi.nullableAsList
@@ -13,7 +13,6 @@ import io.exoquery.plugin.refinedStableIdentifier
 import io.exoquery.plugin.regularArgsWithParamKinds
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.source
-import io.exoquery.plugin.stableIdentifier
 import io.exoquery.plugin.trees.CrossFile
 import io.exoquery.plugin.trees.OwnerChain
 import io.exoquery.plugin.trees.PT.io_exoquery_util_scaffoldCapFunctionQuery
@@ -24,7 +23,6 @@ import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
@@ -55,7 +53,7 @@ fun buildScaffolding(zeroisedCall: IrExpression, scaffoldType: IrType, originalA
 class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransformExpressions, val sourceLabel: String) : Transformer<IrCall>() {
   context(CX.Scope, CX.Builder)
   override fun matches(call: IrCall): Boolean =
-    call.symbol.owner.hasAnnotation<CapturedFunction>()
+    call.symbol.owner.hasAnnotation<SqlFragment>()
 
 
 

@@ -4,7 +4,7 @@ import io.exoquery.testdata.Person
 import io.exoquery.PostgresDialect
 import io.exoquery.SqlExpression
 import io.exoquery.TestDatabases
-import io.exoquery.annotation.CapturedDynamic
+import io.exoquery.annotation.SqlDynamic
 import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.george
@@ -32,7 +32,7 @@ class DynamicActionSpec : FreeSpec({
     val expectedPeople = people.map { p -> p.copy(firstName = p.firstName + "-A") } + george
     val namesToModify = people.map { it.lastName }
 
-    @CapturedDynamic
+    @SqlDynamic
     fun conditionClause(p: SqlExpression<Person>) =
       namesToModify
         .map { n -> sql.expression { p.use.lastName == param(n) } }

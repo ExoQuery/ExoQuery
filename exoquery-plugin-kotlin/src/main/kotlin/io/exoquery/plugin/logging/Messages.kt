@@ -1,9 +1,7 @@
 package io.exoquery.plugin.logging
 
-import io.exoquery.annotation.CapturedDynamic
 import io.exoquery.codegen.model.NameParser
 import io.exoquery.plugin.dataClassProperties
-import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.source

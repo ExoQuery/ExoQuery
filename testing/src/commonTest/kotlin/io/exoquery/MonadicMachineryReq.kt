@@ -1,7 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
-import io.exoquery.PostgresDialect
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 import io.exoquery.testdata.Robot
@@ -27,12 +26,12 @@ class MonadicMachineryReq: GoldenSpecDynamic(MonadicMachineryReqGoldenDynamic, M
     shouldBeGolden(cap.build<PostgresDialect>(), "SQL")
   }
   "sql.expression.(@Cap (Row)->Table).use" {
-    @CapturedFunction
+    @SqlFragment
     fun joinAddress(p: Person) = sql.expression {
       internal.flatJoin(Table<Address>()) { a -> p.id == a.ownerId }
     }
 
-    @CapturedFunction
+    @SqlFragment
     fun joinRobot(p: Person) = sql.expression {
       internal.flatJoin(Table<Robot>()) { r -> p.id == r.ownerId }
     }
@@ -48,12 +47,12 @@ class MonadicMachineryReq: GoldenSpecDynamic(MonadicMachineryReqGoldenDynamic, M
     shouldBeGolden(cap.build<PostgresDialect>(), "SQL")
   }
   "sql.expression.use.(@Cap (Row)()->Table)" {
-    @CapturedFunction
+    @SqlFragment
     fun Person.joinAddress() = sql.expression {
       internal.flatJoin(Table<Address>()) { a -> this@joinAddress.id == a.ownerId }
     }
 
-    @CapturedFunction
+    @SqlFragment
     fun Person.joinRobot() = sql.expression {
       internal.flatJoin(Table<Robot>()) { r -> this@joinRobot.id == r.ownerId }
     }
@@ -70,12 +69,12 @@ class MonadicMachineryReq: GoldenSpecDynamic(MonadicMachineryReqGoldenDynamic, M
   }
 
   "sql.(@Cap (Row)()->Table)" {
-    @CapturedFunction
+    @SqlFragment
     fun Person.joinAddress() = sql {
       internal.flatJoin(Table<Address>()) { a -> this@joinAddress.id == a.ownerId }
     }
 
-    @CapturedFunction
+    @SqlFragment
     fun Person.joinRobot() = sql {
       internal.flatJoin(Table<Robot>()) { r -> this@joinRobot.id == r.ownerId }
     }

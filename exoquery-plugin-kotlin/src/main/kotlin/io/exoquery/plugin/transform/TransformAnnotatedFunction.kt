@@ -5,7 +5,7 @@ import io.decomat.case
 import io.decomat.on
 import io.exoquery.SqlExpression
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.config.ExoCompileOptions
 import io.exoquery.fansi.nullableAsList
@@ -91,7 +91,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
 
   context(CX.Scope, CX.Builder)
   override fun matches(expr: IrFunction): Boolean =
-    expr is IrSimpleFunction && expr.hasAnnotation<CapturedFunction>() &&
+    expr is IrSimpleFunction && expr.hasAnnotation<SqlFragment>() &&
         // If the function has a CapturedFunctionParamKinds annotation it has already been transformed
         !expr.hasAnnotation<CapturedFunctionSketch>()
 

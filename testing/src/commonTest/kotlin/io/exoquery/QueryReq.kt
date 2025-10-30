@@ -1,7 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
-import io.exoquery.PostgresDialect
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.testdata.Robot
 
 // Note that the 1st time you overwrite the golden file it will still fail because the compiler is using the old version
@@ -211,7 +210,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(q.build<PostgresDialect>())
   }
   "query with free in captured function" {
-    @CapturedFunction
+    @SqlFragment
     fun <T> forUpdate(v: SqlQuery<T>) = sql {
       free("${v} FOR UPDATE").asPure<SqlQuery<T>>()
     }
@@ -223,7 +222,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(q.build<PostgresDialect>())
   }
   "query with free in captured function - receiver position" {
-    @CapturedFunction
+    @SqlFragment
     fun <T> SqlQuery<T>.forUpdate() = sql {
       free("${this@forUpdate} FOR UPDATE").asPure<SqlQuery<T>>()
     }

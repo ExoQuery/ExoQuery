@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedDynamic
+import io.exoquery.annotation.SqlDynamic
 import io.exoquery.serial.ParamSerializer
 import io.exoquery.xr.`+++`
 import io.exoquery.xr.XR
@@ -99,7 +99,7 @@ class BasicExpressionQuotationSpec : FreeSpec({
     "c0D=dyn{nA}, c={nB+c0D} -> {nB+T(B0),R={B0,nA}}" {
       val x = true
 
-      @CapturedDynamic
+      @SqlDynamic
       fun cap0() =
         if (x)
           sql.expression { 123 }
@@ -118,7 +118,7 @@ class BasicExpressionQuotationSpec : FreeSpec({
       val v = true
 
       class Foo {
-        @CapturedDynamic
+        @SqlDynamic
         val cap0 =
           if (v) sql.expression { 456 + param(456) } else sql.expression { 456 + param(999) }
       }
@@ -144,7 +144,7 @@ class BasicExpressionQuotationSpec : FreeSpec({
       val v = true
 
       class Foo {
-        @CapturedDynamic
+        @SqlDynamic
         fun cap0(input: SqlExpression<Int>) =
           if (v) sql.expression { 101112 + input.use } else sql.expression { 456 + param(999) }
       }

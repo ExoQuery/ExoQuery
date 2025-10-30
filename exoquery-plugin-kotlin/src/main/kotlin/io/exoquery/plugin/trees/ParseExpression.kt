@@ -14,8 +14,6 @@ import io.exoquery.xr.*
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.types.isBoolean
-import org.jetbrains.kotlin.ir.types.isNullableString
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
@@ -396,7 +394,7 @@ object ParseExpression {
             uprootable.unpackOrErrorXR().successOrParseError(sqlExprIr)
           },
           case(ExtractorsDomain.DynamicExprCall[Is()]).then { call ->
-            if (call is IrCall && call.ownerHasAnnotation<CapturedDynamic>())
+            if (call is IrCall && call.ownerHasAnnotation<SqlDynamic>())
               call.regularArgsOrExtension.forEach { validateDynamicArg(it) }
             val bid = BID.Companion.new()
             binds.addRuntime(bid, sqlExprIr)

@@ -4,8 +4,8 @@ import io.decomat.Is
 import io.exoquery.CapturedBlock
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.CapturedDynamic
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlDynamic
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.parseError
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX
@@ -106,10 +106,10 @@ fun IrDeclarationReference.realOwner(): RealOwner {
       recurseCount == 0 -> RealOwner.External
       // If the owner is a captured-function then we immediately know it's a captured variable
       //elem is IrFunction && elem.isCapturedFunction() -> true
-      elem is IrFunction && elem.hasAnnotation<CapturedFunction>() -> RealOwner.CapturedFunctionVariable(elem, varType)
+      elem is IrFunction && elem.hasAnnotation<SqlFragment>() -> RealOwner.CapturedFunctionVariable(elem, varType)
       // the variables of a CapturedDynamic function are NOT captured variables, they are just normal variables. You can put them into a param
       // but normally they will be SqlQuery/SqlExpression instances
-      elem is IrFunction && elem.hasAnnotation<CapturedDynamic>() -> RealOwner.CapturedDynamicFunctionVariable(elem, varType)
+      elem is IrFunction && elem.hasAnnotation<SqlDynamic>() -> RealOwner.CapturedDynamicFunctionVariable(elem, varType)
 
           // If the owner of the function is a ExoQuery captured-block (i.e. inside of a sql { ... } function of some sort) we immediately
       // know the parent function was defined inside of the sql and is therefore a "captured variable"
@@ -122,9 +122,9 @@ fun IrDeclarationReference.realOwner(): RealOwner {
       // that is completely inside the sql { ... } block but not actually a parameter of the sql itself)
       elem is IrValueParameter ->
         when (val parent = elem.symbol.owner.parent) {
-          is IrFunction if parent.hasAnnotation<CapturedFunction>() ->
+          is IrFunction if parent.hasAnnotation<SqlFragment>() ->
             RealOwner.CapturedFunctionVariable(parent, VarType.ParamVar)
-          is IrFunction if parent.hasAnnotation<CapturedDynamic>() ->
+          is IrFunction if parent.hasAnnotation<SqlDynamic>() ->
             RealOwner.CapturedDynamicFunctionVariable(parent, VarType.ParamVar)
           else ->
             rec(elem.symbol.owner.parent, varType, recurseCount - 1)

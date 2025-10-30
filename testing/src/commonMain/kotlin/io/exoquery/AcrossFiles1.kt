@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 
 data class PersonCrs(val id: Int, val name: String)
 data class AddressCrs(val ownerId: Int, val street: String)
@@ -31,7 +31,7 @@ inline fun crossFileBatchAction(batchInserts: Sequence<PersonCrs>) =
     insert<PersonCrs> { set(name to "JohnActionA") }
   }
 
-@CapturedFunction
+@SqlFragment
 inline fun crossFileCapSelect(q: SqlQuery<PersonCrs>) =
   // TODO what happens if it's a sql.select here?
   sql {

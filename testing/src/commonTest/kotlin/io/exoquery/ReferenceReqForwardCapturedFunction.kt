@@ -1,7 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
-import io.exoquery.PostgresDialect
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.testdata.Person
 
 
@@ -91,37 +90,37 @@ class ReferenceReqForwardCapturedFunction: GoldenSpecDynamic(ReferenceReqForward
 
 
 object CaptureAheadObjectNested3x {
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql {
     CaptureAheadObjectNested3xForward.peopleNested(filter).filter { p -> p.name == param("JoeJoe") }
   }
 }
 
 object CaptureAheadObjectNested3xForward {
-  @CapturedFunction
+  @SqlFragment
   fun peopleNested(filter: String) = sql { CaptureAheadObjectNested3xForwardForward.peopleNestedNested(filter) }
 }
 
 object CaptureAheadObjectNested3xForwardForward {
-  @CapturedFunction
+  @SqlFragment
   fun peopleNestedNested(filter: String) = sql { Table<Person>().filter { p -> p.name == filter } }
 }
 
 
 object CaptureAheadObject {
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql { Table<Person>().filter { p -> p.name == filter } }
 }
 
 object CaptureAheadObjectNested {
-  @CapturedFunction
+  @SqlFragment
   fun peopleNested(filter: String) = sql { Table<Person>().filter { p -> p.name == filter } }
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql { peopleNested(filter) }
 }
 
 object CaptureAheadObjectNested2x {
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql {
     CaptureAheadObjectNested.people(filter).filter { p -> p.name == param("JoeJoe") }
   }
@@ -129,23 +128,23 @@ object CaptureAheadObjectNested2x {
 
 class CaptureAheadClass {
   val local = "Joe1"
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql { Table<Person>().filter { p -> p.name == param(local) && p.name == filter } }
 }
 
 class CaptureAheadClassNested {
   val local = "Joe2"
-  @CapturedFunction
+  @SqlFragment
   fun peopleNested(filter: String) = sql { Table<Person>().filter { p -> p.name == param(local) && p.name == filter } }
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql { peopleNested(filter) }
 }
 
 class CaptureAheadClassNested1 {
   val localA = "JoeA3"
   val localB = "JoeB3"
-  @CapturedFunction
+  @SqlFragment
   fun peopleNested(filter: String) = sql { Table<Person>().filter { p -> p.name == param(localA) || p.name == filter } }
-  @CapturedFunction
+  @SqlFragment
   fun people(filter: String) = sql { peopleNested(filter).filter { p -> p.name == param(localB) && p.name == filter } }
 }

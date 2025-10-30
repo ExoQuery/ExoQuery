@@ -1,6 +1,6 @@
 package io.exoquery
 
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 
 
 inline fun crossFileSelectExpr() = sql {
@@ -14,12 +14,12 @@ inline fun crossFileSelectSelect () = sql.select {
   p to a
 }
 
-@CapturedFunction
+@SqlFragment
 inline fun crossFileCapSelectCapExpr(q: SqlQuery<PersonCrs>) = sql {
   crossFileCapSelect(Table<PersonCrs>().filter { p -> p.name == "JohnB" })
 }
 
-@CapturedFunction
+@SqlFragment
 inline fun crossFileCapSelectCapSelect(q: SqlQuery<PersonCrs>) = sql.select {
   val p = from(crossFileCapSelect(q))
   val a = join(Table<AddressCrs>()) { it.ownerId == p.id }

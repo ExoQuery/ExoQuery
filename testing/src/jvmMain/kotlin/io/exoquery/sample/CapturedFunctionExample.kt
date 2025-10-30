@@ -1,18 +1,18 @@
 package io.exoquery.sample
 
-import io.exoquery.annotation.CapturedFunction
+import io.exoquery.annotation.SqlFragment
 import io.exoquery.sql
 
 fun main() {
   data class Stock(val weight: Double, val sharesOutstanding: Int, val price: Double, val earnings: Double)
 
-  @CapturedFunction
+  @SqlFragment
   fun peRatioWeighted(stock: Stock, weight: Double) = sql.expression {
     (stock.price / stock.earnings) * weight
   }
 
   // A extension function used in the query!
-  @CapturedFunction
+  @SqlFragment
   fun Stock.marketCap() = sql.expression {
     price * sharesOutstanding
   }
