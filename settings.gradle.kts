@@ -24,6 +24,11 @@ dependencyResolutionManagement {
   repositories {
     mavenCentral() // Required for toolchain resolution
   }
+  versionCatalogs {
+    create("pluginLibs") {
+      from(files("plugin_libs.toml"))
+    }
+  }
 }
 
 includeBuild("exoquery-engine")
@@ -50,5 +55,6 @@ if (isLocal || isLinux) {
 include("exoquery-runner-native")
 include("testing")
 include("testing-compile")
+include("testing-compile-dependencies")
 
 rootProject.name = "exoquery"

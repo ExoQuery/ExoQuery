@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.exoquery.plugin.Registrar
 import io.kotest.matchers.string.shouldContain
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import java.io.File
 
 @OptIn(ExperimentalCompilerApi::class)
 class PluginCompileTest : StringSpec({
@@ -52,10 +53,10 @@ class PluginCompileTest : StringSpec({
     import io.exoquery.*
 
     data class MyPerson(val name: String, val age: Int)
-    fun personName(p: MyPerson) = p.name
+    fun nameAndSuffix(name: String) = name + "_suffix"
 
     fun run() {
-      val q = sql { Table<MyPerson>().filter { p -> personName(p) == "Joe" } }
+      val q = sql { Table<MyPerson>().filter { p -> nameAndSuffix(p.name + "_middle") == "Joe" } }
       println(q.buildFor.Postgres().value)
     }
 
@@ -63,9 +64,16 @@ class PluginCompileTest : StringSpec({
     """.trimIndent()
     )
 
+    // Use jars produced by :testing-compile-dependencies:copyDependencies as the compilation classpath
+    val depsDir = File("../testing-compile-dependencies/target/dependencies")
+    val requestedJars: List<File> =
+      if (depsDir.exists()) depsDir.listFiles { f -> f.isFile && f.name.endsWith(".jar") }?.sortedBy { it.name }?.toList().orEmpty()
+      else emptyList()
+
     val result = KotlinCompilation().apply {
       sources = listOf(source)
-      inheritClassPath = true
+      inheritClassPath = false // define a minimal classpath for the plugin from copied dependencies
+      classpaths = requestedJars
       messageOutputStream = System.out // see diagnostics
       compilerPluginRegistrars = listOf(Registrar())
       // k2 = true

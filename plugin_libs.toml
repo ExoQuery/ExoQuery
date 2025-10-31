@@ -1,0 +1,133 @@
+[versions]
+kotlin = "2.2.20"
+kotlinIdeVersion = "1.9.20-506"
+kotlinIdeVersionWithSuffix = "231-1.9.20-506-IJ8109.175"
+spring-boot = "3.5.5"
+spring-dependency-managment = "1.1.7"
+springdoc = "2.8.13"
+aws-serverless-java-container-springboot3 = "2.1.4"
+junit = "4.13.2"
+logstash-logback-encoder = "8.1"
+trove4j = "1.0.20221201"
+kotlinx-coroutines = "1.7.3"
+kotlinx-coroutines-test = "1.6.4"
+kotlinx-datetime = "0.7.1-0.6.x-compat"
+kotlinx-io = "0.8.0"
+kotlinx-serialization = "1.9.0"
+skiko = "0.9.24"
+# don't forget to update jackson version in `executor.policy` file.
+jackson = "2.19.2"
+hamcrest = "3.0"
+compose = "1.7.0"
+#gradle-develocity = "3.17.5"
+# ======================= Compiler Dependency Versions =======================
+pprint-kotlin = "3.0.0"
+terpal = "2.2.20-2.0.1.PL"
+sqlformatter = "2.0.4"
+decomat = "1.0.0"
+controller = "3.2.3"
+exoquery-plugin = "2.2.20-2.0.0.PL.1"
+exoquery-runner = "2.0.0.PL.1"
+
+[libraries]
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
+kotlin-stdlib-jdk7 = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk7", version.ref = "kotlin" }
+kotlin-stdlib-jdk8 = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-stdlib-js = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-js", version.ref = "kotlin" }
+kotlin-stdlib-wasm-js = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-wasm-js", version.ref = "kotlin" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
+kotlin-compiler = { group = "org.jetbrains.kotlin", name = "kotlin-compiler", version.ref = "kotlin" }
+kotlin-script-runtime = { group = "org.jetbrains.kotlin", name = "kotlin-script-runtime", version.ref = "kotlin" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-gradle-plugin-idea = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin-idea", version.ref = "kotlin" }
+kotlin-dom-api-compat = { group = "org.jetbrains.kotlin", name = "kotlin-dom-api-compat", version.ref = "kotlin" }
+kotlin-compose-compiler-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-compose-compiler-plugin", version.ref = "kotlin" }
+kotlin-base-fe10-analysis = { group = "org.jetbrains.kotlin", name = "base-fe10-analysis", version.ref = "kotlinIdeVersionWithSuffix" }
+kotlin-compiler-ide = { group = "org.jetbrains.kotlin", name = "kotlin-compiler-for-ide", version.ref = "kotlinIdeVersion" }
+kotlin-idea = { group = "org.jetbrains.kotlin", name = "idea", version.ref = "kotlinIdeVersionWithSuffix" }
+kotlin-core = { group = "org.jetbrains.kotlin", name = "core", version.ref = "kotlinIdeVersionWithSuffix" }
+kotlinx-coroutines-core-jvm = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core-jvm", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io" }
+kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-serialization-json-jvm = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json-jvm", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-core-jvm = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core-jvm", version.ref = "kotlinx-serialization" }
+springdoc = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+aws-springboot-container = { group = "com.amazonaws.serverless", name = "aws-serverless-java-container-springboot3", version.ref = "aws-serverless-java-container-springboot3" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+logback-logstash-encoder = { group = "net.logstash.logback", name = "logstash-logback-encoder", version.ref = "logstash-logback-encoder" }
+intellij-trove4j = { group = "org.jetbrains.intellij.deps", name = "trove4j", version.ref = "trove4j" }
+skiko-js-wasm-runtime = { group = "org.jetbrains.skiko", name = "skiko-js-wasm-runtime", version.ref = "skiko" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson" }
+jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
+jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest" }
+compose-runtime = { group = "org.jetbrains.compose.runtime", name = "runtime", version.ref = "compose" }
+compose-ui = { group = "org.jetbrains.compose.ui", name = "ui", version.ref = "compose" }
+compose-animation = { group = "org.jetbrains.compose.animation", name = "animation", version.ref = "compose" }
+compose-animation-graphics = { group = "org.jetbrains.compose.animation", name = "animation-graphics", version.ref = "compose" }
+compose-foundation = { group = "org.jetbrains.compose.foundation", name = "foundation", version.ref = "compose" }
+compose-material = { group = "org.jetbrains.compose.material", name = "material", version.ref = "compose" }
+compose-material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "compose" }
+compose-components-resources = { group = "org.jetbrains.compose.components", name = "components-resources", version.ref = "compose" }
+kotlin-serialization-plugin = {group= "org.jetbrains.kotlin", name="kotlin-serialization-compiler-plugin", version.ref = "kotlin"}
+kotlin-exoquery-plugin = { group = "io.exoquery", name = "exoquery-plugin-kotlin", version.ref = "exoquery-plugin" }
+kotlin-exoquery-runtime = { group = "io.exoquery", name = "exoquery-engine", version.ref = "exoquery-plugin" }
+kotlin-exoquery-runner-jdbc = { group = "io.exoquery", name = "exoquery-runner-jdbc", version.ref = "exoquery-runner" }
+kotlin-exoquery-runner-core = { group = "io.exoquery", name = "exoquery-runner-core", version.ref = "exoquery-runner" }
+terpal-controller-jdbc = { group = "io.exoquery", name = "controller-core", version.ref = "controller" }
+terpal-controller-core = { group = "io.exoquery", name = "controller-jdbc", version.ref = "controller" }
+#io.exoquery:decomat-core-jvm:0.4.0
+decomat = { group = "io.exoquery", name = "decomat-core-jvm", version.ref = "decomat" }
+# TODO latest is using version "0.7.1-0.6.x-compat". Look into bumping this in ExoQuery
+kotlin-serialization-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version = "0.6.0" }
+#com.github.vertical-blank:sql-formatter:2.0.4
+sqlformatter = { group = "com.github.vertical-blank", name = "sql-formatter", version.ref = "sqlformatter" }
+#io.exoquery:terpal-runtime:2.1.20-2.0.0.PL
+terpal-runtime = { group = "io.exoquery", name = "terpal-runtime", version.ref = "terpal" }
+#io.exoquery:pprint-kotlin-core-jvm:3.0.0
+pprint-kotlin-core = { group = "io.exoquery", name = "pprint-kotlin-core-jvm", version.ref = "pprint-kotlin" }
+#io.exoquery:pprint-kotlin-kmp-jvm:3.0.0
+pprint-kotlin-kmp = { group = "io.exoquery", name = "pprint-kotlin-kmp-jvm", version.ref = "pprint-kotlin" }
+pprint-kotlin-java = { group = "io.exoquery", name = "pprint-kotlin", version.ref = "pprint-kotlin" }
+kotlinx-serialization-protobuf-jvm = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf-jvm", version.ref = "kotlinx-serialization" }
+
+sqlite-jdbc = { group = "org.xerial", name = "sqlite-jdbc", version = "3.42.0.1" }
+
+h2-jdbc = { group = "com.h2database", name = "h2", version = "2.4.240" }
+
+#gradle-develocity = {group = "com.gradle", name= "develocity-gradle-plugin", version.ref = "gradle-develocity"}
+
+
+
+
+
+
+
+#target.dependencies.add("kotlinNativeCompilerPluginClasspath", "io.exoquery:pprint-kotlin:3.0.0")
+#target.dependencies.add("kotlinNativeCompilerPluginClasspath", "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")
+
+
+[bundles]
+kotlin-stdlib = ["kotlin-stdlib", "kotlin-stdlib-jdk7", "kotlin-stdlib-jdk8"]
+jackson = ["jackson-databind", "jackson-core", "jackson-annotations"]
+compose = [
+    "compose-runtime",
+    "compose-ui",
+    "compose-animation",
+    "compose-animation-graphics",
+    "compose-foundation",
+    "compose-material",
+    "compose-material3",
+    "compose-components-resources",
+]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-plugin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-managment" }
