@@ -49,5 +49,6 @@ if (isLocal || isLinux) {
 
 include("exoquery-runner-native")
 include("testing")
+include("testing-compile")
 
 rootProject.name = "exoquery"
