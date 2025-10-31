@@ -9,6 +9,7 @@ out/
 *.iml
 *.hprof
 *.log
+target/
 
 # VSCode
 .history/

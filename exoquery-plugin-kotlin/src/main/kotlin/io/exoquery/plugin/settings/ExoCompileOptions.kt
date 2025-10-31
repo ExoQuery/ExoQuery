@@ -22,6 +22,7 @@ class ExoCompileOptionsBuilder {
   var enableCodegenAI: Boolean? = false
   var forceRegen: Boolean? = false
   var enableCrossFileStore: Boolean? = ExoCompileOptions.EnableCrossFileStore
+  var enableErrorDetails: Boolean? = ExoCompileOptions.EnableErrorDetails
 
 
   fun build(): ExoCompileOptions {
@@ -41,6 +42,7 @@ class ExoCompileOptionsBuilder {
       enableCodegenAI ?: ExoCompileOptions.DefaultEnabledCodegenAI,
       forceRegen ?: ExoCompileOptions.DefaultForceRegen,
       enableCrossFileStore ?: ExoCompileOptions.EnableCrossFileStore,
+      enableErrorDetails ?: ExoCompileOptions.EnableErrorDetails,
     )
   }
 }
@@ -64,4 +66,5 @@ fun ExoCompileOptionsBuilder.processOption(option: ExoCliOption, value: String) 
   ExoCliOption.ENABLE_CODEGEN_AI -> enableCodegenAI = value.toBoolean()
   ExoCliOption.FORCE_REGEN -> forceRegen = value.toBoolean()
   ExoCliOption.ENABLE_CROSS_FILE_STORE -> enableCrossFileStore = value.toBoolean()
+  ExoCliOption.ENABLE_ERROR_DETAILS -> enableErrorDetails = value.toBoolean()
 }

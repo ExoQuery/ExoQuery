@@ -29,6 +29,7 @@ class ExoCompileOptions(
   val enableCodegenAI: Boolean = DefaultEnabledCodegenAI,
   val forceRegen: Boolean = DefaultForceRegen,
   val enableCrossFileStore: Boolean = EnableCrossFileStore,
+  val enableErrorDetails: Boolean = EnableErrorDetails,
 ) {
   fun encode(): String {
     return EncodingXR.protoBuf.encodeToHexString(ExoCompileOptions.serializer(), this)
@@ -41,6 +42,7 @@ class ExoCompileOptions(
     val DefaultEnabledCodegenAI = false
     val DefaultForceRegen = false
     val EnableCrossFileStore = true
+    val EnableErrorDetails = false
   }
 
   val outputStringMaker: OutputStringMaker = OutputStringMaker(outputString)

@@ -16,18 +16,11 @@ class LiftingError(val msg: String) : Exception(msg)
 
 fun liftingError(msg: String): Nothing = throw LiftingError(msg)
 
-class ParseError(val msg: String, val location: CompilerMessageSourceLocation?) : Exception(msg) {
+class ParseError(val fullMessage: String, val location: CompilerMessageSourceLocation?) : Exception(fullMessage) {
   companion object {
     context(CX.Scope)
     fun withFullMsg(msg: String, element: IrElement, file: IrFile, location: CompilerMessageSourceLocation, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): ParseError {
       val fullMsg: String = run {
-        val expressionPart =
-          element.source()?.let { src ->
-            """|
-               |------------ Source ------------
-               |${src}""".trimMargin()
-          }
-
         val printingElement = element //.prepareForPrinting()
         val rawExpression =
           try {
@@ -39,6 +32,17 @@ class ParseError(val msg: String, val location: CompilerMessageSourceLocation?) 
               e.stackTraceToString()
             }
           }
+
+        val expressionPart =
+          element.source()?.let { src ->
+            """|
+               |------------ Source ------------
+               |${src}
+               |------------ Raw Expression ------------
+               |${rawExpression}
+               |""".trimMargin()
+          }
+
         val rawExpressionTree =
           try {
             printingElement.dumpSimple()
@@ -58,14 +62,22 @@ class ParseError(val msg: String, val location: CompilerMessageSourceLocation?) 
           }
 
         val originalErrorTrace =
-          originalErrorTrace?.let { "\n----------------- Original Cause: -----------------\n${it.stackTraceToString()}\n" } ?: ""
+          if (options?.enableErrorDetails ?: false) {
+            originalErrorTrace?.let { "\n----------------- Original Cause: -----------------\n${it.stackTraceToString()}\n" } ?: ""
+          } else {
+            ""
+          }
 
-        """|[ExoQuery] Could not understand an expression or query due to an error: ${msg}.${expressionPart}
-           |------------ Raw Expression ------------
-           |${rawExpression}
-           |------------ Raw Expression Tree ------------
-           |${rawExpressionTree}
-           |""".trimMargin() + originalErrorTrace + crossFileContent
+        val errorDetail =
+          if (options?.enableErrorDetails ?: false) {
+            "\n" + """------------ Raw Expression Tree ------------
+            |${rawExpressionTree}
+            |""".trimMargin()
+          } else {
+            ""
+          }
+
+        """[ExoQuery] Could not understand an expression or query due to an error: ${msg}.${expressionPart}""" + errorDetail + originalErrorTrace + crossFileContent
       }
       return ParseError(fullMsg, location)
     }

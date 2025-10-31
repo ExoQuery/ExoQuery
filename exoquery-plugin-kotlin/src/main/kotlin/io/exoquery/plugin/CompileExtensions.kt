@@ -8,6 +8,7 @@ import io.exoquery.annotation.SqlFragment
 import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.annotation.ChangeReciever
 import io.exoquery.annotation.ParamKind
+import io.exoquery.plugin.printing.TextRangeSimple
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.Caller
 import io.exoquery.plugin.transform.createLambda0
@@ -18,7 +19,6 @@ import io.exoquery.xr.XR
 import org.jetbrains.kotlin.backend.jvm.ir.getKtFile
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocationWithRange
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
-import org.jetbrains.kotlin.com.intellij.openapi.util.TextRange
 import org.jetbrains.kotlin.fir.backend.FirMetadataSource
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrFileEntry
@@ -38,6 +38,7 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.zipIfSizesAreEqual
 import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
@@ -514,7 +515,7 @@ fun IrElement.sourceOrDump() =
 // Best-effort to get the source of the file
 context(CX.Scope) fun IrElement.source(): String? = run {
   try {
-    val range = TextRange(this.startOffset, this.endOffset)
+    val range = TextRangeSimple(this.startOffset, this.endOffset)
 
     fun getFromFirSource() =
       (currentFile.metadata as? FirMetadataSource.File)
@@ -525,7 +526,7 @@ context(CX.Scope) fun IrElement.source(): String? = run {
 
     fun getFromKtFile() =
       currentFile.getKtFile()?.let { ktFile ->
-        ktFile.textRange.cutOut(range).let { cutOut ->
+        ktFile.textRangeSimple.cutOut(range).let { cutOut ->
           ktFile.text.let { textValue ->
             cutOut.substring(textValue)
           }
@@ -537,6 +538,9 @@ context(CX.Scope) fun IrElement.source(): String? = run {
     null
   }
 }
+
+private val KtFile.textRangeSimple get() =
+  TextRangeSimple(0, this.getTextLength())
 
 context(CX.Scope)
 fun IrExpression.isSqlQuery() =

@@ -27,6 +27,8 @@ interface ExoQueryGradlePluginExtension {
 
   val enableCrossFileStore: Property<Boolean>
 
+  val enableErrorDetails: Property<Boolean>
+
   /**
    * If you want to use NameParser.UsingLLM for code generation (at compile-time), you need to enable this property.
    */
@@ -230,6 +232,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     val (entitiesBaseDir, entitiesDirType) = conventions.generatedEntitiesDir(project)
     val autoCreateDirs = ext.autoCreateCodenDirectories.convention(false).get()
     val debugGeneratedDirConventions = ext.debugGeneratedDirConventions.convention(false).get()
+    val enableErrorDetails = ext.enableErrorDetails.convention(ExoCompileOptions.EnableErrorDetails).get()
 
     // Need to do this here and not in apply() because the kotlinExtension is not available yet there
     // and we need it to know where the generated directories are (i.e. it changes based on whether an LLM is used for codegen or not)
@@ -262,7 +265,8 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         SubpluginOption("queryPrintingEnabled", queryPrintingEnabled.toString()),
         SubpluginOption("enableCodegenAI", enableCodegenAI.get().toString()),
         SubpluginOption("forceRegen", forceRegen.get().toString()),
-        SubpluginOption("enableCrossFileStore", ext.enableCrossFileStore.convention(ExoCompileOptions.EnableCrossFileStore).getOrElse(ExoCompileOptions.EnableCrossFileStore).toString())
+        SubpluginOption("enableCrossFileStore", ext.enableCrossFileStore.convention(ExoCompileOptions.EnableCrossFileStore).getOrElse(ExoCompileOptions.EnableCrossFileStore).toString()),
+        SubpluginOption("enableErrorDetails", enableErrorDetails.toString()),
       )
     }
   }
