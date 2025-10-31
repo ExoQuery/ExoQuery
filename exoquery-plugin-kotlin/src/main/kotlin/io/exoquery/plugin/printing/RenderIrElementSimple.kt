@@ -5,6 +5,7 @@ import io.exoquery.fansi.Color.Red
 import io.exoquery.plugin.extensionArg
 import io.exoquery.plugin.fullName
 import io.exoquery.plugin.safeName
+import org.jetbrains.kotlin.com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.ReceiverParameterDescriptor
 import org.jetbrains.kotlin.ir.AbstractIrFileEntry
@@ -436,8 +437,8 @@ open class RenderIrElementVisitorSimple(
 
   private fun Any.escapeIfRequired() =
     when (this) {
-      is String -> "\"${StringUtilSimple.escapeStringCharacters(this)}\""
-      is Char -> "'${StringUtilSimple.escapeStringCharacters(this.toString())}'"
+      is String -> "\"${StringUtil.escapeStringCharacters(this)}\""
+      is Char -> "'${StringUtil.escapeStringCharacters(this.toString())}'"
       else -> this
     }
 
