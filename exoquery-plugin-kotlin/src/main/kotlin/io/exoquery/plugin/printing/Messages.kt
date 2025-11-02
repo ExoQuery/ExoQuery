@@ -7,13 +7,6 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 // @formatter:off
-object DomainErrors {
-  fun NoDispatchRecieverFoundForSqlVarCall(sqlVar: IrExpression): Nothing =
-    parseError(Messages.NoDispatchRecieverFoundForSqlVarCall(sqlVar))
-
-  fun NotProductTypeParsedFromType(xrType: XRType, type: IrType): Nothing =
-    parseError(Messages.NotProductTypeParsedFromType(xrType, type))
-}
 
 object Messages {
 

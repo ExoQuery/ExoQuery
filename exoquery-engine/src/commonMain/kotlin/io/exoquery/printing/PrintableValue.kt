@@ -19,5 +19,9 @@ data class PrintableValue(val value: String, val type: Type, val queryOutputType
     object KotlinCode : Type {
       override val interpolatorPrefix = "kt"
     }
+
+    object PlainText : Type {
+      override val interpolatorPrefix = "pl"
+    }
   }
 }

@@ -94,7 +94,7 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
           case(Ir.Call.FunctionUntethered1[Is("io.exoquery.elaborateDataClass"), Is()]).thenThis { _, rec ->
             val rootType =
               Parser.scoped {
-                TypeParser.ofTypeAt(this.typeArguments.first()!!, this.location())
+                TypeParser.ofTypeAt(this.typeArguments.first()!!, this)
               } as XRType.Product
             val pairs =
               Elaborate.invoke(rec, rootType).map { path ->

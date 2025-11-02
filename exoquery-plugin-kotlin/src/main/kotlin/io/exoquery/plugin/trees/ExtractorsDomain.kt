@@ -283,7 +283,7 @@ object ExtractorsDomain {
     class ActionSetClause(val inputType: IrType) {
       data class Data(val inputType: IrType, val originalExpr: IrExpression, val assignments: List<IrExpression>) {
         context(CX.Scope, CX.Parsing)
-        fun parseEntity() = ParseQuery.parseEntity(inputType, originalExpr.location())
+        fun parseEntity() = ParseQuery.parseEntity(inputType, originalExpr)
         context(CX.Scope, CX.Parsing)
         fun parseAssignments() = assignments.map { ParseAction.parseAssignment(it) }
       }

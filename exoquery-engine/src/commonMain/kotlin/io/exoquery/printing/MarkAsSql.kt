@@ -6,3 +6,4 @@ data class GoldenResult(val queryString: String, val params: List<Pair<String, S
 
 fun cr(@Language("SQL") str: String, vararg params: Pair<String, String>): GoldenResult = GoldenResult(str, params.toList())
 fun kt(@Language("Kotlin") str: String): GoldenResult = GoldenResult(str)
+fun pl(str: String): GoldenResult = GoldenResult(str)

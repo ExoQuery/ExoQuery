@@ -252,7 +252,7 @@ object ParseQuery {
         }
       },
       case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<CapturedBlock>(), Is("Table")]).thenThis { _, _ ->
-        entityFromType(this.typeArguments[0] ?: parseError("Type arguemnt of Table() call was not found>"), this.location())
+        entityFromType(this.typeArguments[0] ?: parseError("Type arguemnt of Table() call was not found>"), this)
       },
       // This is the select defined in the sql-block (that returns SqlQuery<T> as opposed to the top-level one which returns @Captured SqlQuery<T>.
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<CapturedBlock>(), Is("select"), Ir.FunctionExpression[Is()]]).thenThis { _, (selectLambda) ->
@@ -261,16 +261,18 @@ object ParseQuery {
     )
 
   context(CX.Scope, CX.Parsing)
-  fun entityFromType(type: IrType, location: CompilerMessageSourceLocation): XR.Entity {
-    val tpe = TypeParser.ofTypeAt(type, location)
-    val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", location)
+  fun entityFromType(type: IrType, sourceExpression: IrExpression): XR.Entity {
+    val location = sourceExpression.location()
+    val tpe = TypeParser.ofTypeAt(type, sourceExpression)
+    val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", sourceExpression)
     return XR.Entity(tpeProd.name, tpeProd, XR.HasRename.hasOrNot(tpeProd.meta.hasRename), location.toLocationXR())
   }
 
   context(CX.Scope, CX.Parsing)
-  fun parseEntity(type: IrType, location: CompilerMessageSourceLocation): XR.Entity {
-    val tpe = TypeParser.ofTypeAt(type, location)
-    val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", location)
+  fun parseEntity(type: IrType, sourceExpression: IrExpression): XR.Entity {
+    val location = sourceExpression.location()
+    val tpe = TypeParser.ofTypeAt(type, sourceExpression)
+    val tpeProd = tpe as? XRType.Product ?: parseError("Table<???>() call argument type must be a data-class, but was: ${tpe}", sourceExpression)
     return XR.Entity(tpeProd.name, tpeProd, XR.HasRename.hasOrNot(tpeProd.meta.hasRename), location.toLocationXR())
   }
 }

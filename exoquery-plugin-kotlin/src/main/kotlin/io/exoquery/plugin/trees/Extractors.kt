@@ -1063,7 +1063,7 @@ object Ir {
                 else -> Components2(it.regularParams, FunBody.Complex(bodyVal.statements, null))
               }
             }
-            else -> parseError("The function ${it.name} body was not a blockBody")
+            else -> null
           }
         }
       }

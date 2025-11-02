@@ -45,7 +45,7 @@ class VisitTransformExpressions(
   fun makeCompileLogger(currentExpr: IrElement) =
     CompileLogger.invoke(config, currentFile, currentExpr)
 
-  fun makeScope(currentExpr: IrElement, scopeOwner: IrSymbol, currentDeclarationParent: IrDeclarationParent?, storedXRsScope: CompileTimeStoredXRsScope) = CX.Scope(
+  fun makeScope(currentExpr: IrElement, scopeOwner: IrSymbol, currentDeclarationParent: IrDeclarationParent?, storedXRsScope: CompileTimeStoredXRsScope, perFileDebugConfig: CX.PerFileDebugConfig = CX.PerFileDebugConfig()) = CX.Scope(
     currentExpr = currentExpr,
     logger = makeCompileLogger(currentExpr),
     currentFile = currentFile,
@@ -55,6 +55,7 @@ class VisitTransformExpressions(
     scopeOwner = scopeOwner,
     currentDeclarationParent = currentDeclarationParent,
     storedXRsScope = storedXRsScope,
+    perFileDebugConfig = perFileDebugConfig
   )
 
   context (CX.QueryAccum)
@@ -118,7 +119,7 @@ class VisitTransformExpressions(
     // of the compilation phases).
     //if (file.hasAnnotation<ExoGoldenTest>())
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scope = makeScope(file, scopeOwner, currentDeclarationParent, storedXRsScope)
+    val scope = makeScope(file, scopeOwner, currentDeclarationParent, storedXRsScope, CX.PerFileDebugConfig.fromFile(file))
 
     val sanityCheck = currentFile.path == file.path
     if (!sanityCheck) {
@@ -148,9 +149,9 @@ class VisitTransformExpressions(
 
   override fun visitFunctionNew(declaration: IrFunction, data: VisitorContext): IrStatement {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scopeContext = makeScope(declaration, scopeOwner, currentDeclarationParent, storedXRsScope)
+    val scopeContext = makeScope(declaration, scopeOwner, currentDeclarationParent, storedXRsScope, CX.PerFileDebugConfig.fromFile(currentFile))
     val builderContext = CX.Builder(scopeContext)
-    val runner = ScopedRunner(scopeContext, builderContext, data, "[ExoQuery: VisitFunction]")
+    val runner = ScopedRunner(scopeContext, builderContext, data)
 
     val transformAnnotatedFunction = TransformAnnotatedFunction(this)
     return runner.run(declaration) {
@@ -168,7 +169,7 @@ class VisitTransformExpressions(
     }
   }
 
-  data class ScopedRunner(val scopeContext: CX.Scope, val builderContext: CX.Builder, val visitorContext: VisitorContext, val marker: String, val catchError: Boolean = true) {
+  data class ScopedRunner(val scopeContext: CX.Scope, val builderContext: CX.Builder, val visitorContext: VisitorContext, val catchError: Boolean = true) {
     fun <R : IrElement> run(expression: R, block: context (CX.Scope, CX.Builder, CX.QueryAccum) () -> R): R = run {
       fun runBlock() = block(scopeContext, builderContext, CX.QueryAccum(visitorContext.queriesAccum))
       if (catchError)
@@ -177,8 +178,7 @@ class VisitTransformExpressions(
         } catch (e: ParseError) {
           // builderContext.logger.error(e.msg, e.location ?: expression.location(currentFile.fileEntry))
           scopeContext.logger.error(
-            // e.msg + "\n---------------- Stack Trace ----------------\n" + // stackTraceToString includes the message
-            marker + e.fullMessage,
+            e.fullMessageWithStackTrace(),
           )
           expression
         } catch (e: TransformXrError) {
@@ -195,7 +195,7 @@ class VisitTransformExpressions(
   // TODO move this to visitGetValue? That would be more efficient but what other things might we wnat to transform?
   override fun visitExpression(expression: IrExpression, data: VisitorContext): IrExpression {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scopeContext = makeScope(expression, scopeOwner, currentDeclarationParent, storedXRsScope)
+    val scopeContext = makeScope(expression, scopeOwner, currentDeclarationParent, storedXRsScope, CX.PerFileDebugConfig.fromFile(currentFile))
 
     // We should not be transforming containers that have already been transformed. TODO make them all in to one check and don't check if they're case-class-constructor multiple times!
     with (scopeContext) {
@@ -205,7 +205,7 @@ class VisitTransformExpressions(
     val builderContext = CX.Builder(scopeContext)
     val transformProjectCapture = TransformProjectCapture2(this)
     //val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this, "[ExoQuery: VisitTransformExpressions-VisitExpr]")
-    val runner = ScopedRunner(scopeContext, builderContext, data, "[ExoQuery: VisitExpr]")
+    val runner = ScopedRunner(scopeContext, builderContext, data)
 
     return runner.run(expression) {
       when {
@@ -228,7 +228,7 @@ class VisitTransformExpressions(
 
   override fun visitCall(expression: IrCall, data: VisitorContext): IrElement {
     val scopeOwner = currentScope!!.scope.scopeOwnerSymbol
-    val scopeCtx = makeScope(expression, scopeOwner, currentDeclarationParent, storedXRsScope)
+    val scopeCtx = makeScope(expression, scopeOwner, currentDeclarationParent, storedXRsScope, CX.PerFileDebugConfig.fromFile(currentFile))
     val stack = RuntimeException()
 
     with (scopeCtx) {
@@ -252,7 +252,7 @@ class VisitTransformExpressions(
     val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this, "[ExoQuery: VisitTransformExpressions-VisitCall]")
     val transformReadCodegen = TransformCaptureCodegenRead(data.codegenAccum)
 
-    val runner = ScopedRunner(scopeCtx, builderContext, data, "[ExoQuery: VisitCall]", false)
+    val runner = ScopedRunner(scopeCtx, builderContext, data, false)
     return runner.run(expression) {
       when {
         transformScaffoldAnnotatedFunctionCall.matches(expression) -> transformScaffoldAnnotatedFunctionCall.transform(expression)

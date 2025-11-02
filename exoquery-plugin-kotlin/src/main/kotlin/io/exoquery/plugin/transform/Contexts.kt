@@ -1,8 +1,10 @@
 package io.exoquery.plugin.transform
 
+import io.exoquery.annotation.ErrorDetailsEnabled
 import io.exoquery.config.ExoCompileOptions
 import io.exoquery.config.OutputStringMaker
 import io.exoquery.parseError
+import io.exoquery.plugin.getAnnotationArgsIfExists
 import io.exoquery.plugin.logging.CompileLogger
 import io.exoquery.plugin.trees.DynamicsAccum
 import io.exoquery.plugin.trees.Lifter
@@ -13,6 +15,7 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContext
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
@@ -26,7 +29,42 @@ object CX {
 
   data class QueryAccum(val accum: FileQueryAccum)
 
-  data class DebugDataConfig(val addParamDescriptions: Boolean = true)
+  sealed interface ErrorDetails {
+    val color: Boolean
+    val stackCount: Int
+    val isEnabled: Boolean
+    data class Enabled(override val color: Boolean, override val stackCount: Int) : ErrorDetails { override val isEnabled: Boolean = true }
+    object Disabled : ErrorDetails { override val color: Boolean = false; override val isEnabled: Boolean = false; override val stackCount: Int = 0 }
+  }
+
+  data class PerFileDebugConfig(
+    val addParamDescriptions: Boolean = true,
+    val errorDetails: ErrorDetails = ErrorDetails.Disabled
+  ) {
+    companion object {
+      fun fromFile(file: IrFile): PerFileDebugConfig = run {
+        val exoDetailsEnabled = file.getAnnotationArgsIfExists<ErrorDetailsEnabled>()
+        PerFileDebugConfig(
+          addParamDescriptions = true,
+          errorDetails = run {
+            exoDetailsEnabled
+              ?.let { args ->
+                args.first()?.let { argExpr ->
+                  val isColor = argExpr is IrConst && (argExpr as? IrConst)?.value == true
+
+                  val stackCount = args.getOrNull(1)?.let { expr ->
+                    if (expr is IrConst) { (expr as IrConst).value as? Int } else ExoCompileOptions.DefaultErrorDetailsStackCount
+                  } ?: ExoCompileOptions.DefaultErrorDetailsStackCount
+
+                  ErrorDetails.Enabled(isColor, stackCount)
+                } ?: ErrorDetails.Enabled(ExoCompileOptions.DefaultErrorDetailsColor, ExoCompileOptions.DefaultErrorDetailsStackCount)
+              }
+              ?: ErrorDetails.Disabled
+          }
+        )
+      }
+    }
+  }
 
   data class StoredXRsScope(val storedXRs: CompileTimeStoredXRs)
 
@@ -40,11 +78,16 @@ object CX {
     val scopeOwner: IrSymbol,
     val storedXRsScope: CompileTimeStoredXRsScope,
     val currentDeclarationParent: IrDeclarationParent?,
-    val debugDataConfig: DebugDataConfig = DebugDataConfig()
+    val perFileDebugConfig: PerFileDebugConfig = PerFileDebugConfig()
   ) {
     fun currentDeclarationParentOrFail() = currentDeclarationParent ?: parseError("Cannot get parent of the current declaration", currentExpr)
 
     val outputStringMaker = options?.outputStringMaker ?: OutputStringMaker.Default
+
+    val errorDetailsEnabled = perFileDebugConfig.errorDetails.isEnabled || (options?.enableErrorDetails ?: ExoCompileOptions.DefaultEnableErrorDetails)
+    val errorDetailsColor = if (perFileDebugConfig.errorDetails.isEnabled) perFileDebugConfig.errorDetails.color else (options?.errorDetailsColor ?: ExoCompileOptions.DefaultErrorDetailsColor)
+
+    val stackCount = perFileDebugConfig.errorDetails.stackCount ?: options?.errorDetailsStackCount ?: ExoCompileOptions.DefaultErrorDetailsStackCount
 
     val compileLogger get() = logger
     val typeSystem by lazy {

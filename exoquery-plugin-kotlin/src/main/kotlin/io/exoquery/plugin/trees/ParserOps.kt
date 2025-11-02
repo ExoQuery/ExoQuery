@@ -245,11 +245,11 @@ fun IrDeclarationReference.showLineageAdvanced(): List<Pair<String, IrElement>> 
 
 
 context(CX.Scope)
-fun getSerializerForValueClass(type: IrType, location: CompilerMessageSourceLocation) =
+fun getSerializerForValueClass(type: IrType, originalElement: IrElement) =
   if (type.classOrNull?.owner?.isValue ?: false) {
     with (makeBuilderCtx()) {
       when (val ser = type.inferSerializer()) {
-        is KnownSerializer.Ref -> ser.buildExpression(type, location)
+        is KnownSerializer.Ref -> ser.buildExpression(type, originalElement)
         is KnownSerializer.Implicit -> ser.buildExpression(type)
         is KnownSerializer.None -> null
       }

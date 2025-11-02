@@ -19,7 +19,6 @@ sealed interface Mode {
   data class ExoGoldenTest(override val fileName: String): Mode
   data class ExoGoldenOverride(override val fileName: String): Mode
   companion object {
-    // TODO add a parameter for package so tests can be in other packages then io.exoquery
     @ExoExtras
     fun ExoGoldenTest(): Mode =
       ExoGoldenTest(errorCap("No file name provided. This should be overridden by the compiler-plugin to ExoGoldenTestExpr"))

@@ -109,7 +109,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
           -------------------- The internal representation of the function was: --------------------
           ${capFun.dumpKotlinLike()}          
         """.trimIndent(),
-        capFun.location()
+        capFun
       )
 
 

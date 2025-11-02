@@ -27,7 +27,21 @@ interface ExoQueryGradlePluginExtension {
 
   val enableCrossFileStore: Property<Boolean>
 
+  /**
+   * Indicates whether detailed error information should be enabled during various code compilation errors.
+   * When set to `true`, ExoQuery provides a detailed IR dump and stack trace to help diagnose issues.
+   */
   val enableErrorDetails: Property<Boolean>
+
+  /**
+   * Whether to use color in error details (if enabled)
+   */
+  val errorDetailsColor: Property<Boolean>
+
+  /**
+   * How many levels of stack to print in error details (if enabled)
+   */
+  val errorDetailsStackCount: Property<Int>
 
   /**
    * If you want to use NameParser.UsingLLM for code generation (at compile-time), you need to enable this property.
@@ -114,6 +128,7 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         enableCodegenAI.convention(ExoCompileOptions.DefaultEnabledCodegenAI)
         forceRegen.convention(ExoCompileOptions.DefaultForceRegen)
         enableCrossFileStore.convention(ExoCompileOptions.EnableCrossFileStore)
+        errorDetailsColor.convention(ExoCompileOptions.DefaultErrorDetailsColor)
       }
 
     val isMultiplatform = target.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
@@ -232,7 +247,9 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     val (entitiesBaseDir, entitiesDirType) = conventions.generatedEntitiesDir(project)
     val autoCreateDirs = ext.autoCreateCodenDirectories.convention(false).get()
     val debugGeneratedDirConventions = ext.debugGeneratedDirConventions.convention(false).get()
-    val enableErrorDetails = ext.enableErrorDetails.convention(ExoCompileOptions.EnableErrorDetails).get()
+    val enableErrorDetails = ext.enableErrorDetails.convention(ExoCompileOptions.DefaultEnableErrorDetails).get()
+    val errorDetailsColor = ext.errorDetailsColor.convention(ExoCompileOptions.DefaultErrorDetailsColor).get()
+    val errorDetailsStackCount = ext.errorDetailsStackCount.convention(ExoCompileOptions.DefaultErrorDetailsStackCount).get()
 
     // Need to do this here and not in apply() because the kotlinExtension is not available yet there
     // and we need it to know where the generated directories are (i.e. it changes based on whether an LLM is used for codegen or not)
@@ -267,6 +284,8 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         SubpluginOption("forceRegen", forceRegen.get().toString()),
         SubpluginOption("enableCrossFileStore", ext.enableCrossFileStore.convention(ExoCompileOptions.EnableCrossFileStore).getOrElse(ExoCompileOptions.EnableCrossFileStore).toString()),
         SubpluginOption("enableErrorDetails", enableErrorDetails.toString()),
+        SubpluginOption("errorDetailsColor", errorDetailsColor.toString()),
+        SubpluginOption("errorDetailsStackCount", errorDetailsStackCount.toString())
       )
     }
   }

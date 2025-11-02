@@ -222,7 +222,7 @@ object ParseExpression {
             }
             this.ownerHasAnnotation<io.exoquery.annotation.ParamPrimitive>() -> {
               getSerializerForType(expr.type)?.let { ParamBind.Type.ParamStatic(it) }
-                ?: getSerializerForValueClass(expr.type, expr.location())?.let { ParamBind.Type.ParamCustom(it, expr.type) }
+                ?: getSerializerForValueClass(expr.type, expr)?.let { ParamBind.Type.ParamCustom(it, expr.type) }
                 ?: parseError(
                   "Could not find primitive-serializer for type: ${expr.type.dumpKotlinLike()}. Primitive serializers are only defined for: Int, Long, Float, Double, String, Boolean, and the kotlinx LocalDate, LocalTime, LocalDateTime, and Instant as well as value-classes.",
                   expr
@@ -314,7 +314,7 @@ object ParseExpression {
             this.ownerHasAnnotation<io.exoquery.annotation.ParamPrimitive>() -> {
               val irType = this.typeArguments.firstOrNull() ?: parseError("params-call must have a single type argument", this)
               getSerializerForType(irType)?.let { ParamBind.Type.ParamListStatic(it) }
-                ?: getSerializerForValueClass(expr.type, expr.location())?.let { ParamBind.Type.ParamListCustom(it, expr.type) }
+                ?: getSerializerForValueClass(expr.type, expr)?.let { ParamBind.Type.ParamListCustom(it, expr.type) }
                 ?: parseError(
                   Messages.usedParamWrongMessage(irType.dumpKotlinLike()),
                   this
@@ -545,8 +545,20 @@ object ParseExpression {
             """|It looks like you are attempting to call the external function `${expr.symbol.safeName}` in a captured block
                |only functions specifically made to be interpreted by the ExoQuery system are allowed inside
                |of captured blocks. If you are trying to use a runtime-value of a primitive, you need to bring
-               |it into the captured block by using `param(myCall(...))`. If this is an instance of SqlExpression then
-               |use the `use` function to splice the value e.g. `myExpression.use`.
+               |it into the captured block by using `param(myCall(...))`. 
+               |
+               |For example:
+               |fun myCall(value: String): Int = runtimeComputation(value)
+               |val myQuery = sql { Table<Person>().filter { p -> p.id == param(myCall("someValue")) }
+               |
+               |If this function is supposed to do something that becomes part of the generated SQL you need to 
+               |annotate it as @SqlFragment and make it return an SqlExpression<T> (or SqlQuery<T>) value. 
+               |The use the use the `use` function to splice the value.
+               |
+               |For example:
+               |@SqlFragment
+               |fun myCall(value: String): SqlExpression<String> = sql.expression { value + "_suffix" }
+               |val myQuery = sql { Table<Person>().filter { p -> p.name == myCall("someValue").use }
             """.trimMargin()
 
           else -> ""
@@ -606,7 +618,7 @@ object ParseExpression {
 
 context(CX.Scope)
 fun validateDynamicArg(arg: IrExpression?) {
-  if (arg == null) parseError("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)", arg)
+  if (arg == null) parseError("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)")
   if (arg.isClass<SqlExpression<*>>() || arg.isClass<SqlQuery<*>>()) {
     Unit
   } else {

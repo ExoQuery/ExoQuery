@@ -1,5 +1,6 @@
 package io.exoquery.annotation
 
+import io.exoquery.config.ExoCompileOptions
 import io.exoquery.serial.ParamSerializer
 import io.exoquery.lang.SqlIdiom
 import io.exoquery.util.TraceType
@@ -24,6 +25,13 @@ annotation class Dsl
 @Target(AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoGoldenTest
+
+@Target(AnnotationTarget.FILE)
+@Retention(AnnotationRetention.BINARY)
+annotation class ErrorDetailsEnabled(
+  val color: Boolean = ExoCompileOptions.DefaultErrorDetailsColor,
+  val stackCount: Int = ExoCompileOptions.DefaultErrorDetailsStackCount
+)
 
 /**
  * Use it to trace query compilation like this:

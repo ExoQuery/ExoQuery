@@ -120,4 +120,18 @@ enum class ExoCliOption(
     "Enables/disables full API printout and compiler-stack trace on errors during lifting/parsing of ExoQuery expressions",
     false
   ),
+
+  ERROR_DETAILS_COLOR(
+    "errorDetailsColor",
+    "<true|false>",
+    "Enables/disables colored output for error details",
+    false
+  ),
+
+  ERROR_DETAILS_STACK_COUNT(
+    "errorDetailsStackCount",
+    "<number>",
+    "Number of stack frames to include in error details (-1 for all)",
+    false
+  ),
 }

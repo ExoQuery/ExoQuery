@@ -17,20 +17,21 @@ import io.exoquery.xr.SelectClause
 import io.exoquery.xr.XR
 import io.exoquery.xr.of
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
+import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.util.statements
 
 object ParseSelectClause {
 
-  context(CX.Scope, CX.Parsing) fun processSelectLambda(statementsFromRet: List<IrStatement>, loc: CompilerMessageSourceLocation): SelectClause {
-    if (statementsFromRet.isEmpty()) parseError("A select-clause usually should have two statements, a from(query) and an output. This one has neither", loc) // TODO provide example in the error
-    if (statementsFromRet.last() !is IrReturn) parseError("A select-clause must return a plain (i.e. not SqlQuery) value.", loc)
+  context(CX.Scope, CX.Parsing) fun processSelectLambda(statementsFromRet: List<IrStatement>, sourceElement: IrElement): SelectClause {
+    if (statementsFromRet.isEmpty()) parseError("A select-clause usually should have two statements, a from(query) and an output. This one has neither", sourceElement) // TODO provide example in the error
+    if (statementsFromRet.last() !is IrReturn) parseError("A select-clause must return a plain (i.e. not SqlQuery) value.", sourceElement)
     val ret = statementsFromRet.last()
     val retXR = ParseExpression.parse((ret as IrReturn).value)
     if (ret !is IrReturn) parseError("The last statement in a select-clause must be a return statement", ret) // TODO provide example in the error
     val statementsFrom = statementsFromRet.dropLast(1)
-    if (statementsFrom.isEmpty()) SelectClause.justSelect(retXR, loc.toLocationXR())
+    if (statementsFrom.isEmpty()) SelectClause.justSelect(retXR, sourceElement.location().toLocationXR())
 
     val statementsToParsed = statementsFrom.map { parseSubClause(it) to it }
     return ValidateAndOrganize(statementsToParsed, retXR)
@@ -40,12 +41,12 @@ object ParseSelectClause {
     lambda.match(
       // this typically happens when the top-level select is called
       case(Ir.FunctionExpression.withBlockStatements[Is(), Is()]).thenThis { _, statementsFromRet ->
-        processSelectLambda(statementsFromRet, lambda.location())
+        processSelectLambda(statementsFromRet, lambda)
       },
       // this typiclally happens when select is inside of a CapturedBlock (I.e. there's no IrFunctionExpression
       // call only a IrSimpleFunction defined there directly)
       case(Ir.SimpleFunction.anyKind[Is()]).thenThis { functionDef ->
-        processSelectLambda(body?.statements ?: listOf(), lambda.location())
+        processSelectLambda(body?.statements ?: listOf(), lambda)
       }
     ) ?: parseError("Could not parse Select Clause from lambda", lambda)
 

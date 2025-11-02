@@ -61,12 +61,12 @@ object ParseAction {
         },
       case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<CapturedBlock>(), Is("delete")]).thenIfThis { _, _ -> ownerHasAnnotation<ExoDelete>() }.thenThis { reciever, _ ->
         val deleteType = this.typeArguments.first() ?: parseError("Could not find the type argument of the delete call", expr)
-        val deleteTypeXR = TypeParser.ofTypeAt(deleteType, expr.location())
+        val deleteTypeXR = TypeParser.ofTypeAt(deleteType, expr)
         val dol = '$'
         // Create a synthetic alias for the delete. Normally we get the alias (i.e. in inserts and udates) from the lambda that contains the set(...) clauses
         // but 'delete' doesn't have such clauses. Since insert/update aliasses typically have the look $this$insert/update we'll do the same for delete synthetically.
         val actionAlias = XR.Ident("${dol}this${dol}delete", deleteTypeXR)
-        val ent = ParseQuery.parseEntity(deleteType, expr.location())
+        val ent = ParseQuery.parseEntity(deleteType, expr)
         XR.Delete(ent, actionAlias, expr.loc)
       },
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlActionFilterable<*, *>>(), Is.of("filter", "where"), Ir.FunctionExpression.withBlock[Is(), Is()]]).then { actionExpr, (args, lambdaBody) ->
@@ -145,7 +145,7 @@ object ParseAction {
   private fun parseAssignmentList(expr: IrExpression, inputType: IrType) =
     on(expr).match(
       case(Ir.Call.FunctionMem1[Ir.Expr.IsTypeOf(inputType), Is("set"), Ir.Vararg[Is()]]).then { _, (assignments) ->
-        val ent = ParseQuery.parseEntity(inputType, expr.location())
+        val ent = ParseQuery.parseEntity(inputType, expr)
         val parsedAssignments = assignments.map { parseAssignment(it) }
         ent to parsedAssignments
       }
@@ -181,7 +181,7 @@ object ParseAction {
               val rawParam =
                 when (val ser = epath.knownSerializer) {
                   is KnownSerializer.Ref ->
-                    ParamBind.Type.ParamCustom(ser.buildExpression(epath.type, epath.invocation.location()), expr.type)
+                    ParamBind.Type.ParamCustom(ser.buildExpression(epath.type, epath.invocation), expr.type)
                   is KnownSerializer.Implicit ->
                     ParamBind.Type.ParamCustom(ser.buildExpression(epath.type), expr.type)
                   is KnownSerializer.None ->
@@ -198,7 +198,7 @@ object ParseAction {
             binds.addParam(id, epath.invocation, bind)
             XR.Assignment(prop, tag, epath.invocation.loc)
           }
-        val ent = ParseQuery.parseEntity(inputType, expr.location())
+        val ent = ParseQuery.parseEntity(inputType, expr)
         when (compositeType) {
           CompositeType.Insert -> XR.Insert(ent, actionAlias, assignments, listOf(), expr.loc)
           CompositeType.Update -> XR.Update(ent, actionAlias, assignments, listOf(), expr.loc)

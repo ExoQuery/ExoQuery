@@ -51,11 +51,11 @@ object TypeParser {
   context(CX.Scope) fun of(expr: IrValueParameter) =
     ofElementWithType(expr, expr.type)
 
-  context(CX.Scope) fun ofTypeAt(type: IrType, loc: Location): XRType =
+  context(CX.Scope) fun ofTypeAt(type: IrType, originalElement: IrElement): XRType =
     try {
       parse(type)
     } catch (e: Exception) {
-      parseErrorFromType("ERROR Could not parse type: ${type.dumpKotlinLike()}", e, loc)
+      parseErrorFromType("ERROR Could not parse type: ${type.dumpKotlinLike()}", originalElement, e)
     }
 
   context(CX.Scope) private fun ofElementWithType(expr: IrElement, type: IrType) =
