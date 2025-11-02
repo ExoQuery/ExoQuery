@@ -4,6 +4,7 @@ import com.tschuchort.compiletesting.SourceFile
 
 // A Req-style spec that uses MessageSpecDynamic instead of GoldenSpecDynamic
 class PluginCompileReq : MessageSpecDynamic(PluginCompileReqGoldenDynamic, Mode.ExoGoldenTest(), {
+
   "should report error parsing external function" {
     shouldBeGoldenError(
       """
@@ -14,6 +15,24 @@ class PluginCompileReq : MessageSpecDynamic(PluginCompileReqGoldenDynamic, Mode.
       fun run() {
         val q = sql { Table<MyPerson>().filter { p -> externalFunction(p.name) == "Joe" } }
         println(q.buildFor.Postgres().value)
+      }
+      """.trimIndent()
+    )
+  }
+
+  "should report error parsing external function - returning query" {
+    shouldBeGoldenError(
+      """
+      import io.exoquery.*
+      data class Customer(val id: Int, val name: String)
+      data class Order(val id: Int, val customerId: Int,  val total: Double)
+      fun withOrder(customers: SqlQuery<Customer>) = sql.select {
+        val c = from(customers)
+        val o = join(Table<Order>()) { o -> c.id == o.customerId }
+        c to o
+      }
+      fun run() {
+        val q = sql { withOrder(Table<Customer>()) }
       }
       """.trimIndent()
     )

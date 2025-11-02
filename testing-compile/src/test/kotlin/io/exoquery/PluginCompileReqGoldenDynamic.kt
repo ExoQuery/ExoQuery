@@ -34,6 +34,32 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       
       """
     ),
+    "should report error parsing external function - returning query" to pl(
+      """
+      [ExoQuery] Could not understand an expression or query due to an error: Could not parse the Query.
+      It looks like you are attempting to call the external function `withOrder` in a captured block
+      only functions specifically made to be interpreted by the ExoQuery system are allowed inside
+      of captured blocks. If this function does something that is supposed to become part of the generated SQL
+      you need to annotate it as @SqlFragment and make it return a SqlQuery<T> (or SqlExpression<T>) value.
+      
+      For example:
+      @SqlFragment fun withOrders(customers: SqlQuery<Customer>) = sql.select {
+        val c = from(customers)
+        val o = join(Table<Order>()) { o -> c.id == o.customerId }
+        c to o
+      }
+      val myQuery = sql { withOrders(Table<Customer>()) }
+      
+      Where Customer and Order are:
+      data class Customer(val id: Int, val name: String)
+      data class Order(val id: Int, val customerId: Int,  val total: Double).
+      ------------ Source ------------
+      withOrder(Table<Customer>())
+      ------------ Raw Expression ------------
+      withOrder(customers = ${'$'}this${'$'}sql.Table<Customer>())
+      
+      """
+    ),
     "should report error parsing external function - error details enabled" to pl(
       """
       [ExoQuery] Could not understand an expression or query due to an error: Could not parse the expression.

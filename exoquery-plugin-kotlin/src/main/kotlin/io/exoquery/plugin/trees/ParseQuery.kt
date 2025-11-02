@@ -147,8 +147,20 @@ object ParseQuery {
               expr is IrCall && expr.isExternal() && expr.isSqlQuery() && expr.symbol.owner is IrSimpleFunction ->
                 """|It looks like you are attempting to call the external function `${expr.symbol.safeName}` in a captured block
                    |only functions specifically made to be interpreted by the ExoQuery system are allowed inside
-                   |of captured blocks. If you are trying to use a runtime-value in the query stored it in a variable
-                   |first and then pass it into the block.
+                   |of captured blocks. If this function does something that is supposed to become part of the generated SQL
+                   |you need to annotate it as @SqlFragment and make it return a SqlQuery<T> (or SqlExpression<T>) value.
+                   |
+                   |For example:
+                   |@SqlFragment fun withOrders(customers: SqlQuery<Customer>) = sql.select {
+                   |  val c = from(customers)
+                   |  val o = join(Table<Order>()) { o -> c.id == o.customerId }
+                   |  c to o
+                   |}
+                   |val myQuery = sql { withOrders(Table<Customer>()) }
+                   |
+                   |Where Customer and Order are:
+                   |data class Customer(val id: Int, val name: String)
+                   |data class Order(val id: Int, val customerId: Int,  val total: Double)
                 """.trimMargin()
 
               expr is IrGetValue ->
