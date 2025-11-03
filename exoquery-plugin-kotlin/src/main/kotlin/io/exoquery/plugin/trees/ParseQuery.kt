@@ -205,15 +205,15 @@ object ParseQuery {
       case(ExtractorsDomain.Call.UseExpression.Receiver[Is()]).thenThis { head ->
         ParseExpression.parse(head).asQuery()
       },
-      case(Ir.Call.FunctionMemN[Is(), Is.of("flatJoin", "flatJoinLeft"), Is()]).thenIfThis { _, _ -> ownerHasAnnotation<FlatJoin>() || ownerHasAnnotation<FlatJoinLeft>() }.thenThis { _, args ->
+      case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<CapturedBlockCompose>(), Is.of("join", "joinLeft"), Is()]).thenIfThis { _, _ -> ownerHasAnnotation<FlatJoin>() || ownerHasAnnotation<FlatJoinLeft>() }.thenThis { _, args ->
         on(args[1]).match(
           case(Ir.FunctionExpression.withBlock[Is(), Is()]).thenThis { params, block ->
             val cond = ParseExpression.parseFunctionBlockBody(block)
             val id = params.first().makeIdent()
             when (symName) {
-              "flatJoin" -> XR.FlatJoin(XR.JoinType.Inner, ParseQuery.parse(args[0]), id, cond, expr.loc)
-              "flatJoinLeft" -> XR.FlatJoin(XR.JoinType.Left, ParseQuery.parse(args[0]), id, cond, expr.loc)
-              else -> parseError("Invalid flatJoin method: ${symName}", expr)
+              "join" -> XR.FlatJoin(XR.JoinType.Inner, ParseQuery.parse(args[0]), id, cond, expr.loc)
+              "joinLeft" -> XR.FlatJoin(XR.JoinType.Left, ParseQuery.parse(args[0]), id, cond, expr.loc)
+              else -> parseError("Invalid composeFrom.join method: ${symName}", expr)
             }
           }
         ) ?: parseError("Could not parse flatJoin", expr)

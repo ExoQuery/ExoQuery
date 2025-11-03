@@ -179,15 +179,15 @@ interface StringSqlDsl {
 // no values of this should ever be created (that is called a "phantom type" in various circles)
 
 
-sealed interface CapturedBlockInternal {
+sealed interface CapturedBlockCompose {
   @Dsl
   @FlatJoin
-  fun <T> flatJoin(query: SqlQuery<T>, cond: (T) -> Boolean): SqlQuery<T> =
+  fun <T> join(query: SqlQuery<T>, cond: (T) -> Boolean): SqlQuery<T> =
     errorCap("The `flatJoin` expression of the Query was not inlined")
 
   @Dsl
   @FlatJoinLeft
-  fun <T> flatJoinLeft(query: SqlQuery<T>, cond: (T) -> Boolean): SqlQuery<T?> =
+  fun <T> joinLeft(query: SqlQuery<T>, cond: (T) -> Boolean): SqlQuery<T?> =
     errorCap("The `flatJoinLeft` expression of the Query was not inlined")
 }
 
@@ -489,7 +489,7 @@ interface CapturedBlock {
   fun FreeBlock.asConditon(): Boolean = errorCap("The `invoke` expression of the Query was not inlined")
   fun FreeBlock.asPureConditon(): Boolean = errorCap("The `invoke` expression of the Query was not inlined")
 
-  val internal: CapturedBlockInternal
+  val composeFrom: CapturedBlockCompose
 
   @Dsl
   @ParamStatic(ParamSerializer.String::class)
