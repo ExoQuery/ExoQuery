@@ -1,5 +1,6 @@
 package io.exoquery.norm
 
+import io.exoquery.lang.QueryData
 import io.exoquery.printing.HasPhasePrinting
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
@@ -8,7 +9,7 @@ import io.exoquery.xr.*
 import io.exoquery.xr.XR.*
 import io.exoquery.xr.XR
 
-class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolean) : StatelessTransformer, HasPhasePrinting {
+class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolean, queryData: QueryData) : StatelessTransformer, HasPhasePrinting {
 
   override val traceType: TraceType = TraceType.Normalizations
   override val trace: Tracer = Tracer(traceType, traceConf, 1)
@@ -16,7 +17,7 @@ class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolea
   val DealiasPhase by lazy { DealiasApply(traceConf) }
   val AvoidAliasConflictPhase by lazy { AvoidAliasConflictApply(traceConf) }
   val NormalizeNestedStructuresPhase by lazy { NormalizeNestedStructures(this) }
-  val SymbolicReductionPhase by lazy { SymbolicReduction(traceConf) }
+  val SymbolicReductionPhase by lazy { SymbolicReduction(traceConf, queryData.containsFlatUnits) }
   val AdHocReductionPhase by lazy { AdHocReduction(traceConf) }
   val OrderTermsPhase by lazy { OrderTerms(traceConf) }
 

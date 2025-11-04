@@ -35,8 +35,9 @@ interface SqlIdiom : HasPhasePrinting {
   val aliasSeparator: String get() = "_"
   open fun joinAlias(alias: List<String>): String = alias.joinToString(aliasSeparator)
 
-  fun normalizeQuery(xr: XR.Query) =
+  fun normalizeQuery(xr: XR.Query) = run {
     SqlNormalize(traceConf = traceConf, disableApplyMap = false)(xr)
+  }
 
   // If we want to inline this we would need move it outisde of SqlIdiom and make it a top-level function, then we would need to pass traceConf to every invocation
   fun ((SqlQueryModel) -> SqlQueryModel).andThen(phaseTitle: String, f: (SqlQueryModel) -> SqlQueryModel): (SqlQueryModel) -> SqlQueryModel =

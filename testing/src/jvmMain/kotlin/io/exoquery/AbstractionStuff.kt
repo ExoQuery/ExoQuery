@@ -1,6 +1,6 @@
 package io.exoquery
 
-//hello
+
 
 
 //interface HasId { val id: Int }
@@ -25,51 +25,3 @@ package io.exoquery
 //  }
 //  println(myQuery.buildPretty<PostgresDialect>().value)
 //}
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//// hello

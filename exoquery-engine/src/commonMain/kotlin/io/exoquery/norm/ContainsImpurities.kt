@@ -16,3 +16,11 @@ private object ContainsImpurities: StatelessChecker {
 
 fun XR.Query.hasImpurities() = ContainsImpurities(this)
 fun Expression.hasImpurities() = ContainsImpurities(this)
+
+private class ContainsElementType(val checker: (XR) -> Boolean): StatelessChecker {
+  override fun check(xr: XR): Boolean =
+    checker(xr)
+}
+
+fun XR.containsElementType(checker: (XR) -> Boolean) =
+  ContainsElementType(checker)(this)

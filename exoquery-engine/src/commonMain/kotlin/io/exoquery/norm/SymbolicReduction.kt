@@ -2,7 +2,9 @@ package io.exoquery.norm
 
 import io.exoquery.util.TraceConfig
 import io.exoquery.xr.BetaReduction
+import io.exoquery.xr.ContainsXR
 import io.exoquery.xr.XR
+import io.exoquery.xr._And_
 import io.exoquery.xr.contains
 import io.exoquery.xr.copy.*
 
@@ -19,13 +21,29 @@ import io.exoquery.xr.copy.*
  *
  * NOTE: Leaving Quill commneted-out code equivalents here for now for reference
  */
-class SymbolicReduction(val traceConfig: TraceConfig) {
+class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits: Boolean) {
   fun XR.FlatMap.hasTailPositionFlatJoin(): Boolean =
     body is XR.U.HasHead && body.head is XR.FlatJoin
+
+  fun XR.containsNonFilterFlatUnit(): Boolean =
+    ContainsXR(this) { it is XR.U.FlatUnit && it !is XR.FlatFilter }
 
   operator fun invoke(q: XR.Query): XR.Query? =
     with(q) {
       when {
+
+        /**
+         * This is my own transformation as opposed to being from Wadler's paper. It represents
+         * a situation where a Filter clause is pushed deeper and deeper in the query (see the next transformation)
+         * until eventually it reaches a FlatUnit and you get something like Filter(FlatUnit, x, ...). In this kind
+         * of situation the `x` is meaningless because FlatUnit returns a unit-type so it can be ignored.
+         * Therefore we can just merge the Filter into a FlatFilter.
+         *
+         */
+        this is XR.Filter && head is XR.U.FlatUnit && head is XR.FlatFilter -> {
+          XR.FlatFilter(body _And_ head.by)
+        }
+
         /*
          * Represents if-for in Figure 11.
          * This transformation is particularity difficult to understand so I have added examples with several layers of granularity.
@@ -49,7 +67,7 @@ class SymbolicReduction(val traceConfig: TraceConfig) {
          * case FlatMap(Filter(a, b, c), d, e: Query)
          *
          */
-        this is XR.FlatMap && head is XR.Filter -> {
+        this is XR.FlatMap && head is XR.Filter && !queryContainsFlatUnits -> {  // TODO for the sake of performance can do containsNonFilterFlatUnit on the entire query first
           val (a, b, c) = Triple(head.head, head.id, head.body)
           val (d, e) = Pair(id, body)
           val cr = BetaReduction(c, b to d).asExpr()
@@ -58,12 +76,6 @@ class SymbolicReduction(val traceConfig: TraceConfig) {
           }
           FlatMap.cs(a, d, er)
         }
-
-// Scala:
-//      case FlatMap(Filter(a, b, c), d, e: Query) =>
-//        val cr = BetaReduction(c, b -> d)
-//        val er = AttachToEntity(Filter(_, _, cr))(e)
-//        Some(FlatMap(a, d, er))
 
         /*
          * This transformation does not have an analogue in Wadler's paper, it represents the fundamental nature of the Monadic 'bind' function

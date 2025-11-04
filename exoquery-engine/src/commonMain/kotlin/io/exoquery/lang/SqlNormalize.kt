@@ -13,6 +13,15 @@ import io.exoquery.xr.*
 import io.exoquery.xr.XR.*
 import io.exoquery.xr.XR
 
+data class QueryData(val containsFlatUnits: Boolean) {
+  companion object {
+    fun analyze(q: XR.Query): QueryData {
+      val containsFlatUnits = ContainsXR(q) { it is XR.U.FlatUnit && it !is XR.FlatFilter }
+      return QueryData(containsFlatUnits)
+    }
+  }
+}
+
 class SqlNormalize(
   val concatBehavior: ConcatBehavior = ConcatBehavior.AnsiConcat,
   val equalityBehavior: EqualityBehavior = EqualityBehavior.AnsiEquality,
@@ -23,7 +32,6 @@ class SqlNormalize(
   override val trace by lazy { Tracer(traceType, traceConf, 1) }
 
   val AvoidAliasConflictPhase by lazy { AvoidAliasConflictApply(traceConf) }
-  val NormalizePhase = Normalize(traceConf, disableApplyMap)
   val RepropagateTypesPhase = RepropagateTypes(traceConf)
   val ExpandProductNullChecks = io.exoquery.norm.ExpandProductNullChecks
   val NormalizeCustomQueriesPhase = NormalizeCustomQueries
@@ -53,7 +61,8 @@ class SqlNormalize(
         RepropagateTypesPhase(it)
       }
       .andThen("Normalize") {
-        NormalizePhase(it)
+        // Need to create normalize here since need to have QueryData from latest state of the tree
+        Normalize(traceConf, disableApplyMap, QueryData.analyze(it))(it)
       }
   // TODO ExpandDistinct
 
