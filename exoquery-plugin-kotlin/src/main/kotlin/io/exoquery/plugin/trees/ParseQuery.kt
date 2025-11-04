@@ -92,7 +92,6 @@ object ParseQuery {
                       """|${e.message}
                          |----------------- This Occurred in a Problematic Scaffold Expansion -----------------
                          |${this.prepareForPrinting().dumpKotlinLike()}
-                         |-------------------------------------------------------------------------------------
                       """.trimMargin(), it)
                   }
                 }
@@ -264,7 +263,7 @@ object ParseQuery {
         }
       },
       case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<CapturedBlock>(), Is("Table")]).thenThis { _, _ ->
-        entityFromType(this.typeArguments[0] ?: parseError("Type arguemnt of Table() call was not found>"), this)
+        entityFromType(this.typeArguments[0] ?: parseError("Type arguemnt of Table() call was not found>", expr), this)
       },
       // This is the select defined in the sql-block (that returns SqlQuery<T> as opposed to the top-level one which returns @Captured SqlQuery<T>.
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<CapturedBlock>(), Is("select"), Ir.FunctionExpression[Is()]]).thenThis { _, (selectLambda) ->

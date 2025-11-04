@@ -2,6 +2,7 @@ package io.exoquery.plugin.trees
 
 import io.exoquery.liftingError
 import io.exoquery.parseError
+import io.exoquery.parseErrorAtCurrent
 import io.exoquery.plugin.classId
 import io.exoquery.plugin.transform.CX
 import org.jetbrains.kotlin.ir.builders.irCall
@@ -24,8 +25,8 @@ import kotlin.reflect.typeOf
 context(CX.Scope)
 fun KType.fullPathOfBasic(): ClassId =
   when (val cls = this.classifier) {
-    is KClass<*> -> cls.classId() ?: parseError("Could not find the class id for the class: $cls")
-    else -> parseError("Invalid list class: $cls")
+    is KClass<*> -> cls.classId() ?: parseErrorAtCurrent("Could not find the class id for the class: $cls")
+    else -> parseErrorAtCurrent("Invalid list class: $cls")
   }
 
 // TODO this can probably make both objects and types if we check the attributes of the reified type T
@@ -52,10 +53,10 @@ context(CX.Scope, CX.Builder) fun makeClassFromString(fullPath: String, args: Li
 // Blows up here with a strange error if you put 'run' for the body of the function without specifying a return type
 // Caused by: java.lang.IllegalStateException: Arguments and parameters size mismatch: arguments.size = 1, parameters.size = 2
 context(CX.Scope, CX.Builder) fun makeClassFromId(fullPath: ClassId, args: List<IrExpression>, types: List<IrType> = listOf(), overrideType: IrType? = null): IrConstructorCall {
-  val cls = pluginCtx.referenceClass(fullPath) ?: parseError("Could not find the reference for a class in the context: $fullPath")
+  val cls = pluginCtx.referenceClass(fullPath) ?: parseErrorAtCurrent("Could not find the reference for a class in the context: $fullPath")
 
   if (!cls.owner.isClass && !cls.owner.isAnnotationClass)
-    parseError("Attempting to create an instance of $fullPath which is not a class")
+    parseErrorAtCurrent("Attempting to create an instance of $fullPath which is not a class")
 
   return (cls.constructors.firstOrNull() ?: liftingError("Could not find a constructor for a class in the context: $fullPath"))
     .let { ctor ->
@@ -73,10 +74,10 @@ context(CX.Scope, CX.Builder) fun makeClassFromId(fullPath: ClassId, args: List<
 }
 
 context(CX.Scope, CX.Builder) fun makeObjectFromId(id: ClassId): IrGetObjectValue {
-  val clsSym = pluginCtx.referenceClass(id) ?: parseError("Could not find the reference for a class in the context: $id")
+  val clsSym = pluginCtx.referenceClass(id) ?: parseErrorAtCurrent("Could not find the reference for a class in the context: $id")
 
   if (!clsSym.owner.isObject)
-    parseError("Attempting to create an object-instance of $id which is not an object")
+    parseErrorAtCurrent("Attempting to create an object-instance of $id which is not an object")
 
   val tpe = clsSym.owner.defaultType
   return builder.irGetObjectValue(tpe, clsSym)

@@ -52,7 +52,7 @@ class TransformSelectClause(val superTransformer: VisitTransformExpressions) : T
           }
           // TODO use Messages.kt, use better example
         )
-          ?: parseError("Parsing Failed\n================== The clause was not a property select-expression (was the owner annotated correctly?): ==================\n" + selectExpressionRaw.dumpKotlinLike() + "\n--------------------------\n" + selectExpressionRaw.dumpSimple())
+          ?: parseError("The clause was not a property select-expression (was the owner annotated correctly?)", selectExpressionRaw)
 
       val (selectClause, dynamics) = Parser.scoped { Parser.parseSelectClauseLambda(selectLambda) }
       // Store the selectClause inside a XR.CustomQueryRef instance so that we can invoke the XR serialization and "plant" it into the IR

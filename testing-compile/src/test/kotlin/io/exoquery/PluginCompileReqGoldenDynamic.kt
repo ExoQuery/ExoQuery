@@ -9,7 +9,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
   override val messages = mapOf<String, GoldenResult>(
     "should report error parsing external function" to pl(
       """
-      [ExoQuery] Could not understand an expression or query due to an error: Could not parse the expression.
+      [ExoQuery] Could not understand an expression or query due to an error: Could not parse the expression
       It looks like you are attempting to call the external function `externalFunction` in a captured block
       only functions specifically made to be interpreted by the ExoQuery system are allowed inside
       of captured blocks. If you are trying to use a runtime-value of a primitive, you need to bring
@@ -62,7 +62,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
     ),
     "should report error parsing external function - error details enabled" to pl(
       """
-      [ExoQuery] Could not understand an expression or query due to an error: Could not parse the expression.
+      [ExoQuery] Could not understand an expression or query due to an error: Could not parse the expression
       It looks like you are attempting to call the external function `externalFunction` in a captured block
       only functions specifically made to be interpreted by the ExoQuery system are allowed inside
       of captured blocks. If you are trying to use a runtime-value of a primitive, you need to bring
@@ -88,6 +88,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       [IrCall] public final fun externalFunction (name: kotlin.String): kotlin.String declared in sample
         name: [IrCall] public final fun <get-name> (): kotlin.String declared in sample.MyPerson
           <this>: [IrGetValue] 'p: sample.MyPerson declared in sample.run.<anonymous>.<anonymous>' type=sample.MyPerson origin=null
+      
       ----------------- Stack Trace: -----------------
       [Excluding 10 lines]
       ... (truncated)
@@ -96,7 +97,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
     ),
     "should report error parsing external function - error details enabled, custom stack count" to pl(
       """
-      [ExoQuery] Could not understand an expression or query due to an error: Could not parse the expression.
+      [ExoQuery] Could not understand an expression or query due to an error: Could not parse the expression
       It looks like you are attempting to call the external function `externalFunction` in a captured block
       only functions specifically made to be interpreted by the ExoQuery system are allowed inside
       of captured blocks. If you are trying to use a runtime-value of a primitive, you need to bring
@@ -122,6 +123,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       [IrCall] public final fun externalFunction (name: kotlin.String): kotlin.String declared in sample
         name: [IrCall] public final fun <get-name> (): kotlin.String declared in sample.MyPerson
           <this>: [IrGetValue] 'p: sample.MyPerson declared in sample.run.<anonymous>.<anonymous>' type=sample.MyPerson origin=null
+      
       ----------------- Stack Trace: -----------------
       [Excluding 5 lines]
       ... (truncated)

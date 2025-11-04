@@ -177,9 +177,7 @@ class VisitTransformExpressions(
           runBlock()
         } catch (e: ParseError) {
           // builderContext.logger.error(e.msg, e.location ?: expression.location(currentFile.fileEntry))
-          scopeContext.logger.error(
-            e.fullMessageWithStackTrace(),
-          )
+          scopeContext.logger.error(e.fullMessageWithStackTrace(), e.location ?: expression.location(scopeContext.currentFile.fileEntry))
           expression
         } catch (e: TransformXrError) {
           val location = expression.location(scopeContext.currentFile.fileEntry)
@@ -252,7 +250,7 @@ class VisitTransformExpressions(
     val transformScaffoldAnnotatedFunctionCall = TransformScaffoldAnnotatedFunctionCall(this, "[ExoQuery: VisitTransformExpressions-VisitCall]")
     val transformReadCodegen = TransformCaptureCodegenRead(data.codegenAccum)
 
-    val runner = ScopedRunner(scopeCtx, builderContext, data, false)
+    val runner = ScopedRunner(scopeCtx, builderContext, data, true)
     return runner.run(expression) {
       when {
         transformScaffoldAnnotatedFunctionCall.matches(expression) -> transformScaffoldAnnotatedFunctionCall.transform(expression)

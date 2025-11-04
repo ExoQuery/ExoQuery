@@ -163,12 +163,12 @@ object ExtractorsDomain {
           call.symbol.safeName == "<init>" -> {
             val className: String = call.type.classFqName?.sanitizedClassName() ?: call.type.dumpKotlinLike()
             if (!call.symbol.owner.isPrimary)
-              parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.")
+              parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.", call)
 
             val params = call.symbol.owner.regularParams.map { it.name.asString() }.toList()
             val args = call.regularArgs.toList()
             if (params.size != args.size)
-              parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
+              parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}", call)
             val fields = (params zip args).map { (name, value) -> Field(name, value) }
             Components1(Data(className, fields))
           }
@@ -184,12 +184,12 @@ object ExtractorsDomain {
           call.symbol.safeName == "<init>" && call.symbol.owner.regularParams.size == 1 -> {
             val className: String = call.type.classFqName?.asString() ?: call.type.dumpKotlinLike()
             if (!call.symbol.owner.isPrimary)
-              parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.")
+              parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.", call)
 
             val params = call.symbol.owner.regularParams.map { it.name.asString() }.toList()
             val args = call.regularArgs.toList()
             if (params.size != args.size)
-              parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
+              parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}", call)
             Components2(className, args.first())
           }
           else -> null
@@ -206,12 +206,12 @@ object ExtractorsDomain {
           call.symbol.safeName == "<init>" && call.symbol.owner.regularParams.size >= 1 -> {
             val className: String = call.type.classFqName?.asString() ?: call.type.dumpKotlinLike()
             if (!call.symbol.owner.isPrimary)
-              parseError("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.")
+              parseErrorAtCurrent("Detected construction of the class ${className} using a non-primary constructor. This is not allowed.")
 
             val params = call.symbol.owner.regularParams.map { it.name.asString() }.toList()
             val args = call.regularArgs.toList()
             if (params.size != args.size)
-              parseError("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
+              parseErrorAtCurrent("Cannot parse constructor of ${className} its params ${params} do not have the same cardinality as its arguments ${args.map { it?.dumpKotlinLike() }}")
             Components2(className, args.first())
           }
           else -> null

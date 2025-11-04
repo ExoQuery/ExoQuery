@@ -28,7 +28,7 @@ class TransformCaptureCodegenRead(val codegenAccum: FileCodegenAccum) : Transfor
       on(expression).match(
         case(ExtractorsDomain.Call.CaptureGenerate[Is(), Is()]).then { codeDataClassConstructor, callType ->
           val arg = codeDataClassConstructor.regularArgs[0]
-          Unlifter.unliftCodeEntities(arg ?: parseError("case class codegen argument was null")) to callType
+          Unlifter.unliftCodeEntities(arg ?: parseError("case class codegen argument was null", expression)) to callType
         }
       ) ?: parseError(
         Messages.UnexpectedCodegenCall,

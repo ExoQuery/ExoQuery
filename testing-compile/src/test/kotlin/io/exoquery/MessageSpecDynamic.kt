@@ -62,24 +62,7 @@ open class MessageSpecDynamic(
       compilerPluginRegistrars = listOf(io.exoquery.plugin.Registrar())
     }.compile()
 
-    val messages = run {
-      val replaced = result.messages.replace(fileHeadingRegex, "[ExoQuery]")
-      val header = StaticStrings.StackTraceHeader
-      if (!replaced.contains(header)) replaced else {
-        val beforeHeader =
-          replaced.split("\n")
-          .takeWhile { it != header } // take until header
-
-        val remainingPastHeader =
-          replaced.split("\n")
-          .dropWhile { it != header } // drop until header
-          .drop(1) // then drop the header itself
-
-        val (afterTruncation, numStackFrameLines) = remainingPastHeader.dropWhileCounting { it != StaticStrings.TruncationLine && it.isNotBlank() }
-
-        (beforeHeader + listOf(header, "[Excluding ${numStackFrameLines} lines]") + afterTruncation).joinToString("\n")
-      }
-    }
+    val messages = summarizeStackTraces(result.messages)
 
     when (mode) {
       is Mode.ExoGoldenTest -> {
@@ -101,6 +84,34 @@ open class MessageSpecDynamic(
         }
         assertEquals(result.exitCode, expectedExitCode)
       }
+    }
+  }
+
+  private fun summarizeStackTraces(messages: String) = run {
+    fun countFramesAndDrop(part: String): Pair<Int, String> {
+      val lines = part.lines()
+      val (afterStackLines, numFrames) = lines.dropWhileCounting { it.trim().startsWith("at ") }
+      return numFrames to afterStackLines.joinToString("\n")
+    }
+
+    val replaced = messages.replace(fileHeadingRegex, "[ExoQuery]")
+    if (!replaced.contains(StaticStrings.StackTraceHeader))
+      replaced
+    else {
+      // Split the message into stack-trace headers and keep only the first N lines of each stack-trace
+      val parts = replaced.split(StaticStrings.StackTraceHeader+"\n")
+      val outputLines = mutableListOf<String>()
+      parts.forEachIndexed { index, part ->
+        if (index == 0) {
+          outputLines += part // First part, no stack-trace
+        } else {
+          val (numFrames, afterStack) = countFramesAndDrop(part)
+          outputLines += StaticStrings.StackTraceHeader
+          outputLines += "[Excluding $numFrames lines]"
+          outputLines += afterStack
+        }
+      }
+      outputLines.joinToString("\n")
     }
   }
 

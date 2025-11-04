@@ -30,7 +30,7 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
             try {
               element.dumpKotlinLike()
             } catch (e: Throwable) {
-              e.stackTraceToString()
+              limitedStackTraceFromScope(e)
             }
           }
 
@@ -51,7 +51,7 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
             try {
               element.dumpSimple(errorDetailsColor)
             } catch (e: Throwable) {
-              e.stackTraceToString()
+              limitedStackTraceFromScope(e)
             }
           }
 
@@ -83,13 +83,20 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
 
       return ParseError(fullMsg, location, errorDetailsEnabled, stackCount)
     }
+
+    context(CX.Scope)
+    private fun limitedStackTraceFromScope(e: Throwable) =
+      e.stackTrace.takeIfPositive(stackCount).map { "at $it" }.joinToString("\n") { it.toString() }
   }
+
+  private fun limitedStackTrace(e: Exception) =
+    e.stackTrace.takeIfPositive(stackCount).map { "at $it" }.joinToString("\n") { it.toString() }
 
   fun fullMessageWithStackTrace(): String =
     if (addStackToPrint) {
       """${fullMessage}
       |${StaticStrings.StackTraceHeader}
-      |${this.stackTrace.takeIfPositive(stackCount).joinToString("\n") { it.toString() } + if (this.stackTrace.size > stackCount) "\n${StaticStrings.TruncationLine}" else "" }
+      |${limitedStackTrace(this) + if (this.stackTrace.size > stackCount) "\n${StaticStrings.TruncationLine}" else "" }
       |""".trimMargin().trimEnd()
     } else {
       fullMessage
@@ -115,7 +122,7 @@ context(CX.Scope)
 fun parseErrorFromType(msg: String, expr: IrElement, originalErrorTrace: Throwable? = null): Nothing =
   throw ParseError.withFullMsg(io.exoquery.plugin.logging.Messages.TypeParseErrorMsg(msg), expr, currentFile, expr.location(), originalErrorTrace)
 
-context(CX.Scope) fun parseError(msg: String): Nothing =
+context(CX.Scope) fun parseErrorAtCurrent(msg: String): Nothing =
   throw ParseError.withFullMsg(msg, currentExpr, currentFile, currentExpr.location())
 
 context(CX.Scope) fun parseError(msg: String, expr: IrElement, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): Nothing =

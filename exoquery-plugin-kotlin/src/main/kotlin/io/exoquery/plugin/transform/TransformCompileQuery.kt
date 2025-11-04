@@ -266,7 +266,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
           type.isClass<SqlQuery<*>>() -> Query
           type.isClass<SqlAction<*, *>>() -> Action
           type.isClass<SqlBatchAction<*, *, *>>() -> BatchAction
-          else -> parseError("The type ${type.dumpKotlinLike()} must be a SqlQuery or SqlAction but it was not")
+          else -> parseErrorAtCurrent("The type ${type.dumpKotlinLike()} must be a SqlQuery or SqlAction but it was not")
         }
     }
   }
@@ -297,10 +297,10 @@ object ConstructCompiletimeDialect {
     when {
       "io.exoquery.PostgresDialect" in fullPath -> PostgresDialect(traceConfig)
       else ->
-        (Class.forName(fullPath) ?: parseError("Could not find the dialect class: ${fullPath}"))
+        (Class.forName(fullPath) ?: parseErrorAtCurrent("Could not find the dialect class: ${fullPath}"))
           .constructors.find {
             it.parameters.size == 1 && it.parameters.first().type.kotlin.isSuperclassOf(TraceConfig::class)
           }?.let { it.newInstance(traceConfig) } as SqlIdiom
-          ?: parseError("The dialect class ${fullPath} must have a 1-arg constructor that takes a trace-config but it did not")
+          ?: parseErrorAtCurrent("The dialect class ${fullPath} must have a 1-arg constructor that takes a trace-config but it did not")
     }
 }

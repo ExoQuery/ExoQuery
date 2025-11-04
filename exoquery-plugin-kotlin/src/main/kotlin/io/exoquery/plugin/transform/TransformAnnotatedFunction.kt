@@ -102,16 +102,24 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     val capFun = capFunRaw as? IrSimpleFunction ?: parseError("The function annotated with @SqlFunction must be a simple function.", capFunRaw)
 
 
-    if (capFun.regularParams.isEmpty() && capFun.extensionParam == null)
+    if (capFun.regularParams.isEmpty() && capFun.extensionParam == null) {
+      val internalRep =
+        if (errorDetailsEnabled) {
+          "\n" + """|-------------------- The internal representation of the function was: --------------------
+             |${capFun.dumpKotlinLike()}          
+             |""".trimMargin()
+        } else {
+          ""
+        }
+
       parseError(
         """
-          The function annotated with @SqlFunction must have at least one parameter but none were found (and a extension-receiver parameter -that is treated as an argument- was not found either). In this case it is not necessary to mark the function with the @SqlFunction annotation. Remove it and treat the function as a static query splice.
-          -------------------- The internal representation of the function was: --------------------
-          ${capFun.dumpKotlinLike()}          
-        """.trimIndent(),
+        |The function annotated with @SqlFunction must have at least one parameter but none were found (and a extension-receiver parameter -that is treated as an argument- was not found either). 
+        |In this case it is not necessary to mark the function with the @SqlFunction annotation. Remove it and treat the function as a static query splice.
+        """.trimMargin() + internalRep,
         capFun
       )
-
+    }
 
     if (!(capFun.returnType.isClass<SqlQuery<*>>() || capFun.returnType.isClass<SqlExpression<*>>())) {
       parseError("The SqlFragment had the wrong kind of return type. ${errorText()}", capFun)
@@ -235,7 +243,8 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
       parseError("""
       The query-based @SqlFunction `${originalCall.symbol.safeName}` had (${runtimes.size}) parameters that could not be captured at compile-time. They are the following:
       ${runtimes.withIndex().map { (i, it) -> "$i) ${it.sourceOrDump()}" }.joinToString("\n")}
-      """.trimIndent())
+      """.trimIndent(),
+      originalCall)
     }
   }
 
@@ -258,8 +267,9 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
       val runtimes = dynamics.getAllRuntimesCollect()
       parseError("""
       The expression-based @SqlFunction `${originalCall.symbol.safeName}` had (${runtimes.size}) parameters that could not be captured at compile-time. They are the following:
-      ${runtimes.withIndex().map { (i, it) -> "$i) ${it.sourceOrDump()}" }.joinToString("\n")}
-      """.trimIndent())
+      ${runtimes.withIndex().map { (i, it) -> "$i) ${it.sourceOrDump()}" }.joinToString("\n")},
+      """.trimIndent(),
+      originalCall)
     }
   }
 

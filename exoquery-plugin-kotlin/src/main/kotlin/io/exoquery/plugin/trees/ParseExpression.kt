@@ -46,7 +46,7 @@ object ParseWindow {
       case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<CapturedBlock>(), Is("over")]).thenThis { _, _ ->
         XR.Window(listOf(), listOf(), XR.Ident.Unused("windowcore"), expr.loc)
       },
-    ) ?: parseError("Could not parse Window from:\n${expr.dumpSimple()}")
+    ) ?: parseError("Could not parse Window from the expression", expr)
 }
 
 /**
@@ -78,7 +78,7 @@ object ParseExpression {
     context(CX.Scope, CX.Parsing)
     fun exprOrFail(): Expr =
       when (this) {
-        is Const -> parseError("Expected an expression segment, but found a constant segment: Seg.Const(${value})")
+        is Const -> parseErrorAtCurrent("Expected an expression segment, but found a constant segment: Seg.Const(${value})")
         is Expr -> this
       }
   }
@@ -90,14 +90,14 @@ object ParseExpression {
         val rhsXR = parse(rhs)
         XR.Variable(XR.Ident(name.sanitizeIdentName(), irType, rhs.locationXR()), rhsXR, expr.loc)
       }
-    ) ?: parseError("Could not parse Ir Variable statement from:\n${expr.dumpSimple()}")
+    ) ?: parseError("Could not parse Ir Variable statement from:\n${expr.dumpSimple()}", expr)
 
   context(CX.Scope, CX.Parsing) fun parseBranch(expr: IrBranch): XR.Branch =
     on(expr).match(
       case(Ir.Branch[Is(), Is()]).then { cond, then ->
         XR.Branch(parse(cond), parse(then), expr.loc)
       }
-    ) ?: parseError("Could not parse Branch from: ${expr.dumpSimple()}")
+    ) ?: parseError("Could not parse Branch from: ${expr.dumpSimple()}", expr)
 
   context(CX.Scope, CX.Parsing) fun parseFunctionBlockBody(blockBody: IrBlockBody): XR.Expression =
     blockBody.match(
@@ -109,7 +109,7 @@ object ParseExpression {
         val retExpr = parse(ret)
         XR.Block(vars, retExpr, blockBody.locationXR())
       }
-    ) ?: parseError("Could not parse IrBlockBody:\n${blockBody.dumpKotlinLike()}")
+    ) ?: parseError("Could not parse IrBlockBody:\n${blockBody.dumpKotlinLike()}", blockBody)
 
   context(CX.Scope, CX.Parsing) fun parse(expr: IrExpression): XR.Expression =
     on(expr).match<XR.Expression>(
@@ -155,7 +155,7 @@ object ParseExpression {
       },
 
       case(ExtractorsDomain.CaseClassConstructorCall[Is()]).thenThis { data ->
-        if (this.symbol.safeName == "SqlExpression" || this.symbol.safeName == "SqlQuery") parseError("Illegal state, processing ${this.symbol.safeName} as a case class constructor")
+        if (this.symbol.safeName == "SqlExpression" || this.symbol.safeName == "SqlQuery") parseError("Illegal state, processing ${this.symbol.safeName} as a case class constructor", expr)
 
         // Can get the type here if we want it but not needed since we get more precise type information from the applied arguments (e.g. if there are generics)
         //val tpe = TypeParser.of(expr).let { it as? XRType.Product ?: parseError("Data-Class constructor result was expected to be a XRType.Product (CC) but it was a ${it.shortString()}") }
@@ -532,7 +532,7 @@ object ParseExpression {
           val firstClause = casesAst.first()
           firstClause.cond _Or_ elseBranch.then
         } else {
-          val elseBranchOrLast = elseBranch ?: casesAst.lastOrNull() ?: parseError("Empty when expression not allowed:\n${this.dumpKotlinLike()}")
+          val elseBranchOrLast = elseBranch ?: casesAst.lastOrNull() ?: parseError("Empty when expression not allowed:\n${this.dumpKotlinLike()}", expr)
           XR.When(casesAst, elseBranchOrLast.then, expr.loc)
         }
       },
@@ -564,7 +564,7 @@ object ParseExpression {
           else -> ""
         }
 
-      parseError("Could not parse the expression." + (if (additionalHelp.isNotEmpty()) "\n${additionalHelp}" else ""), expr)
+      parseError("Could not parse the expression" + (if (additionalHelp.isNotEmpty()) "\n${additionalHelp}" else ""), expr)
     }
 
   context(CX.Scope, CX.Parsing)
@@ -612,13 +612,13 @@ object ParseExpression {
       IrConstKind.String -> XR.Const.String(irConst.value as String, irConst.loc)
       IrConstKind.Float -> XR.Const.Float(irConst.value as Float, irConst.loc)
       IrConstKind.Double -> XR.Const.Double(irConst.value as Double, irConst.loc)
-      else -> parseError("Unknown IrConstKind: ${irConst.kind}")
+      else -> parseError("Unknown IrConstKind: ${irConst.kind}", irConst)
     }
 }
 
 context(CX.Scope)
 fun validateDynamicArg(arg: IrExpression?) {
-  if (arg == null) parseError("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)")
+  if (arg == null) parseErrorAtCurrent("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)")
   if (arg.isClass<SqlExpression<*>>() || arg.isClass<SqlQuery<*>>()) {
     Unit
   } else {

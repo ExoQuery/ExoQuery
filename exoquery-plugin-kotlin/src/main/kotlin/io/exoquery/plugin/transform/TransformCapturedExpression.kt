@@ -58,7 +58,7 @@ class TransformCapturedExpression(val superTransformer: VisitTransformExpression
       val body = superTransformer.visitBlockBody(bodyRaw) as IrBlockBody
       val (xr, dynamics) = Parser.scoped { Parser.parseFunctionBlockBody(body) }
 
-      val xrExpr = xr as? XR.Expression ?: parseError("Could not parse to expression:\n${xr}")
+      val xrExpr = xr as? XR.Expression ?: parseError("Could not parse to expression", expression)
       xrExpr to dynamics
     }
   }

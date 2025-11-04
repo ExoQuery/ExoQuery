@@ -2,6 +2,7 @@ package io.exoquery.plugin.transform
 
 import io.exoquery.annotation.TracesEnabled
 import io.exoquery.parseError
+import io.exoquery.parseErrorAtCurrent
 import io.exoquery.plugin.getAnnotation
 import io.exoquery.plugin.isClass
 import io.exoquery.plugin.logging.CompileLogger
@@ -35,7 +36,7 @@ object ComputeEngineTracing {
     val traceTypesClsRef = getFileTraceAnnotations() + dialectType.getTraceAnnotationArgs()
     val traceTypesNames =
       traceTypesClsRef
-        .map { ref -> (ref as? IrClassReference) ?: parseError("Invalid Trace Type: ${ref.source() ?: ref.dumpKotlinLike()} was not a class-reference:\n${ref.dumpSimple()}") }
+        .map { ref -> (ref as? IrClassReference) ?: parseErrorAtCurrent("Invalid Trace Type: ${ref.source() ?: ref.dumpKotlinLike()} was not a class-reference:\n${ref.dumpSimple()}") }
         .mapNotNull { ref ->
           // it's TracesEnabled(KClass<TraceType.Normalizations>, etc...) so we need to take 1st argument from the type
           val shortName = ref.type.simpleTypeArgs.first().classFqName?.shortName()?.asString()

@@ -6,6 +6,7 @@ import io.exoquery.config.ExoCompileOptions
 import io.exoquery.generation.Code
 import io.exoquery.generation.toGenerator
 import io.exoquery.parseError
+import io.exoquery.parseErrorAtCurrent
 import io.exoquery.plugin.logging.Messages.AttemptingToUseLLMWhenDisabled
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.name
@@ -19,7 +20,7 @@ class CodegenFileBuilder(val options: ExoCompileOptions) {
       // TODO double check this works as intended
       when (val aiConfig = dc.nameParser.findFirstConfigWithAI()) {
         is NameParser.UsingLLM if (!options.enableCodegenAI) -> {
-          parseError(AttemptingToUseLLMWhenDisabled(dc.driver.jdbcUrl, aiConfig))
+          parseErrorAtCurrent(AttemptingToUseLLMWhenDisabled(dc.driver.jdbcUrl, aiConfig))
         }
       }
 

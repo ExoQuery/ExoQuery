@@ -112,7 +112,7 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
         )
       }
     }
-      ?: parseError("Parsing Failed\n================== The expresson was not a Global Function (with one argument-block): ==================\n" + expression.dumpKotlinLike() + "\n--------------------------\n" + expression.dumpSimple())
+      ?: parseError("The expression was not a Global Function (with one argument-block)", expression)
 
   context(CX.Scope, CX.Builder)
   fun transformPrintSource(argsRaw: MatchedType, applySuperTransform: Boolean = true) = run {
