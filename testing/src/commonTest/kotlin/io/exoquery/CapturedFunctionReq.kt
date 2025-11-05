@@ -16,7 +16,7 @@ object LimitedContainer {
     sql { peopleWithName("Joe") }
 }
 
-class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, Mode.ExoGoldenTest(), {
+class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, Mode.ExoGoldenOverride(), {
   @SqlFragment
   fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
   val foo: Boolean = true
@@ -76,6 +76,46 @@ class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, M
       @SqlFragment
       fun namedY(people: SqlQuery<Person>, name: String) = sql { people.filter { p -> p.name == name } }
       val capJoes = sql { namedY(namedX(Table<Person>(), "Joe"), "Jack") }
+      shouldBeGolden(capJoes.xr, "XR")
+      shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
+    }
+  }
+
+  "zero args support" - {
+    "cap { capFun() }" {
+      @SqlFragment
+      fun allPeople() = sql { Table<Person>() }
+      val capAll = sql { allPeople() }
+      shouldBeGolden(capAll.xr, "XR")
+      shouldBeGolden(capAll.build<PostgresDialect>(), "SQL")
+    }
+    "cap { capFun() -> capFunB() }" {
+      @SqlFragment
+      fun allPeople() = sql { Table<Person>() }
+
+      @SqlFragment
+      fun allJoes() = sql { allPeople().filter { p -> p.name == "Joe" } }
+      val capJoes = sql { allJoes() }
+      shouldBeGolden(capJoes.xr, "XR")
+      shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
+    }
+    "cap { capFun() -> capFunB(X) }" {
+      @SqlFragment
+      fun peopleWithName(name: String) = sql { Table<Person>().filter { p -> p.name == name } }
+
+      @SqlFragment
+      fun allJoes() = sql { peopleWithName("Joe") }
+      val capJoes = sql { allJoes() }
+      shouldBeGolden(capJoes.xr, "XR")
+      shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
+    }
+    "cap { capFun(X) -> capFunB() }" {
+      @SqlFragment
+      fun adults() = sql { Table<Person>().filter { p -> p.age > 21 } }
+
+      @SqlFragment
+      fun namedPeople(name: String) = sql { adults().filter { p -> p.name == name } }
+      val capJoes = sql { namedPeople("Joe") }
       shouldBeGolden(capJoes.xr, "XR")
       shouldBeGolden(capJoes.build<PostgresDialect>(), "SQL")
     }

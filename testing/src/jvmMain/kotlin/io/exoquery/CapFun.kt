@@ -6,24 +6,19 @@ import io.exoquery.PostgresDialect
 
 data class MyPerson(val id: Long, val name: String)
 
+@SqlFragment
+fun peopleNested() = sql { Table<MyPerson>().filter { p -> p.name == "foo" } }
+
+@SqlFragment
+fun people(filter: String) = sql { peopleNested() }
+
 val q = sql.select {
-  val p = from(MyCaptureAheadObject.people("Jack"))
+  val p = from(people("Jack"))
   p
 }
 
-
-object MyCaptureAheadObject {
-  @SqlFragment
-  fun peopleNested(filter: String) = sql { Table<MyPerson>().filter { p -> p.name == filter } }
-
-  @SqlFragment
-  fun people(filter: String) = sql { peopleNested(filter) }
-}
-
 fun main() {
-  val result = q.build<PostgresDialect>().determinizeDynamics()
+  val result = q.buildPrettyFor.Postgres()
 
-  println(q.determinizeDynamics().xr)
-  println(result)
-  println(result.debugData.phase.toString())
+  println(result.value)
 }

@@ -147,7 +147,10 @@ class MirrorIdiom(val renderOpts: RenderOptions = RenderOptions()) {
 
   // stmt"${scopedTokenizer(function)}.apply(${values.token})"
   val XR.FunctionApply.token: Token get() = stmt("${function.tokenScoped}.apply(${args.map { it.token }.mkStmt(", ")})")
-  val XR.FunctionN.token: Token get() = stmt("{ ${params.map { it.name.token }.mkStmt(", ")} -> ${body.token} }")
+  val XR.FunctionN.token: Token get() = run {
+    val argValues = if (params.isNotEmpty()) stmt("${params.map { it.name.token }.mkStmt(", ")} -> ") else "".token
+    stmt("{ ${argValues}${body.token} }")
+  }
   val XR.Const.token: Token
     get() =
       when (this) {

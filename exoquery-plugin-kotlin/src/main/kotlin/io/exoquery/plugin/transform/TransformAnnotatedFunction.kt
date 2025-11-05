@@ -102,24 +102,28 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     val capFun = capFunRaw as? IrSimpleFunction ?: parseError("The function annotated with @SqlFunction must be a simple function.", capFunRaw)
 
 
-    if (capFun.regularParams.isEmpty() && capFun.extensionParam == null) {
-      val internalRep =
-        if (errorDetailsEnabled) {
-          "\n" + """|-------------------- The internal representation of the function was: --------------------
-             |${capFun.dumpKotlinLike()}          
-             |""".trimMargin()
-        } else {
-          ""
-        }
-
-      parseError(
-        """
-        |The function annotated with @SqlFunction must have at least one parameter but none were found (and a extension-receiver parameter -that is treated as an argument- was not found either). 
-        |In this case it is not necessary to mark the function with the @SqlFunction annotation. Remove it and treat the function as a static query splice.
-        """.trimMargin() + internalRep,
-        capFun
-      )
-    }
+    // Note that previously we had a check here to make sure that the function had at least one parameter (either regular or extension-reciever)
+    // however this is not necessary since a function with no parameters can still go through the motions of being captured into an XR.Function with no arguments
+    // despite it not being necessary. This annotation should be optional for zero-parameter functions since they can just be static query splices.
+    //
+    //    if (capFun.regularParams.isEmpty() && capFun.extensionParam == null) {
+    //      val internalRep =
+    //        if (errorDetailsEnabled) {
+    //          "\n" + """|-------------------- The internal representation of the function was: --------------------
+    //             |${capFun.dumpKotlinLike()}
+    //             |""".trimMargin()
+    //        } else {
+    //          ""
+    //        }
+    //
+    //      parseError(
+    //        """
+    //        |The function annotated with @SqlFunction must have at least one parameter but none were found (and a extension-receiver parameter -that is treated as an argument- was not found either).
+    //        |In this case it is not necessary to mark the function with the @SqlFunction annotation. Remove it and treat the function as a static query splice.
+    //        """.trimMargin() + internalRep,
+    //        capFun
+    //      )
+    //    }
 
     if (!(capFun.returnType.isClass<SqlQuery<*>>() || capFun.returnType.isClass<SqlExpression<*>>())) {
       parseError("The SqlFragment had the wrong kind of return type. ${errorText()}", capFun)

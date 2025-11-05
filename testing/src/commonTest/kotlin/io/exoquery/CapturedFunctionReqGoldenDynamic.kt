@@ -54,6 +54,30 @@ object CapturedFunctionReqGoldenDynamic: GoldenQueryFile {
     "static function capture - structural tests/cap { capFunA(capFunB(x)) -> capFunC }/SQL" to cr(
       "SELECT p.id, p.name, p.age FROM Person p WHERE p.name = 'Joe' AND p.name = 'Jack'"
     ),
+    "zero args support/cap { capFun() }/XR" to kt(
+      "{ Table(Person) }.toQuery.apply()"
+    ),
+    "zero args support/cap { capFun() }/SQL" to cr(
+      "SELECT x.id, x.name, x.age FROM Person x"
+    ),
+    "zero args support/cap { capFun() -> capFunB() }/XR" to kt(
+      "{ { Table(Person) }.toQuery.apply().filter { p -> p.name == Joe } }.toQuery.apply()"
+    ),
+    "zero args support/cap { capFun() -> capFunB() }/SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.name = 'Joe'"
+    ),
+    "zero args support/cap { capFun() -> capFunB(X) }/XR" to kt(
+      "{ { name -> Table(Person).filter { p -> p.name == name } }.toQuery.apply(Joe) }.toQuery.apply()"
+    ),
+    "zero args support/cap { capFun() -> capFunB(X) }/SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.name = 'Joe'"
+    ),
+    "zero args support/cap { capFun(X) -> capFunB() }/XR" to kt(
+      "{ name -> { Table(Person).filter { p -> p.age > 21 } }.toQuery.apply().filter { p -> p.name == name } }.toQuery.apply(Joe)"
+    ),
+    "zero args support/cap { capFun(X) -> capFunB() }/SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE p.age > 21 AND p.name = 'Joe'"
+    ),
     "advanced cases/passing in a param/XR" to kt(
       """{ people, otherValue, f -> select { val p = from(people); val a = join(Table(Address)) { a.ownerId == f.apply(p) && a.street == otherValue }; Tuple(first = p, second = a) } }.toQuery.apply(Table(Person).filter { p -> p.name == TagP("1") }, TagP("0"), { it -> it.id }).map { kv -> Tuple(first = kv.first, second = kv.second) }"""
     ),
