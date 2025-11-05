@@ -16,7 +16,7 @@ object LimitedContainer {
     sql { peopleWithName("Joe") }
 }
 
-class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, Mode.ExoGoldenOverride(), {
+class CapturedFunctionReq: GoldenSpecDynamic(CapturedFunctionReqGoldenDynamic, Mode.ExoGoldenTest(), {
   @SqlFragment
   fun joes(people: SqlQuery<Person>) = sql { people.filter { p -> p.name == "Joe" } }
   val foo: Boolean = true
