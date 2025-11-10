@@ -91,7 +91,7 @@ internal class DeterminizeDynamics() {
     val newXR = query.xr.swapTags(
       (newParams.map { it.first to it.second } + newRuntimes.map { it.first to it.second }).toMap()
     )
-    return SqlQuery(newXR, RuntimeSet(newRuntimes.map { it.second to it.third }), ParamSet(newParams.map { it.third }))
+    return SqlQuery({ newXR }, RuntimeSet(newRuntimes.map { it.second to it.third }), ParamSet(newParams.map { it.third }))
   }
 
   private fun <Input, Output> recAction(action: SqlAction<Input, Output>): SqlAction<Input, Output> {

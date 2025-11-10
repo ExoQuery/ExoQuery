@@ -322,8 +322,11 @@ object ContainerExpr {
     context (CX.Scope) operator fun <AP : Pattern<IrExpression>> get(x: AP) =
       customPattern1("SqlExpressionExpr.Pluckable", x) { it: IrExpression ->
         it.match(
+          case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlQuery.Companion>(), Is("fromPackedXR"), Is()]).thenThis { _, _ ->
+            Components1(this)
+          },
           case(ExtractorsDomain.CaseClassConstructorCall1PlusLenient[
-            Is.of(PT.io_exoquery_SqlQuery, PT.io_exoquery_SqlExpression, PT.io_exoquery_SqlAction, PT.io_exoquery_SqlBatchAction),
+            Is.of(PT.io_exoquery_SqlExpression, PT.io_exoquery_SqlAction, PT.io_exoquery_SqlBatchAction),
             Is()
           ])
             .thenThis { _, _ ->
@@ -442,9 +445,8 @@ object SqlQueryExpr {
 
     context(CX.Scope, CX.Builder)
     override fun replant(paramsFrom: IrExpression): IrExpression {
-      val strExpr = call(PT.io_exoquery_unpackQuery).invoke(builder.irString(packedXR))
       val callParams = paramsFrom.callDispatch("params").invoke()
-      val make = makeClassFromString(PT.io_exoquery_SqlQuery, listOf(strExpr, RuntimeEmpty(), callParams))
+      val make = makeObject<SqlQuery.Companion>().callDispatch("fromPackedXR").invoke(builder.irString(packedXR), RuntimeEmpty(), callParams)
       return make
     }
 
@@ -452,22 +454,22 @@ object SqlQueryExpr {
       context (CX.Scope) operator fun <AP : Pattern<Uprootable>> get(x: AP) =
         customPattern1("SqlQueryExpr.Uprootable", x) { it: IrExpression ->
           it.match(
-            case(ExtractorsDomain.CaseClassConstructorCall1Plus[Is(PT.io_exoquery_SqlQuery), Ir.Call.FunctionUntethered1[Is(PT.io_exoquery_unpackQuery), Is()]])
-              .thenIf { _, _ ->
-                comp.regularArgs[1].isEmptyRuntimes()
+            //  [Is(PT.io_exoquery_SqlQuery), Ir.Call.FunctionUntethered1[Is(PT.io_exoquery_unpackQuery), Is()]]
+            case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlQuery.Companion>(), Is("fromPackedXR"), Is()])
+              .thenIf { _, args ->
+                args[1].isEmptyRuntimes()
               }
-              .then { _, (_, irStr) ->
-                val constPackedXR = irStr as? IrConst ?: throw IllegalArgumentException("value passed to unpackQuery was not a constant-string in:\n${it.dumpKotlinLike()}")
+              .then { _, args ->
+                val constPackedXR = args[0] as? IrConst ?: throw IllegalArgumentException("value passed to unpackQuery was not a constant-string in:\n${it.dumpKotlinLike()}")
                 Components1(Uprootable(constPackedXR.value.toString()))
               }
           )
         }
 
-      context(CX.Scope, CX.Builder) fun plantNewUprootableWithPacked(xr: XR.Query, params: ParamsExpr): Pair<IrConstructorCall, SqlQueryExpr.Uprootable> {
+      context(CX.Scope, CX.Builder) fun plantNewUprootableWithPacked(xr: XR.Query, params: ParamsExpr): Pair<IrExpression, SqlQueryExpr.Uprootable> {
         val packedXR = xr.encode()
-        val strExpr = call(PT.io_exoquery_unpackQuery).invoke(builder.irString(packedXR))
         // TODO cache the class types using the pattern in Types.kt so the class-id doesn't need to be looked up over and over again
-        val make = makeClassFromString(PT.io_exoquery_SqlQuery, listOf(strExpr, RuntimeEmpty(), params.lift()))
+        val make = makeObject<SqlQuery.Companion>().callDispatch("fromPackedXR").invoke(builder.irString(packedXR), RuntimeEmpty(), params.lift())
         return make to SqlQueryExpr.Uprootable(packedXR)
       }
       context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Query, params: ParamsExpr): IrExpression =
@@ -476,9 +478,8 @@ object SqlQueryExpr {
 
       context(CX.Scope, CX.Builder) fun plantNewPluckable(xr: XR.Query, runtimes: RuntimesExpr, params: ParamsExpr): IrExpression {
         val packedXR = xr.encode()
-        val strExpr = call(PT.io_exoquery_unpackQuery).invoke(builder.irString(packedXR))
         // TODO cache the class types using the pattern in Types.kt so the class-id doesn't need to be looked up over and over again
-        val make = makeClassFromString(PT.io_exoquery_SqlQuery, listOf(strExpr, runtimes.lift(), params.lift()))
+        val make = makeObject<SqlQuery.Companion>().callDispatch("fromPackedXR").invoke(builder.irString(packedXR), runtimes.lift(), params.lift())
         return make
       }
     }

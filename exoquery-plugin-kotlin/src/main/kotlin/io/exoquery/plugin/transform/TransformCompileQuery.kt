@@ -157,7 +157,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
 
                     if (options?.queryPrintingEnabled ?: false)
                       this@Scope.logger.report(outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "query"), expr)
-                    SqlCompiledQueryExpr(sqlExpr, queryString, queryTokenized, false, parsedArgs.queryLabel, Phase.CompileTime, uprootable.packedXR, query.encode()).plant()
+                    SqlCompiledQueryExpr(sqlExpr, queryString, queryTokenized, queryTokenized.isStatic(), parsedArgs.queryLabel, Phase.CompileTime, uprootable.packedXR, query.encode()).plant()
 
                   }
                   is ProcessResult.Failure -> {

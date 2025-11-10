@@ -32,15 +32,20 @@ sealed interface ActionKind {
  * val result: List<Person> = myQuery.buildFor.Postgres().runOn(controller)
  * ```
  */
-data class SqlCompiledQuery<T>(override val value: String, override val token: Token, val needsTokenization: Boolean, val label: String?, val debugData: SqlCompiledQuery.DebugData) : ExoCompiled() {
+data class SqlCompiledQuery<T>(override val value: String, val tokenMaker: () -> Token, val needsTokenization: Boolean, val label: String?, val debugData: SqlCompiledQuery.DebugData) : ExoCompiled() {
+  override val token: Token by lazy { tokenMaker() }
+
   override val params: List<Param<*>> by lazy { token.extractParams() }
   override fun originalXR(): XR = debugData.originalXR()
 
   // Similar concept tot the SqlQuery/SqlExpression.determinizeDynamics but it does not need to consider any nesting constructs
   // because the Params in the `params` variable are already determined to be the complete set in the tokenization
   // (determined by Lifter.liftToken + realization for compile-time and buildRuntime + realization for runtime)
-  override fun determinizeDynamics(): SqlCompiledQuery<T> =
-    this.copy(token = determinizedToken())
+  override fun determinizeDynamics(): SqlCompiledQuery<T> = run {
+    val token = determinizedToken()
+    val sql = determinizedToken().build()
+    this.copy(value = sql, tokenMaker = { token })
+  }
 
   data class DebugData(val phase: Phase, val originalXR: () -> XR.Query, val originalQuery: () -> SqlQueryModel)
 }

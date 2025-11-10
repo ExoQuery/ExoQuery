@@ -10,6 +10,7 @@ import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.logging.Messages
 import io.exoquery.plugin.ownerFunction
 import io.exoquery.plugin.refinedStableIdentifier
+import io.exoquery.plugin.refinedStableIdentifierOrErrorText
 import io.exoquery.plugin.regularArgsWithParamKinds
 import io.exoquery.plugin.safeName
 import io.exoquery.plugin.source
@@ -169,10 +170,10 @@ class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransfor
       val ownershipChain = TransformProjectCapture2.buildOwnerChain(zeroizedCallRaw)
 
       if (ownershipChain.root is OwnerChain.Root.Unknown)
-        parseError("Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was Unknown).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifier()}", zeroizedCallRaw, showCrossFile = true)
+        parseError("Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was Unknown).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifierOrErrorText()}", zeroizedCallRaw, showCrossFile = true)
       if (ownershipChain.root is OwnerChain.Root.Virgin)
         parseError(
-          "Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was a Unprocessed Captured Expression).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifier()}",
+          "Invalid ownership chain constructed when attempting to scaffold the${makeTag()} captured-function call of ${call.symbol.safeName} (source was a Unprocessed Captured Expression).\n----------- Ownership trace was the following: -----------\n${ownershipChain.show()}\n----------- Stable Identifier: -----------\n${zeroizedCallRaw.ownerFunction.refinedStableIdentifierOrErrorText()}",
           zeroizedCallRaw,
           showCrossFile = true
         )

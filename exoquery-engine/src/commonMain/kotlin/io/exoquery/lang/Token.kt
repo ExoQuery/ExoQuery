@@ -16,6 +16,16 @@ sealed interface Token {
   // Builds the actual string to be used as the SQL query as opposed to just for display purposes
   fun build(): String
 
+  /**
+   * Can the token vary based on the amount of parameters, e.g. the ParamMultiToken is NOT static because
+   * its rendered form depends on how many values are in the ParamMulti. However a ParamSingleToken IS static because it always
+   * renders to "?" regardless of the parameter value.
+   *
+   * This parameter is NOT the same as a static/dynamic query because even a static query can have `IN (?, ?, ... )` clauses
+   * which have a variable number of parameters based on the ParamMulti values.
+   */
+  fun isStatic(): Boolean
+
   // For cases where it is a Param actually plugin the value i.e. stringify it
   fun renderWith(renderer: Renderer): String
   fun showRaw(config: PPrinterConfig = PPrinterConfig()): String = PrintToken(config).invoke(this).toString()
@@ -88,11 +98,13 @@ sealed interface Token {
 sealed interface TagToken : Token
 
 final data class StringToken(val string: String) : Token {
+  override fun isStatic() = true
   override fun build(): String = string
   override fun renderWith(renderer: Renderer): String = string
 }
 
 final data class ParamSingleToken(val bid: BID) : Token {
+  override fun isStatic() = true
   override fun build() = "<UNR?>"
   fun realize(paramSet: ParamSet) =
     ParamSingleTokenRealized(bid, paramSet.lifts.asSequence().filterIsInstance<ParamSingle<*>>().find { p -> p.id == bid })
@@ -104,12 +116,14 @@ final data class ParamSingleToken(val bid: BID) : Token {
 // Allow for the possibility of `param` being an error so that we can introspect the tree for errors
 // withiout immediately failing on creation
 final data class ParamSingleTokenRealized(val bid: BID, val param: ParamSingle<*>?) : Token {
+  override fun isStatic() = true
   override fun build(): String = param?.let { "?" } ?: xrError("Param not found for bid: ${bid}")
   override fun renderWith(renderer: Renderer): String = renderer.invoke(bid, param, true)
   fun withBid(bid: BID) = ParamSingleTokenRealized(bid, param?.withNewBid(bid))
 }
 
 final data class ParamMultiToken(val bid: BID) : Token {
+  override fun isStatic() = false
   override fun build() = "<UNRS?>"
   fun realize(paramSet: ParamSet) =
     ParamMultiTokenRealized(bid, paramSet.lifts.asSequence().filterIsInstance<ParamMulti<*>>().find { p -> p.id == bid })
@@ -119,6 +133,7 @@ final data class ParamMultiToken(val bid: BID) : Token {
 }
 
 final data class ParamMultiTokenRealized(val bid: BID, val param: ParamMulti<*>?) : Token {
+  override fun isStatic() = false
   // NOTE probably more efficient to just count the param values and use .repeat() to get a list of "?"s
   override fun build(): String = param?.value?.map { _ -> "?" }?.joinToString(", ") ?: xrError("Param not found for bid: ${bid}")
   override fun renderWith(renderer: Renderer): String = renderer.invoke(bid, param, true)
@@ -126,6 +141,7 @@ final data class ParamMultiTokenRealized(val bid: BID, val param: ParamMulti<*>?
 }
 
 final data class ParamBatchToken(val bid: BID) : Token {
+  override fun isStatic() = true
   override fun build() = "<UNRB?>"
   fun realize(paramSet: ParamSet) =
     ParamBatchTokenRealized(bid, paramSet.lifts.asSequence().filterIsInstance<ParamBatchRefiner<*, *>>().find { p -> p.id == bid }, 0)
@@ -135,6 +151,7 @@ final data class ParamBatchToken(val bid: BID) : Token {
 }
 
 final data class ParamBatchTokenRealized(val bid: BID, val param: ParamBatchRefiner<*, *>?, val chunkIndex: Int) : Token {
+  override fun isStatic() = true
   override fun build(): String = param?.let { "?" } ?: xrError("Param not found for bid: ${bid}")
   override fun renderWith(renderer: Renderer): String = renderer.invoke(bid, param, true)
   fun withBid(bid: BID) = ParamBatchTokenRealized(bid, param?.withNewBid(bid), chunkIndex)
@@ -146,6 +163,7 @@ final data class ParamBatchTokenRealized(val bid: BID, val param: ParamBatchRefi
 }
 
 final data class TokenContext(val content: Token, val kind: Kind) : Token {
+  override fun isStatic() = content.isStatic()
   sealed interface Kind {
     data object AssignmentBlock : Kind
   }
@@ -155,6 +173,11 @@ final data class TokenContext(val content: Token, val kind: Kind) : Token {
 }
 
 final data class Statement(val tokens: List<Token>) : Token {
+  /**
+   * Are all tokens must be static for the statement to be static e.g.
+   * if there is even one ParamMultiToken then the statement is not static.
+   */
+  override fun isStatic() = tokens.all { it.isStatic() }
   override fun build(): String = tokens.map { it.build() }.mkString()
   override fun renderWith(renderer: Renderer): String = tokens.map { it.renderWith(renderer) }.mkString()
 
@@ -181,6 +204,10 @@ final data class Statement(val tokens: List<Token>) : Token {
 }
 
 final data class SetContainsToken(val a: Token, val op: Token, val b: Token) : Token {
+  /**
+   * Similar to Statement, all parts must be static for the whole to be static
+   */
+  override fun isStatic() = a.isStatic() && op.isStatic() && b.isStatic()
   override fun build(): String = "${a.build()} ${op.build()} parser(${b.build()})"
   override fun renderWith(renderer: Renderer): String = "${a.renderWith(renderer)} ${op.renderWith(renderer)} (${b.renderWith(renderer)})"
 }

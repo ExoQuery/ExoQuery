@@ -17,7 +17,7 @@ data class SqlCompiledQueryExpr(
   val sqlQueryExpr: IrExpression,
   val queryString: String,
   val queryTokenized: Token,
-  val isAction: Boolean,
+  val needsTokenization: Boolean,
   val label: String?,
   val phase: Phase,
   val originalEncodedQueryXR: String,
@@ -38,12 +38,12 @@ data class SqlCompiledQueryExpr(
         listOf(queryOutputType),
         listOf(
           queryString.lift(), // value
-          queryTokenized.token.lift(callParamsFromSqlQuery), // token
+          createLambda0(queryTokenized.token.lift(callParamsFromSqlQuery), currentDeclarationParentOrFail()), // token
           // If there are no ParamMulti values then we know that we can use the original query built with the .build function.
           // Now we can't check what the values in ParamSet are but we have this value in the TagForParam.paramType field
           // which shows us if the Param is a ParamSingle or ParamMulti. We need to check that in the AST in order to know that this
           // value is supposed to be.
-          irBuilder.irBoolean(false), // needsTokenization (todo need to determine this from the tokenized value i.e. only `true` if there are no ParamMulti values)
+          irBuilder.irBoolean(needsTokenization), // needsTokenization
           labelExpr,
           make<SqlCompiledQuery.DebugData>(
             Phase.CompileTime.lift(),

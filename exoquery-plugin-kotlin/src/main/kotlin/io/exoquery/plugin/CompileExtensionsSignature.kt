@@ -54,6 +54,15 @@ fun IrFunction.refinedStableIdentifier() = run {
   else function.stableIdentifier()
 }
 
+context(CX.Scope)
+fun IrFunction.refinedStableIdentifierOrErrorText() = run {
+  try {
+    this.refinedStableIdentifier()
+  } catch (e: Throwable) {
+    "<NO Stable Identifier for ${this.symbol.safeName}>"
+  }
+}
+
 
 /**
  * A unique stable identifier for functions. This is used for tracking cross-file functions in StoredXRs.db. In most cases

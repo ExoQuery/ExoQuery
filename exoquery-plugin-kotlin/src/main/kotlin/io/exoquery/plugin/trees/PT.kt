@@ -20,7 +20,7 @@ object PT {
 
   val io_exoquery_unpackExpr = "io.exoquery.unpackExpr"
 
-  val io_exoquery_SqlQuery = "io.exoquery.SqlQuery"
+  //val io_exoquery_SqlQuery = "io.exoquery.SqlQuery"
   val io_exoquery_SqlAction = "io.exoquery.SqlAction"
   val io_exoquery_SqlBatchAction = "io.exoquery.SqlBatchAction"
 
