@@ -65,9 +65,9 @@ class TransformCapturedBatchAction(val superTransformer: VisitTransformExpressio
     val paramsExprModel = dynamics.makeParams()
     val newSqlAction =
       if (dynamics.noRuntimes()) {
-        SqlBatchActionExpr.Uprootable.plantNewUprootable(xr, batchCollection, paramsExprModel)
+        SqlBatchActionExpr.Uprootable.plantNewUprootable(xr, batchCollection, paramsExprModel, expression.type)
       } else {
-        SqlBatchActionExpr.Uprootable.plantNewPluckable(xr, batchCollection, dynamics.makeRuntimes(), paramsExprModel)
+        SqlBatchActionExpr.Uprootable.plantNewPluckable(xr, batchCollection, dynamics.makeRuntimes(), paramsExprModel, expression.type)
       }
 
     //logger.error("========== Output: ==========\n${newSqlAction.dumpKotlinLike()}")

@@ -67,12 +67,33 @@ data class SqlAction<Input, Output> @ExoInternal constructor(val xrMaker: () -> 
   fun dynamic(): SqlAction<Input, Output> = this
 }
 
- data class SqlBatchAction<BatchInput, Input : Any, Output>(override val xr: XR.Batching, val batchParam: Sequence<BatchInput>, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfXR {
+ data class SqlBatchAction<BatchInput, Input : Any, Output>(val xrMaker: () -> XR.Batching, val batchParam: Sequence<BatchInput>, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfXR {
+  @ExoInternal
+  override val xr: XR.Batching by lazy { xrMaker() }
+
+  // Materialize the id lazily to avoid deserialization unless needed
+  private data class Id<BatchInput>(val xr: XR.Batching, val batchParam: Sequence<BatchInput>, val runtimes: RuntimeSet, val params: ParamSet)
+  private val id: Id<BatchInput> by lazy { Id(xr, batchParam, runtimes, params) }
+  override fun equals(other: Any?): Boolean =
+    other is SqlBatchAction<*, *, *> && this.id == other.id
+  override fun hashCode(): Int = id.hashCode()
+  override fun toString(): String = "SqlBatchAction(${xr}, batchParam=$batchParam, runtimes=$runtimes, params=$params)"
+
   fun show() = PrintMisc().invoke(this)
+
+  companion object {
+    @ExoInternal
+    internal fun <BatchInput, Input : Any, Output> fromPackedXR(packedXR: String, batchParam: Sequence<BatchInput>, runtimes: RuntimeSet = RuntimeSet.Empty, params: ParamSet = ParamSet.Empty): SqlBatchAction<BatchInput, Input, Output> =
+      SqlBatchAction({ unpackBatchAction(packedXR) }, batchParam, runtimes, params)
+
+    @ExoInternal
+    operator fun <BatchInput, Input : Any, Output> invoke(xr: XR.Batching, batchParam: Sequence<BatchInput>, runtimes: RuntimeSet = RuntimeSet.Empty, params: ParamSet = ParamSet.Empty): SqlBatchAction<BatchInput, Input, Output> =
+      SqlBatchAction({ xr }, batchParam, runtimes, params)
+  }
 
   @ExoInternal
   override fun rebuild(xr: XR, runtimes: RuntimeSet, params: ParamSet): SqlBatchAction<BatchInput, Input, Output> =
-    copy(xr = xr as? XR.Batching ?: xrError("Failed to rebuild SqlBatchAction with XR of type ${xr::class} which was: ${xr.show()}"), runtimes = runtimes, params = params)
+    copy(xrMaker = { xr as? XR.Batching ?: xrError("Failed to rebuild SqlBatchAction with XR of type ${xr::class} which was: ${xr.show()}") }, runtimes = runtimes, params = params)
 
   @ExoInternal
   fun buildRuntime(dialect: SqlIdiom, label: String?, pretty: Boolean = false): SqlCompiledBatchAction<BatchInput, Input, Output> = run {

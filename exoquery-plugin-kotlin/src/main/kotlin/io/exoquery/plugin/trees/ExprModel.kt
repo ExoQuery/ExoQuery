@@ -331,6 +331,9 @@ object ContainerExpr {
           case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlExpression.Companion>(), Is("fromPackedXR"), Is()]).thenThis { _, _ ->
             Components1(this)
           },
+          case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlBatchAction.Companion>(), Is("fromPackedXR"), Is()]).thenThis { _, _ ->
+            Components1(this)
+          },
           case(ExtractorsDomain.CaseClassConstructorCall1PlusLenient[
             Is.of(PT.io_exoquery_SqlExpression, PT.io_exoquery_SqlAction, PT.io_exoquery_SqlBatchAction),
             Is()
@@ -554,10 +557,14 @@ object SqlBatchActionExpr {
 
     context(CX.Scope, CX.Builder)
     override fun replant(paramsFrom: IrExpression): IrExpression {
-      val strExpr = call(PT.io_exoquery_unpackBatchAction).invoke(builder.irString(packedXR))
       val callParams = paramsFrom.callDispatch("params").invoke()
       val batchParam = paramsFrom.callDispatch("batchParam").invoke()
-      val make = makeClassFromString(PT.io_exoquery_SqlBatchAction, listOf(strExpr, batchParam, RuntimeEmpty(), callParams))
+      val batchInputType = paramsFrom.type.simpleTypeArgs[0]
+      val inputType = paramsFrom.type.simpleTypeArgs[1]
+      val outputType = paramsFrom.type.simpleTypeArgs[2]
+      val make = makeObject<SqlBatchAction.Companion>()
+        .callDispatchWithParams("fromPackedXR", listOf(batchInputType, inputType, outputType))
+        .invoke(builder.irString(packedXR), batchParam, RuntimeEmpty(), callParams)
       return make
     }
 
@@ -565,26 +572,37 @@ object SqlBatchActionExpr {
       context (CX.Scope) operator fun <AP : Pattern<Uprootable>> get(x: AP) =
         customPattern1("SqlBatchActionExpr.Uprootable", x) { it: IrExpression ->
           it.match(
-            case(ExtractorsDomain.CaseClassConstructorCall1Plus[Is(PT.io_exoquery_SqlBatchAction), Ir.Call.FunctionUntethered1[Is(PT.io_exoquery_unpackBatchAction), Is()]])
-              .thenIf { _, _ -> comp.regularArgs[2].isEmptyRuntimes() }
-              .then { _, (_, irStr) ->
-                val constPackedXR = irStr as? IrConst ?: throw IllegalArgumentException("value passed to unpackBatchAction was not a constant-string in:\n${it.dumpKotlinLike()}")
+            case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlBatchAction.Companion>(), Is("fromPackedXR"), Is()])
+              .thenIf { _, args ->
+                // Ensure runtimes arg is Runtimes.Empty
+                args[2].isEmptyRuntimes()
+              }
+              .then { _, args ->
+                val constPackedXR = args[0] as? IrConst ?: throw IllegalArgumentException("value passed to unpackBatchAction was not a constant-string in:\n${it.dumpKotlinLike()}")
                 Components1(Uprootable(constPackedXR.value.toString()))
               }
           ) //?: parseError("Could not match the SqlBatchActionExpr.Uprootable pattern", it)
         }
 
-      context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Batching, batchParam: IrExpression, params: ParamsExpr): IrExpression {
+      context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Batching, batchParam: IrExpression, params: ParamsExpr, originalType: IrType): IrExpression {
         val packedXR = xr.encode()
-        val strExpr = call(PT.io_exoquery_unpackBatchAction).invoke(builder.irString(packedXR))
-        val make = makeClassFromString(PT.io_exoquery_SqlBatchAction, listOf(strExpr, batchParam, RuntimeEmpty(), params.lift()))
+        val batchInputType = originalType.simpleTypeArgs[0]
+        val inputType = originalType.simpleTypeArgs[1]
+        val outputType = originalType.simpleTypeArgs[2]
+        val make = makeObject<SqlBatchAction.Companion>()
+          .callDispatchWithParams("fromPackedXR", listOf(batchInputType, inputType, outputType))
+          .invoke(builder.irString(packedXR), batchParam, RuntimeEmpty(), params.lift())
         return make
       }
 
-      context(CX.Scope, CX.Builder) fun plantNewPluckable(xr: XR.Batching, batchParam: IrExpression, runtimes: RuntimesExpr, params: ParamsExpr): IrExpression {
+      context(CX.Scope, CX.Builder) fun plantNewPluckable(xr: XR.Batching, batchParam: IrExpression, runtimes: RuntimesExpr, params: ParamsExpr, originalType: IrType): IrExpression {
         val packedXR = xr.encode()
-        val strExpr = call(PT.io_exoquery_unpackBatchAction).invoke(builder.irString(packedXR))
-        val make = makeClassFromString(PT.io_exoquery_SqlBatchAction, listOf(strExpr, batchParam, runtimes.lift(), params.lift()))
+        val batchInputType = originalType.simpleTypeArgs[0]
+        val inputType = originalType.simpleTypeArgs[1]
+        val outputType = originalType.simpleTypeArgs[2]
+        val make = makeObject<SqlBatchAction.Companion>()
+          .callDispatchWithParams("fromPackedXR", listOf(batchInputType, inputType, outputType))
+          .invoke(builder.irString(packedXR), batchParam, runtimes.lift(), params.lift())
         return make
       }
     }
