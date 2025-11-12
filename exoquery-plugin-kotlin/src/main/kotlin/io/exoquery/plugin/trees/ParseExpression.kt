@@ -118,10 +118,6 @@ object ParseExpression {
         CallParser.parse(call).asExpr()
       },
 
-      //case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<SqlQuery<*>>(), Is("isNotEmpty")]).then { sqlQueryIr, _ ->
-      //  XR.QueryToExpr(QueryParser.parse(sqlQueryIr), sqlQueryIr.loc)
-      //},
-
       // Converter functions for string e.g. toInt, toLong, etc.
       case(Ir.Call.FunctionMem0[Ir.Expr.ClassOf<String>(), Is { it.isConverterFunction() }]).thenThis { head, method ->
         val isKotlinSynthetic = this.hasSameOffsetsAs(head)
@@ -191,10 +187,6 @@ object ParseExpression {
         )
       },
 
-      // TODO add the batch IrValueParameter to the ParseContext
-      // TODO check if the component inside the Param contains the batch param (if it is used as a regular ident in the query we need to handle that too)
-      // TODO if it is a batch param then add the ParamBind into a new ParamUsingBatchAlias and then add it to the binds
-      // TODO also need to handle setParams case in parseAction where a batch-param is used
       case(Ir.Call.FunctionMemN[Is(), Is.of("param", "paramCtx", "paramCustom"), Is()]).thenThis { _, args ->
         val paramValue = args.first()
         // Ignore human name coming from the param for now
@@ -232,9 +224,6 @@ object ParseExpression {
           }
 
         val bid = BID.new()
-
-        //val varsUsed = IrTraversals.collectGetValue(paramValue)
-
         val (varsUsed, callsUsed) = IrTraversals.collectGetValuesAndCalls(paramValue)
         callsUsed.forEach {
           if (it.ownerFunction.hasAnnotation<Dsl>())
@@ -267,7 +256,13 @@ object ParseExpression {
       case(Ir.CastingTypeOperator[Is(), Is()]).thenThis { target, newType ->
         val callType: XR.CallType = XR.CallType.PureFunction
         val targetProperty = parse(target)
-        val thisType = TypeParser.of(this)
+        val thisType by lazy { TypeParser.of(this) }
+
+        // If we're casting to the same class-id (e.g. frequently kotlin casts some type T? to T) then just ignore. Even if it's a SqlQuery<A> cast to SqlQuery<B> we still don't
+        // care because the only reason we would ever want to know about a Kotlin cast is to do an SQL-cast and SQL-casts are only done on columns.
+        if (target.type.classId() != null && target.type.classId() == newType.classId()) {
+          targetProperty
+        }
         // SQl does not have a notion of products (e.g. table-types) being something that is castable e.g. you can do `SELECT castToSomething(p).field FROM Person p`
         // That means that in any situation where kotlin casts a product type we need to cast the individual field instead of the entire product
         // Currently this is only happening in situations with ? operators e.g. something like this:
@@ -282,7 +277,7 @@ object ParseExpression {
         // Instead of this:
         //   select { val p = from(Table(Person)); val r = join(Table(Robot)) { { val tmp0_safe_receiver = p.name; if (tmp0_safe_receiver == null) null else tmp0_safe_receiver.first } == r.ownerFirstName }; Tuple(first = p, second = r) }
         // That means we just need to remove the kotlin-cast from the tmp0_safe_receiver which is just a cast on a product type
-        if (targetProperty.type.isProduct())
+        else if (targetProperty.type.isProduct())
           targetProperty
         // If we're casting a Boolean to a Boolean ignore the cast because it does not matter in SQL
         else if (thisType.isBooleanValue() && targetProperty.type.isBooleanValue())

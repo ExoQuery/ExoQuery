@@ -331,6 +331,16 @@ interface CapturedBlock {
   operator fun <T> SqlQuery<T>.contains(value: T): Boolean =
     errorCap("The `contains` expression of the Query was not inlined")
 
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  operator fun String.contains(pattern: String): Boolean =
+    errorCap("The `contains` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  fun String.lowercase(): String = errorCap("The `lowercase` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class)
+  fun String.uppercase(): String = errorCap("The `uppercase` expression of the Query was not inlined")
+
   /**
    * Use this to call specialized functions on Strings that are specific to SQL. For example:
    * ```

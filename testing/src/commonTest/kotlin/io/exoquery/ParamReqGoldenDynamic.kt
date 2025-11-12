@@ -133,5 +133,14 @@ object ParamReqGoldenDynamic: GoldenQueryFile {
     "datatypes/Instant comparison/Params" to cr(
       "[ParamSingle(0, 2000-01-01T00:00:00Z, Instant), ParamSingle(1, 2000-01-01T00:00:00Z, Instant), ParamSingle(2, 2000-01-01T00:00:00Z, Instant), ParamSingle(3, 2000-01-01T00:00:00Z, Instant)]"
     ),
+    "x in params/Original SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE 'foo' IN (?, ?)"
+    ),
+    "x in params/Determinized SQL" to cr(
+      "SELECT p.id, p.name, p.age FROM Person p WHERE 'foo' IN (?, ?)"
+    ),
+    "x in params/Params" to cr(
+      "[ParamMulti(0, [foo, bar], String)]"
+    ),
   )
 }

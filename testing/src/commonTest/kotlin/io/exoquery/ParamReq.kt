@@ -145,4 +145,15 @@ class ParamReq: GoldenSpecDynamic(ParamReqGoldenDynamic, Mode.ExoGoldenTest(), {
       shouldBeGolden(build.determinizeDynamics().params.toString(), "Params")
     }
   }
+
+  "x in params" {
+    val list = listOf("foo", "bar")
+    val q = sql {
+      Table<Person>().filter { p -> "foo" in params(list) }
+    }
+    val build = q.buildFor.Postgres()
+    shouldBeGolden(build.token.build(), "Original SQL")
+    shouldBeGolden(build.determinizeDynamics().token.build(), "Determinized SQL")
+    shouldBeGolden(build.determinizeDynamics().params.toString(), "Params")
+  }
 })

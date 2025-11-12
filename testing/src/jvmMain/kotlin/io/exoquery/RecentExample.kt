@@ -26,7 +26,7 @@ val q = sql.select {
   val i = join(BOrderItems) { it.orderId == o.id }
   val p = join(BProducts) { it.id == i.productId }
   val cat = join(BCategories) { it.id == p.categoryId }
-  //where { (cat.name == "Electronics") || (cat.name == "Books") }
+  where { (cat.name == "Electronics") || (cat.name.contains("foo")) }
   groupBy(c.id)
 
   // c.id, c.name, i.quantity, i.unitPrice

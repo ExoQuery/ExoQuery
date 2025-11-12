@@ -2,6 +2,7 @@ package io.exoquery.plugin.trees
 
 import io.decomat.*
 import io.exoquery.CapturedBlock
+import io.exoquery.Params
 import io.exoquery.SqlQuery
 import io.exoquery.annotation.DslBooleanExpression
 import io.exoquery.annotation.DslFunctionCall

@@ -1,5 +1,6 @@
 package io.exoquery.xr
 
+import io.decomat.*
 import io.exoquery.BID
 import io.exoquery.pprint.PPrinterConfig
 import io.exoquery.printing.PrintXR
@@ -1297,6 +1298,49 @@ sealed interface XR {
     @Transient
     override val productComponents = productOf(this, branches, orElse)
     override val type: XRType by lazy { branches.lastOrNull()?.type ?: XRType.Unknown }
+
+    object isXthenYelseZ {
+      operator fun <XP: Pattern<X>, YP: Pattern<Y>, ZP: Pattern<Z>, X: XR.Expression, Y: XR.Expression, Z: XR.Expression> get(xp: XP, yp: YP, zp: ZP) =
+        customPattern2M("When.isXthenYelseZ", xp, yp) { whenExpr: XR.When ->
+          whenExpr.branches.singleOrNull()
+            ?.let { branch ->
+              if (yp.matchesAny(branch.then))
+                Components2M(branch.cond, branch.then, whenExpr.orElse)
+              else
+                null
+            }
+        }
+    }
+
+    object ifX_isK_thenKelseY {
+      operator fun <XP: Pattern<X>, KP: Pattern<K>, YP: Pattern<Y>, X: XR.Expression, Y: XR.Expression, K: XR.Expression> get(xp: XP, kp: KP, yp: YP) =
+        customPattern2("When.isXthenXelseY", xp, yp) { whenExpr: XR.When ->
+          whenExpr.branches.singleOrNull()
+            ?.let { branch ->
+              on(branch.cond).match(
+                // e.g. When(a:X is b:null (K), branch.then:null, orElse:x) -> compare b == branch.then
+                case(XR.BinaryOp[Is(), Is<OP.EqEq>(), Is()]).thenIf { _, b -> b == branch.then && xp.matchesAny(b) }.then { a, b ->
+                  Components2(a, whenExpr.orElse)
+                }
+              )
+            }
+        }
+    }
+
+    object ifX_isNotK_thenYelseK {
+      operator fun <XP: Pattern<X>, KP: Pattern<K>, YP: Pattern<Y>, X: XR.Expression, Y: XR.Expression, K: XR.Expression> get(xp: XP, kp: Pattern<K>, yp: YP) =
+        customPattern2("When.isXthenXelseY", xp, yp) { whenExpr: XR.When ->
+          whenExpr.branches.singleOrNull()
+            ?.let { branch ->
+              on(branch.cond).match(
+                // e.g. When(a:X is not b:null (K), branch.then:X, orElse:null) -> compare b == orElse
+                case(XR.BinaryOp[Is(), Is<OP.NotEq>(), Is()]).thenIf { _, b -> b == whenExpr.orElse && kp.matchesAny(b) }.then { a, b ->
+                  Components2(a, branch.then)
+                }
+              )
+            }
+        }
+    }
 
     companion object {
       fun makeIf(cond: XR.Expression, then: XR.Expression, orElse: XR.Expression, loc: Location = Location.Synth) =

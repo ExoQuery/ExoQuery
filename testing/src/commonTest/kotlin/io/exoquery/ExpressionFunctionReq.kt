@@ -45,20 +45,22 @@ class ExpressionFunctionReq : GoldenSpecDynamic(ExpressionFunctionReqGoldenDynam
       val q = sql { Table<Person>().map { p -> p.name.sql.replace("a", "b") } }
       shouldBeGolden(q.build<PostgresDialect>())
     }
-// TODO method whitelist for this case
-//    "upper" {
-//      val q = sql { Table<Person>().map { p -> p.name.uppercase() } }
-//      shouldBeGolden(q.build<PostgresDialect>())
-//    }
+    "upper" {
+      val q = sql { Table<Person>().map { p -> p.name.uppercase() } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
     "upper - sql" {
       val q = sql { Table<Person>().map { p -> p.name.sql.uppercase() } }
       shouldBeGolden(q.build<PostgresDialect>())
     }
-// TODO method whitelist for this case
-//    "lower" {
-//      val q = sql { Table<Person>().map { p -> p.name.lowercase() } }
-//      shouldBeGolden(q.build<PostgresDialect>())
-//    }
+    "contains" {
+      val q = sql { Table<Person>().map { p -> p.name.contains("ack") } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
+    "lower" {
+      val q = sql { Table<Person>().map { p -> p.name.lowercase() } }
+      shouldBeGolden(q.build<PostgresDialect>())
+    }
     "lower - sql" {
       val q = sql { Table<Person>().map { p -> p.name.sql.lowercase() } }
       shouldBeGolden(q.build<PostgresDialect>())

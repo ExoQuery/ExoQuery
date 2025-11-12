@@ -1,7 +1,6 @@
 package io.exoquery.lang
 
 import io.exoquery.norm.AvoidAliasConflictApply
-import io.exoquery.norm.ExpandProductNullChecks
 import io.exoquery.norm.Normalize
 import io.exoquery.norm.NormalizeCustomQueries
 import io.exoquery.norm.RepropagateTypes
@@ -33,7 +32,7 @@ class SqlNormalize(
 
   val AvoidAliasConflictPhase by lazy { AvoidAliasConflictApply(traceConf) }
   val RepropagateTypesPhase = RepropagateTypes(traceConf)
-  val ExpandProductNullChecks = io.exoquery.norm.ExpandProductNullChecks
+  val ExpandReducibleNullChecks = io.exoquery.norm.ExpandReducibleNullChecks
   val NormalizeCustomQueriesPhase = NormalizeCustomQueries
 
   private val root = { it: Query -> it }
@@ -54,9 +53,9 @@ class SqlNormalize(
       .andThen("BetaReduce-Initial") {
         BetaReduction.ofQuery(it)
       }
-      //.andThen("ExpandProductNullChecks") {
-      //  ExpandProductNullChecks(it)
-      //}
+      .andThen("ExpandProductNullChecks") {
+        ExpandReducibleNullChecks(it)
+      }
       .andThen("RepropagateTypes") {
         RepropagateTypesPhase(it)
       }

@@ -6,6 +6,8 @@ import io.exoquery.sql
 data class MyPerson(val id: Int, val name: String)
 data class MyValue(val value: Int, val description: String)
 
+
+// TODO NEED TO ADD THIS TO TESTS
 fun a() {
   val ids = listOf(1, 2, 3)
   val people = sql {

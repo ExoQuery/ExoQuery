@@ -14,6 +14,7 @@ object MethodWhitelist {
     listOf(
       HostMethods(classIdOrFail<String>("String"),
         listOf(
+          AllowedMethod("contains"),
           AllowedMethod("substring"),
           AllowedMethod("uppercase"),
           AllowedMethod("lowercase"),

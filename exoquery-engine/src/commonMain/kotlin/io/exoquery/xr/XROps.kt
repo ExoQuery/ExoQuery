@@ -36,6 +36,9 @@ fun isOperatorOnValues(op: BinaryOperator) =
 fun BinaryOp.oneSideIs(value: XR.Expression): Boolean =
   this.a == value || this.b == value
 
+inline fun BinaryOp.oneSideIs(predicate: (XR.Expression) -> Boolean): Boolean =
+  predicate(this.a) || predicate(this.b)
+
 fun XR.Query.swapTags(tagMap: Map<BID, BID>): XR.Query =
   SwapTagsTransformer(tagMap).invoke(this)
 
@@ -360,7 +363,18 @@ object CID {
   val kotlin_Double = XR.ClassId("kotlin.Double")
   val kotlin_Float = XR.ClassId("kotlin.Float")
   val kotlin_Boolean = XR.ClassId("kotlin.Boolean")
+  val exoquery_SqlQuery = XR.ClassId("io.exoquery.SqlQuery")
+  val exoquery_Params = XR.ClassId("io.exoquery.Params")
 }
+
+fun XR.ClassId.isSqlQuery(): Boolean =
+  this == CID.exoquery_SqlQuery
+
+fun XR.ClassId.isParams(): Boolean =
+  this == CID.exoquery_Params
+
+fun XR.ClassId.isString(): Boolean =
+  this == CID.kotlin_String
 
 fun XR.ClassId.isWholeNumber(): Boolean =
   when (this) {

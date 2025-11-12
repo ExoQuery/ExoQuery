@@ -260,8 +260,16 @@ interface SqlIdiom : HasPhasePrinting {
     get(): Token = run {
       val argsToken = (listOf(head) + args).map { it -> it.token }.mkStmt()
       when {
-        // NOTE: Perhaps we should check that io.exoquery.Params is the host-type? Need to think about various implications of being more strict
-        name == "contains" -> {
+
+        originalHostType.isSqlQuery() && name == "contains" -> {
+          val headToken = when {
+            // don't put parens around subqueries since the QueryToExpr tokenizer already does that
+            head is XR.QueryToExpr -> head.token
+            else -> +"(${head.token})"
+          }
+          +"${args.first().token} ${"IN".token} ${headToken}"
+        }
+        originalHostType.isParams() && name == "contains" -> {
           val headToken = when {
             // don't put parens around subqueries since the QueryToExpr tokenizer already does that
             head is XR.QueryToExpr -> head.token
@@ -270,6 +278,9 @@ interface SqlIdiom : HasPhasePrinting {
           +"${args.first().token} ${"IN".token} ${headToken}"
         }
 
+        originalHostType.isString() && name == "contains" ->
+          +"${head.token} LIKE '%' || ${args.first().token} || '%'"
+
         // rely on implicit-casts for numeric conversion
         originalHostType.isWholeNumber() && name.isConverterFunction() ->
           head.wholeNumberConversionMapping(name, isKotlinSynthetic)
@@ -277,7 +288,7 @@ interface SqlIdiom : HasPhasePrinting {
         originalHostType.isFloatingPoint() && name.isConverterFunction() ->
           head.floatConversionMapping(name, isKotlinSynthetic)
 
-        originalHostType == CID.kotlin_String -> {
+        originalHostType.isString() -> {
           when {
             // Cast strings to numeric types if needed
             name.isConverterFunction() -> head.stringConversionMapping(name)
@@ -519,8 +530,9 @@ interface SqlIdiom : HasPhasePrinting {
   // x is Any are technically useless checks but then entire logic here is much simpler to understand
   // with them enabled.  I'm not sure if the compiler will optimize them out or not but I
   // do not thing it will make a significant performance penalty.
-  @Suppress("USELESS_IS_CHECK")
   val XR.BinaryOp.token get(): Token = xrBinaryOpTokenImpl(this)
+
+  @Suppress("USELESS_IS_CHECK")
   fun xrBinaryOpTokenImpl(binaryOpImpl: XR.BinaryOp): Token = with(binaryOpImpl) {
     when {
         a is Any && op is EqEq && b is Null -> +"${scopedTokenizer(a)} IS NULL"
@@ -783,7 +795,6 @@ interface SqlIdiom : HasPhasePrinting {
 
   val XR.Insert.token get(): Token = xrInsertTokenImpl(this)
   fun xrInsertTokenImpl(insertImpl: XR.Insert): Token = with(insertImpl) {
-    val query = this.query as? XR.Entity ?: xrError("Insert query must be an entity but found: ${this.query}")
     tokenizeInsertBase(this)
   }
 
@@ -801,14 +812,8 @@ interface SqlIdiom : HasPhasePrinting {
 
   val XR.FilteredAction.token get(): Token = xrFilteredActionTokenImpl(this)
   fun xrFilteredActionTokenImpl(filteredActionImpl: XR.FilteredAction): Token = with(filteredActionImpl) {
-    when {
-      action is XR.U.CoreAction -> {
-        val reducedExpr = BetaReduction(filter, alias to action.alias).asExpr()
-        +"${action.token} WHERE ${reducedExpr.token}"
-      }
-      else ->
-        xrError("Filtered actions are only allowed on the core-actions update, delete but found:\n${showRaw()}")
-    }
+    val reducedExpr = BetaReduction(filter, alias to action.alias).asExpr()
+    +"${action.token} WHERE ${reducedExpr.token}"
   }
 
   fun protractReturning(kind: XR.Returning.Kind.Expression, actionAlias: XR.Ident) = run {
@@ -859,15 +864,8 @@ interface SqlIdiom : HasPhasePrinting {
 
   val XR.Delete.token get(): Token = xrDeleteTokenImpl(this)
   fun xrDeleteTokenImpl(deleteImpl: XR.Delete): Token = with(deleteImpl) {
-    fun deleteBase() = tokenizeDeleteBase(deleteImpl)
-    when {
-      query is XR.Filter && query.head is XR.Entity ->
-        +"${deleteBase()} WHERE ${query.token}"
-      query is XR.Entity ->
-        deleteBase()
-      else ->
-        xrError("Invalid query-clause in a Delete. It can only be a XR Filter or Entity but was:\n${query.showRaw()}")
-    }
+    // Note, query is always an Entity here
+    tokenizeDeleteBase(deleteImpl)
   }
 
   fun tokenizeDeleteBase(delete: XR.Delete): Token = with(delete) {
@@ -877,15 +875,8 @@ interface SqlIdiom : HasPhasePrinting {
   // TODO specialized logic for Postgres UPDATE to allow setting token-context here
   val XR.Update.token get(): Token = xrUpdateTokenImpl(this)
   fun xrUpdateTokenImpl(updateImpl: XR.Update): Token = with(updateImpl) {
-    fun updateBase() = tokenizeUpdateBase(updateImpl)
-    when {
-      query is XR.Filter && query.head is XR.Entity ->
-        +"${updateBase()} WHERE ${query.token}"
-      query is XR.Entity ->
-        updateBase()
-      else ->
-        xrError("Invalid query-clause in an Update. It can only be a XR Filter or Entity but was:\n${query.showRaw()}")
-    }
+    // Note, query is always an Entity here
+    tokenizeUpdateBase(updateImpl)
   }
 
   fun tokenizeUpdateBase(update: XR.Update): Token = with(update) {
@@ -909,14 +900,11 @@ interface SqlIdiom : HasPhasePrinting {
 
 
   fun columnAndValue(assignment: XR.Assignment): Pair<Token, Token> {
-    val column = when (val property = assignment.property) {
-      is XR.Property -> property.token
-      else -> xrError("Invalid assignment value of ${assignment}. Must be a Property object.")
-    }
+    val column = assignment.property.token
     val value = scopedTokenizer(assignment.value)
     return column to value
   }
 
-  fun columnsAndValues(assignments: List<XR.Assignment>, exlcusions: List<XR.Property>): List<Pair<Token, Token>> =
-    assignments.filterNot { exlcusions.contains(it.property) }.map { columnAndValue(it) }
+  fun columnsAndValues(assignments: List<XR.Assignment>, exclusions: List<XR.Property>): List<Pair<Token, Token>> =
+    assignments.filterNot { exclusions.contains(it.property) }.map { columnAndValue(it) }
 }

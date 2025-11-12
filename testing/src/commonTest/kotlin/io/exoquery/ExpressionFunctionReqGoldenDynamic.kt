@@ -36,8 +36,17 @@ object ExpressionFunctionReqGoldenDynamic: GoldenQueryFile {
     "String/replace" to cr(
       "SELECT REPLACE(p.name, 'a', 'b') AS value FROM Person p"
     ),
+    "String/upper" to cr(
+      "SELECT UPPER(p.name) AS value FROM Person p"
+    ),
     "String/upper - sql" to cr(
       "SELECT UPPER(p.name) AS value FROM Person p"
+    ),
+    "String/contains" to cr(
+      "SELECT p.name LIKE '%' || 'ack' || '%' AS value FROM Person p"
+    ),
+    "String/lower" to cr(
+      "SELECT LOWER(p.name) AS value FROM Person p"
     ),
     "String/lower - sql" to cr(
       "SELECT LOWER(p.name) AS value FROM Person p"
