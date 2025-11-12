@@ -8,9 +8,18 @@ import io.exoquery.xr.RuntimeBuilder
 import io.exoquery.xr.XR
 import io.exoquery.xr.toActionKind
 
-data class SqlAction<Input, Output>(val xrMaker: () -> XR.Action, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfActionXR {
+data class SqlAction<Input, Output> @ExoInternal constructor(val xrMaker: () -> XR.Action, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfActionXR {
   @ExoInternal
   override val xr: XR.Action by lazy { xrMaker() }
+
+  // Materialize the id only lazily since we don't want to actually compute the xr unless needed (since when coming
+  // from the compiled form it requires deserialization)
+  private data class Id(val xr: XR.Action, val runtimes: RuntimeSet, val params: ParamSet)
+  private val id: Id by lazy { Id(xr, runtimes, params) }
+  override fun equals(other: Any?): Boolean =
+    other is SqlAction<*, *> && this.id == other.id
+  override fun hashCode(): Int = id.hashCode()
+  override fun toString(): String = "SqlAction(${xr}, runtimes=$runtimes, params=$params)"
 
   fun show() = PrintMisc().invoke(this)
 
