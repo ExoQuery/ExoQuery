@@ -17,7 +17,7 @@ fun main() {
 
   val q = sql {
     forUpdate(Table<Person>().filter { p -> p.age > 21 })
-  }.dyanmic()
+  }.dynamic()
 
 
   println(q.buildFor.Postgres().value)

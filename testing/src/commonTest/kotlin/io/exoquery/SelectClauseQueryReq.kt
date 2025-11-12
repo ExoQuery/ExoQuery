@@ -51,7 +51,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
           //      p.name to (r ?: Robot("defaultName", "defaultModel")).model <- this should be an error because elvis op cannot be called on a product type
 
           p.name to r?.model
-        }.dyanmic()
+        }.dynamic()
       shouldBeGolden(people.xr, "XR")
       shouldBeGolden(people.build<PostgresDialect>(), "SQL")
     }
@@ -64,7 +64,7 @@ class SelectClauseQueryReq : GoldenSpecDynamic(SelectClauseQueryReqGoldenDynamic
           // TODO need an unhappy-paths test for this
           //      (p ?: Person(Name("foo", "bar"), 123)).name?.first to r.model
           (p?.name?.first ?: "foo") to r.model
-        }.dyanmic()
+        }.dynamic()
       shouldBeGolden(people.xr, "XR")
       shouldBeGolden(people.build<PostgresDialect>(), "SQL")
     }

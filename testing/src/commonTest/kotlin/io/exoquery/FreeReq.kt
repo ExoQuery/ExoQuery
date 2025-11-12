@@ -35,7 +35,7 @@ class FreeReq: GoldenSpecDynamic(FreeReqGoldenDynamic, Mode.ExoGoldenTest(), {
     "dynamic query in free" {
       val query = sql {
         Table<Person>().filter { p -> p.name == "Joe" }
-      }.dyanmic()
+      }.dynamic()
 
       val free = sql {
         free("beforeStuff() ${query} afterStuff()").asPure<SqlAction<Person, Long>>()
@@ -64,7 +64,7 @@ class FreeReq: GoldenSpecDynamic(FreeReqGoldenDynamic, Mode.ExoGoldenTest(), {
     "dynamic action in free" {
       val action = sql {
         insert<Person> { setParams(Person(1, "Joe", 123)) }
-      }.dyanmic()
+      }.dynamic()
 
       val free = sql {
         free("beforeStuff() ${action} afterStuff()").asPure<SqlAction<Person, Long>>()

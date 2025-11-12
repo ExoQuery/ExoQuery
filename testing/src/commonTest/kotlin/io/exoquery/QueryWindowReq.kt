@@ -12,7 +12,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
           p.name,
           over().partitionBy(p.name).sortBy(p.age).rank()
         )
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
@@ -23,7 +23,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
           p.name,
           over().partitionBy(p.name).sortBy(p.age).avg(p.id)
         )
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
@@ -34,7 +34,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
           p.name,
           over().partitionBy(p.name).sortBy(p.age).rowNumber()
         )
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
@@ -45,7 +45,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
           p.name,
           over().partitionBy(p.name).sortBy(p.age).count(p.age)
         )
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
@@ -56,7 +56,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
           p.name,
           over().partitionBy(p.name).sortBy(p.age).count()
         )
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
@@ -69,7 +69,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
           p.name,
           over().partitionBy(p.name).rank()
         )
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
@@ -82,7 +82,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
           p.name,
           over().sortBy(p.age).rank()
         )
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>(), "SQL")
     }
@@ -94,7 +94,7 @@ class QueryWindowReq: GoldenSpecDynamic(QueryWindowReqGoldenDynamic, Mode.ExoGol
         p.name,
         over().rank()
       )
-    }.dyanmic()
+    }.dynamic()
     shouldBeGolden(q.xr, "XR")
     shouldBeGolden(q.build<PostgresDialect>(), "SQL")
   }

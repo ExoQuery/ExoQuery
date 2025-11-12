@@ -74,7 +74,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
       val u = from(joes union jacks)
       val a = join(Table<Address>()) { a -> a.ownerId == u.id }
       free("stuff(${u.name})")<String>()
-    }.dyanmic()
+    }.dynamic()
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }

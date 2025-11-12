@@ -8,6 +8,6 @@ fun main() {
 
   val q = sql {
     Table<Emb>().map { e -> Parent(1, e) }.distinct()
-  }.dyanmic()
+  }.dynamic()
   println(q.buildPrettyFor.Postgres().value)
 }

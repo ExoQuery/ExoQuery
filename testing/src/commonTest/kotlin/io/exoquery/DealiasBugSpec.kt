@@ -25,7 +25,7 @@ class DealiasBugSpec: GoldenSpecDynamic(DealiasBugSpecGoldenDynamic, Mode.ExoGol
       })
       where { t.user.id == 123 }
       t.user to t.id
-    }.dyanmic()
+    }.dynamic()
     shouldBeGolden(q.xr, "XR")
     shouldBeGolden(q.build<PostgresDialect>())
   }
@@ -41,7 +41,7 @@ class DealiasBugSpec: GoldenSpecDynamic(DealiasBugSpecGoldenDynamic, Mode.ExoGol
       })
       where { t.otherOther.id == 123 }
       t.otherOther to t.id
-    }.dyanmic()
+    }.dynamic()
     shouldBeGolden(q.xr, "XR")
     shouldBeGolden(q.build<PostgresDialect>())
   }
@@ -56,7 +56,7 @@ class DealiasBugSpec: GoldenSpecDynamic(DealiasBugSpecGoldenDynamic, Mode.ExoGol
       })
       where { t.otherOther.id == 123 }
       t.otherOther to t.id
-    }.dyanmic()
+    }.dynamic()
     shouldBeGolden(q.xr, "XR")
     shouldBeGolden(q.build<PostgresDialect>())
   }

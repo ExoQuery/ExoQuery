@@ -11,14 +11,14 @@ class NamingAnnotationActionReq: GoldenSpecDynamic(NamingAnnotationActionReqGold
     "should work (and quote) in insert" {
       val q = sql {
         insert<Person> { set(name to "Joe", age to 123) }.returning { p -> p.id to p.name }
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.build<PostgresDialect>())
     }
 
     "should work (and quote) in insert using self column" {
       val q = sql {
         insert<Person> { set(name to name + "_Suffix", age to 123) }.returning { p -> p.id to p.name }
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.build<PostgresDialect>())
     }
 
@@ -45,14 +45,14 @@ class NamingAnnotationActionReq: GoldenSpecDynamic(NamingAnnotationActionReqGold
     "should work (and quote) in insert" {
       val q = sql {
         insert<Person> { set(name.first to "Joe", age to 123) }.returning { p -> p.id to p.name }
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.build<PostgresDialect>())
     }
 
     "should work (and quote) in insert using self column" {
       val q = sql {
         insert<Person> { set(name.first to name.first + "_Suffix", age to 123) }.returning { p -> p.id to p.name }
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.build<PostgresDialect>())
     }
 
@@ -78,14 +78,14 @@ class NamingAnnotationActionReq: GoldenSpecDynamic(NamingAnnotationActionReqGold
     "should work (and quote) in insert" {
       val q = sql {
         insert<Person> { set(name.first to "Joe", age to 123) }.returning { p -> p.id to p.name }
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.build<PostgresDialect>())
     }
 
     "should work (and quote) in insert using self column" {
       val q = sql {
         insert<Person> { set(name.first to name.first + "_Suffix", age to 123) }.returning { p -> p.id to p.name }
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.build<PostgresDialect>())
     }
 

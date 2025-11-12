@@ -26,7 +26,7 @@ class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGolde
         val av = from(a)
         groupBy(av.first)
         av.first to count(av.second.street)
-      }.dyanmic() // TODO fix spelling
+      }.dynamic() // TODO fix spelling
 
       shouldBeGolden(b.xr, "XR")
       shouldBeGolden(b.buildPrettyFor.Postgres(), useTokenRendering = false)
@@ -46,7 +46,7 @@ class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGolde
         val av = from(a)
         groupBy(av.pws)
         GroupedProduct(av.pws, count(av.address.street))
-      }.dyanmic() // TODO fix spelling
+      }.dynamic() // TODO fix spelling
 
       shouldBeGolden(b.xr, "XR")
       shouldBeGolden(b.buildPrettyFor.Postgres(), useTokenRendering = false)

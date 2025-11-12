@@ -47,7 +47,7 @@ class NameEscapeSpec: GoldenSpecDynamic(NameEscapeSpecGoldenDynamic, Mode.ExoGol
         }.nested())
         where { t.user.id == 123 }
         t.user to t.id
-      }.dyanmic()
+      }.dynamic()
       shouldBeGolden(q.xr, "XR")
       shouldBeGolden(q.build<PostgresDialect>())
     }

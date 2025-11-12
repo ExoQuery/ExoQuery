@@ -16,7 +16,7 @@ class QueryValuePositionReq: GoldenSpecDynamic(QueryValuePositionReqGoldenDynami
             count(a.ownerId)
           }.value()
         )
-      }.dyanmic()
+      }.dynamic()
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.buildFor.Postgres())
   }

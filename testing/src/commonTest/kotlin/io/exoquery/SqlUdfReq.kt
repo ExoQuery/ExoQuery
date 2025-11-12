@@ -8,7 +8,7 @@ class SqlUdfReq: GoldenSpecDynamic(SqlUdfReqGoldenDynamic, Mode.ExoGoldenTest(),
   "does necessary casts" {
     val q = sql {
       Table<Person>().map { p -> p.age.toString() to p.name.toInt() }
-    }.dyanmic()
+    }.dynamic()
     shouldBeGolden(q.xr, "XR")
     shouldBeGolden(q.build<PostgresDialect>(), "SQL")
   }
@@ -17,7 +17,7 @@ class SqlUdfReq: GoldenSpecDynamic(SqlUdfReqGoldenDynamic, Mode.ExoGoldenTest(),
 
     val q = sql {
       Table<Test>().map { p -> p.name!! }
-    }.dyanmic()
+    }.dynamic()
     shouldBeGolden(q.xr, "XR")
     shouldBeGolden(q.build<PostgresDialect>(), "SQL")
   }
