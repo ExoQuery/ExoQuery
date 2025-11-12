@@ -20,10 +20,6 @@ object PT {
 
   val io_exoquery_unpackExpr = "io.exoquery.unpackExpr"
 
-  //val io_exoquery_SqlQuery = "io.exoquery.SqlQuery"
-  val io_exoquery_SqlAction = "io.exoquery.SqlAction"
-  val io_exoquery_SqlBatchAction = "io.exoquery.SqlBatchAction"
-
   // TODO small optimization: a bunch of times ClassId is created from this, create one here up front once
   val io_exoquery_SqlExpression = "io.exoquery.SqlExpression"
 

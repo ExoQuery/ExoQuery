@@ -333,14 +333,7 @@ object ContainerExpr {
           },
           case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlBatchAction.Companion>(), Is("fromPackedXR"), Is()]).thenThis { _, _ ->
             Components1(this)
-          },
-          case(ExtractorsDomain.CaseClassConstructorCall1PlusLenient[
-            Is.of(PT.io_exoquery_SqlExpression, PT.io_exoquery_SqlAction, PT.io_exoquery_SqlBatchAction),
-            Is()
-          ])
-            .thenThis { _, _ ->
-              Components1(this)
-            }
+          }
         )
       }
   }
