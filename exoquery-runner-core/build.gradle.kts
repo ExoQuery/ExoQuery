@@ -11,6 +11,14 @@ plugins {
 version = extra["controllerProjectVersion"].toString()
 
 kotlin {
+  compilerOptions {
+    freeCompilerArgs.add("-Xwhen-guards")
+    optIn.addAll(
+      "io.exoquery.annotation.ExoInternal",
+      "kotlinx.serialization.ExperimentalSerializationApi"
+    )
+  }
+
   jvmToolchain(11)
 
   jvm {
