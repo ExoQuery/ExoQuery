@@ -1,7 +1,6 @@
 package io.exoquery.xr
 
 import io.exoquery.BID
-import io.exoquery.ContainerOfFunXR
 import io.exoquery.ContainerOfXR
 
 fun <CXR : ContainerOfXR> CXR.rekeyRuntimeBinds(): CXR {

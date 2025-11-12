@@ -4,12 +4,10 @@ import io.decomat.*
 import io.exoquery.*
 import io.exoquery.plugin.classId
 import io.exoquery.plugin.classIdOf
-import io.exoquery.plugin.regularArgs
 import io.exoquery.plugin.transform.*
 import io.exoquery.xr.EncodingXR
 import io.exoquery.xr.XR
 import io.exoquery.xr.encode
-import io.exoquery.xr.of
 import kotlinx.serialization.decodeFromHexString
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.irGetObject
@@ -18,7 +16,6 @@ import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.IrConst
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl

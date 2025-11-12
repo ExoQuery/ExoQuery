@@ -5,7 +5,6 @@ import io.decomat.*
 import io.exoquery.*
 import io.exoquery.annotation.ExoBuildFunctionLabel
 import io.exoquery.plugin.*
-import io.exoquery.plugin.printing.dumpSimple
 import io.exoquery.plugin.trees.ExtractorsDomain.SqlBuildFunction
 import io.exoquery.plugin.trees.Lifter
 import io.exoquery.plugin.trees.SqlActionExpr

@@ -1,5 +1,6 @@
 package io.exoquery
 
+import io.exoquery.annotation.ExoInternal
 import io.exoquery.serial.ParamSerializer
 import kotlin.reflect.KClass
 
@@ -24,6 +25,7 @@ import kotlin.reflect.KClass
  * val query: SqlQuery<Person> = sql { Table<Person>() }
  * }}}
  */
+@ExoInternal
 sealed interface Param<T : Any> {
   val id: BID
   val serial: ParamSerializer<T>
@@ -34,9 +36,7 @@ sealed interface Param<T : Any> {
 }
 
 
-// TODO need to have multiple-version of Param
-// TODO also in the dsl get rid of params that takes a list of ValueWithSerializer instances.
-//      any params used in a collection need to have the same serializer
+@ExoInternal
 data class ParamMulti<T : Any>(override val id: BID, val value: List<T?>, override val serial: ParamSerializer<T>, override val description: String? = null) : Param<T> {
   override fun withNonStrictEquality(): ParamMulti<T> =
     copy(serial = serial.withNonStrictEquality())
@@ -46,6 +46,7 @@ data class ParamMulti<T : Any>(override val id: BID, val value: List<T?>, overri
   override fun toString() = "ParamMulti(${id.value}, $value, $serial)" // don't want to show description here because it could add too much noise
 }
 
+@ExoInternal
 data class ParamSingle<T : Any>(override val id: BID, val value: T?, override val serial: ParamSerializer<T>, override val description: String? = null) : Param<T> {
   override fun withNonStrictEquality(): ParamSingle<T> =
     copy(serial = serial.withNonStrictEquality())
@@ -58,6 +59,7 @@ data class ParamSingle<T : Any>(override val id: BID, val value: T?, override va
 /**
  * For sql.batch { param -> insert { set(name = param(p.name <- encoding the value here!)) }  }
  */
+@ExoInternal
 data class ParamBatchRefiner<Input, Output : Any>(override val id: BID, val refiner: (Input?) -> Output?, override val serial: ParamSerializer<Output>, override val description: String? = null) : Param<Output> {
   fun refine(input: Input): ParamSingle<Output> = ParamSingle<Output>(id, refiner(input), serial, description)
   fun refineAny(input: Any?): ParamSingle<Output> = refine(input as Input)
@@ -68,6 +70,7 @@ data class ParamBatchRefiner<Input, Output : Any>(override val id: BID, val refi
   override fun toString() = "ParamBatchRefiner(${id.value}, ${showValue()}, $serial)"
 }
 
+@ExoInternal
 data class ParamSet(val lifts: List<Param<*>>) {
   operator fun plus(other: ParamSet): ParamSet = ParamSet(lifts + other.lifts)
   fun withNonStrictEquality(): ParamSet = ParamSet(lifts.map { it.withNonStrictEquality() })

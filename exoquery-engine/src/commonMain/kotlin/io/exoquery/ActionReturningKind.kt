@@ -1,7 +1,9 @@
 package io.exoquery
 
+import io.exoquery.annotation.ExoInternal
 import io.exoquery.xr.XR
 
+@ExoInternal
 sealed interface ActionReturningKind {
   data object None : ActionReturningKind
   data class Keys(val columns: List<String>) : ActionReturningKind

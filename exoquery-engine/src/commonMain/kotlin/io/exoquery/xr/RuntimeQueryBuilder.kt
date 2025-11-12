@@ -1,16 +1,13 @@
 package io.exoquery.xr
 
-import io.exoquery.ContainerOfActionXR
 import io.exoquery.ContainerOfFunXR
 import io.exoquery.ContainerOfXR
 import io.exoquery.Param
 import io.exoquery.ParamSet
-import io.exoquery.Phase
 import io.exoquery.SqlAction
 import io.exoquery.SqlBatchAction
-import io.exoquery.SqlQuery
 import io.exoquery.TransformXrError
-import io.exoquery.printing.pprintMisc
+import io.exoquery.annotation.ExoInternal
 import io.exoquery.lang.ParamBatchToken
 import io.exoquery.lang.ParamMultiToken
 import io.exoquery.lang.ParamSingleToken
@@ -20,6 +17,7 @@ import io.exoquery.lang.StatelessTokenTransformer
 import io.exoquery.lang.Token
 import io.exoquery.util.formatQuery
 
+@ExoInternal
 class RuntimeBuilder(val dialect: SqlIdiom, val pretty: Boolean) {
   data class ContainerBuildQuery(val queryString: String, val queryTokenized: Token, val queryModel: SqlQueryModel)
   data class ContainerBuildAction(val queryString: String, val queryTokenized: Token)
@@ -99,29 +97,6 @@ class RuntimeBuilder(val dialect: SqlIdiom, val pretty: Boolean) {
     override fun invoke(token: ParamSingleToken): Token = token.realize(paramSet)
     override fun invoke(token: ParamBatchToken): Token = token.realize(paramSet)
   }
-
-  // TODO need a test with a dynamic SqlExpression container used in an SqlQuery (and vice-versa)
-  // TODO will need to gather the Params from all of the nested query containers when lifting system is introduced
-
-// Kotlin:
-//  def spliceQuotations(quoted: Quoted[_]): Ast = {
-//    def spliceQuotationsRecurse(quoted: Quoted[_]): Ast = {
-//      val quotationVases = quoted.runtimeQuotes
-//      val ast = quoted.ast
-//      // Get all the quotation tags
-//      Transform(ast) {
-//        // Splice the corresponding vase for every tag, then recurse
-//        case v @ QuotationTag(uid) =>
-//        // When a quotation to splice has been found, retrieve it and continue
-//        // splicing inside since there could be nested sections that need to be spliced
-//        quotationVases.find(_.uid == uid) match {
-//          case Some(vase) => spliceQuotationsRecurse(vase.quoted)
-//          case None => throw new IllegalArgumentException(s"Quotation vase with UID ${uid} could not be found!")
-//        }
-//      }
-//    }
-//    BetaReduction(spliceQuotationsRecurse(quoted))
-//  }
 }
 
 fun ContainerOfXR.spliceQuotations(): Pair<XR, List<Param<*>>> {
