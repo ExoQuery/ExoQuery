@@ -8,12 +8,25 @@ import io.exoquery.xr.RuntimeBuilder
 import io.exoquery.xr.XR
 import io.exoquery.xr.toActionKind
 
-data class SqlAction<Input, Output>(override val xr: XR.Action, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfXR {
+data class SqlAction<Input, Output>(val xrMaker: () -> XR.Action, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfActionXR {
+  @ExoInternal
+  override val xr: XR.Action by lazy { xrMaker() }
+
   fun show() = PrintMisc().invoke(this)
+
+  companion object {
+    @ExoInternal
+    internal fun <Input, Output> fromPackedXR(packedXR: String, runtimes: RuntimeSet = RuntimeSet.Empty, params: ParamSet = ParamSet.Empty): SqlAction<Input, Output> =
+      SqlAction({ unpackAction(packedXR) }, runtimes, params)
+
+    @ExoInternal
+    operator fun <Input, Output> invoke(xr: XR.Action, runtimes: RuntimeSet = RuntimeSet.Empty, params: ParamSet = ParamSet.Empty): SqlAction<Input, Output> =
+      SqlAction({ xr }, runtimes, params)
+  }
 
   @ExoInternal
   override fun rebuild(xr: XR, runtimes: RuntimeSet, params: ParamSet): SqlAction<Input, Output> =
-    copy(xr = xr as? XR.Action ?: xrError("Failed to rebuild SqlAction with XR of type ${xr::class} which was: ${xr.show()}"), runtimes = runtimes, params = params)
+    copy(xrMaker = { xr as? XR.Action ?: xrError("Failed to rebuild SqlAction with XR of type ${xr::class} which was: ${xr.show()}") }, runtimes = runtimes, params = params)
 
   @ExoInternal
   fun buildRuntime(dialect: SqlIdiom, label: String?, pretty: Boolean = false): SqlCompiledAction<Input, Output> = run {
@@ -21,7 +34,7 @@ data class SqlAction<Input, Output>(override val xr: XR.Action, override val run
     val actionReturningKind = ActionReturningKind.fromActionXR(xr)
     SqlCompiledAction(
       containerBuild.queryString, containerBuild.queryTokenized, true, xr.toActionKind(), actionReturningKind, label,
-      SqlCompiledAction.DebugData(Phase.Runtime, { xr })
+      SqlCompiledAction.DebugData(Phase.Runtime, { this.xr })
     )
   }
 
@@ -41,10 +54,11 @@ data class SqlAction<Input, Output>(override val xr: XR.Action, override val run
   fun determinizeDynamics(): SqlAction<Input, Output> = DeterminizeDynamics().ofAction(this)
 
   // Don't need to do anything special in order to convert runtime, just call a function that the TransformProjectCapture can't see through
+  @ExoInternal
   fun dynamic(): SqlAction<Input, Output> = this
 }
 
-data class SqlBatchAction<BatchInput, Input : Any, Output>(override val xr: XR.Batching, val batchParam: Sequence<BatchInput>, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfXR {
+ data class SqlBatchAction<BatchInput, Input : Any, Output>(override val xr: XR.Batching, val batchParam: Sequence<BatchInput>, override val runtimes: RuntimeSet, override val params: ParamSet) : ContainerOfXR {
   fun show() = PrintMisc().invoke(this)
 
   @ExoInternal

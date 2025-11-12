@@ -325,6 +325,9 @@ object ContainerExpr {
           case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlQuery.Companion>(), Is("fromPackedXR"), Is()]).thenThis { _, _ ->
             Components1(this)
           },
+          case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlAction.Companion>(), Is("fromPackedXR"), Is()]).thenThis { _, _ ->
+            Components1(this)
+          },
           case(ExtractorsDomain.CaseClassConstructorCall1PlusLenient[
             Is.of(PT.io_exoquery_SqlExpression, PT.io_exoquery_SqlAction, PT.io_exoquery_SqlBatchAction),
             Is()
@@ -498,11 +501,12 @@ object SqlActionExpr {
 
     context(CX.Scope, CX.Builder)
     override fun replant(paramsFrom: IrExpression): IrExpression {
-      val strExpr = call(PT.io_exoquery_unpackAction).invoke(builder.irString(packedXR))
       val callParams = paramsFrom.callDispatch("params").invoke()
       val inputType = paramsFrom.type.simpleTypeArgs[0]
       val outputType = paramsFrom.type.simpleTypeArgs[1]
-      val make = makeClassFromString(PT.io_exoquery_SqlAction, listOf(strExpr, RuntimeEmpty(), callParams), listOf(inputType, outputType))
+      val make = makeObject<SqlAction.Companion>()
+        .callDispatchWithParams("fromPackedXR", listOf(inputType, outputType))
+        .invoke(builder.irString(packedXR), RuntimeEmpty(), callParams)
       return make
     }
 
@@ -510,10 +514,12 @@ object SqlActionExpr {
       context (CX.Scope) operator fun <AP : Pattern<Uprootable>> get(x: AP) =
         customPattern1("SqlActionExpr.Uprootable", x) { it: IrExpression ->
           it.match(
-            case(ExtractorsDomain.CaseClassConstructorCall1Plus[Is(PT.io_exoquery_SqlAction), Ir.Call.FunctionUntethered1[Is(PT.io_exoquery_unpackAction), Is()]])
-              .thenIf { _, _ -> comp.regularArgs[1].isEmptyRuntimes() }
-              .then { _, (_, irStr) ->
-                val constPackedXR = irStr as? IrConst ?: throw IllegalArgumentException("value passed to unpackAction was not a constant-string in:\n${it.dumpKotlinLike()}")
+            case(Ir.Call.FunctionMemN[Ir.Expr.ClassOf<SqlAction.Companion>(), Is("fromPackedXR"), Is()])
+              .thenIf { _, args ->
+                args[1].isEmptyRuntimes()
+              }
+              .then { _, args ->
+                val constPackedXR = args[0] as? IrConst ?: throw IllegalArgumentException("value passed to unpackAction was not a constant-string in:\n${it.dumpKotlinLike()}")
                 Components1(Uprootable(constPackedXR.value.toString()))
               }
           )
@@ -521,19 +527,21 @@ object SqlActionExpr {
 
       context(CX.Scope, CX.Builder) fun plantNewUprootable(xr: XR.Action, params: ParamsExpr, originalType: IrType): IrExpression {
         val packedXR = xr.encode()
-        val strExpr = call(PT.io_exoquery_unpackAction).invoke(builder.irString(packedXR))
         val inputType = originalType.simpleTypeArgs[0]
         val outputType = originalType.simpleTypeArgs[1]
-        val make = makeClassFromString(PT.io_exoquery_SqlAction, listOf(strExpr, RuntimeEmpty(), params.lift()), listOf(inputType, outputType))
+        val make = makeObject<SqlAction.Companion>()
+          .callDispatchWithParams("fromPackedXR", listOf(inputType, outputType))
+          .invoke(builder.irString(packedXR), RuntimeEmpty(), params.lift())
         return make
       }
 
       context(CX.Scope, CX.Builder) fun plantNewPluckable(xr: XR.Action, runtimes: RuntimesExpr, params: ParamsExpr, originalType: IrType): IrExpression {
         val packedXR = xr.encode()
-        val strExpr = call(PT.io_exoquery_unpackAction).invoke(builder.irString(packedXR))
         val inputType = originalType.simpleTypeArgs[0]
         val outputType = originalType.simpleTypeArgs[1]
-        val make = makeClassFromString(PT.io_exoquery_SqlAction, listOf(strExpr, runtimes.lift(), params.lift()), listOf(inputType, outputType))
+        val make = makeObject<SqlAction.Companion>()
+          .callDispatchWithParams("fromPackedXR", listOf(inputType, outputType))
+          .invoke(builder.irString(packedXR), runtimes.lift(), params.lift())
         return make
       }
     }
