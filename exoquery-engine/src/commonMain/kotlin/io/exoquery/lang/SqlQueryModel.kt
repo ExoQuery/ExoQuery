@@ -203,6 +203,9 @@ final data class FlattenSqlQuery(
   override val type: XRType
 ) : SqlQueryModel {
 
+  fun isTrivialQuery() =
+    having == null && groupBy == null && orderBy.isEmpty() && limit == null && offset == null && distinct.isDistinct == false
+
   // Overriding so make this return a more-specific type
   override fun transformXR(f: StatelessTransformer): FlattenSqlQuery =
     this.transformClauses(f)
@@ -552,11 +555,34 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             // If it's a filter, pass on the value of nestNextMap in case there is a future map we need to nest
             val b = base(head, id, nestNextMap)
             // If the filter body uses the filter id, make sure it matches one of the aliases in the fromContexts
-            if (b.where == null && (!CollectXR.byType<XR.Ident>(body).map { it.name }
-                .contains(id.name) || collectAliases(b.from).contains(id.name)))
-              trace("Flattening| Filter(Ident) [Simple]") andReturn {
+            val filterVariableIsUsed = CollectXR.byType<XR.Ident>(body).map { it.name }.contains(id.name)
+            val filterVariableIsUnused = !filterVariableIsUsed
+            val filterVariableIsInFrom = collectAliases(b.from).contains(id.name)
+            // If we don't have an existing where-clause we can usually tack it on since nested groupBy's etc.. already have a nested layer (i.e. flattening) in the base
+            // (Btw: If the filter-variable is used, it needs to be a from-clause)
+            if (b.where == null && (filterVariableIsUnused || filterVariableIsInFrom))
+              trace("Flattening| Filter(Ident) [where=null]") andReturn {
                 b.copy(where = body, type = type)
               }
+            // TODO need to try this
+            // If the base is trivial (i.e. only from+select) even if it already has a 'where' we can tack on the content of the filter
+            //else if (b.where != null && b.isTrivialQuery() && (filterVariableIsUnused || filterVariableIsInFrom)) {
+            //  trace("Flattening| Filter(Ident) [TrivialQuery]") andReturn {
+            //    b.copy(where = b.where _And_ body, type = type)
+            //  }
+            //}
+            // with this query:
+            //            val normalizedAnomalies = sql.select {
+            //                val reading = from(Table<SolarReading>())
+            //                val normalizedFlux =
+            //                    free("normalize_flux(${reading.rawFlux}, ${reading.panelTemp})").asPure<Double>()
+            //                where { normalizedFlux > 1.5 }
+            //                Triple(reading.panelId, normalizedFlux, reading.panelTemp)
+            //            }
+            //
+            //            val filteredNormalizedAnomilies = sql { normalizedAnomalies.filter { a -> a.second > 2.1 } }
+            //
+            //            fun main(): Unit = filteredNormalizedAnomilies.buildPrettyFor.Postgres().runSample()
             else
               trace("Flattening| Filter(Ident) [Complex]") andReturn {
                 FlattenSqlQuery(
@@ -608,7 +634,10 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
           is XR.Drop -> {
             val b = base(head, alias, nestNextMap = false)
-            if (b.offset == null && b.limit == null) // not sure why `&& b.limit == null`. Need to look into why it was introduced to Quill.
+            // TODO When it comes to b.limit==null, situations with distinctOn caused this to be a problem. Check of offset is
+            //      problematic with distinctOn. We could either check if head is a flatMap (like quill does in TakeDropFlatten with superceeds
+            //      this or just check of head is a distinctOn)
+            if (b.offset == null && b.limit == null)
               trace("Flattening| Drop [Simple]") andReturn {
                 b.copy(offset = num, type = type)
               }
