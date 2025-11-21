@@ -193,6 +193,11 @@ interface StatefulTransformer<T> {
           val (numB, stateB) = stateA.invoke(num)
           Take.cs(queryA, numB) to stateB
         }
+        is Limit -> {
+          val (queryA, stateA) = invoke(head)
+          val (numB, stateB) = stateA.invoke(num)
+          Limit.cs(queryA, numB) to stateB
+        }
         is FlatJoin -> {
           val (aA, stateA) = invoke(head)
           val (onA, stateB) = stateA.invoke(on)

@@ -90,6 +90,7 @@ interface StatelessChecker {
         is XR.UnionAll -> invoke(a) || invoke(b)
         is XR.Distinct -> invoke(head)
         is XR.DistinctOn -> invoke(head) || invokeIdent(id) || invoke(by)
+        is XR.Limit -> invoke(head) || invoke(num)
         is XR.Drop -> invoke(head) || invoke(num)
         is XR.SortBy -> invoke(head) || invokeIdent(id) || criteria.any { invoke(it) }
         is XR.Take -> invoke(head) || invoke(num)

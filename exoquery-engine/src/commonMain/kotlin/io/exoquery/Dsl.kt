@@ -370,10 +370,79 @@ interface CapturedBlock {
     errorCap("The sort-by expression of the Query was not inlined")
 
   @Dsl
+  /**
+   * Limit the number of rows to the first [f] elements using collection semantics.
+   *
+   * Semantics
+   * - This behaves like Kotlin collections' `take(f)` and composes with [drop] the same way
+   *   `List.take(f).drop(n)` does. In other words, `take` is applied first to the current result
+   *   set and any subsequent [drop] applies to that already-limited set.
+   * - SQL does not compose like this by default: `LIMIT ... OFFSET ...` always returns up to
+   *   `LIMIT` rows after skipping `OFFSET` rows. To preserve collection semantics, ExoQuery will
+   *   synthesize a nested subquery when a [drop] follows a `take`.
+   *
+   * Why both take and limit?
+   * - [take] models collection semantics and ensures that rewriting collection code into SQL keeps
+   *   the same meaning. See [limit] for SQL-native behavior.
+   *
+   * Examples
+   * - Kotlin collection:
+   *   - `(1..10).toList().take(3).drop(2)` yields `listOf(3)` (1 result)
+   * - SQL with take then drop (collection semantics via nesting):
+   *   - `sql { Table<Person>().take(3).drop(2) }`
+   *   - SQL (conceptually): `SELECT * FROM (SELECT * FROM people p LIMIT 3) t OFFSET 2`
+   *   - Result count: at most 1 (assuming there are at least 3 rows), matching the collection example.
+   *
+   * Contrast with SQL LIMIT/OFFSET
+   * - Doing plain SQL `LIMIT 3 OFFSET 2` returns up to 3 rows (rows 3–5), which differs from
+   *   `take(3).drop(2)` that yields only the 3rd row. Use [limit] to request SQL semantics directly.
+   */
   fun <T> SqlQuery<T>.take(f: Int): SqlQuery<T> = errorCap("The take expression of the Query was not inlined")
 
   @Dsl
+  /**
+   * Limit the number of rows to the first [f] elements using SQL semantics.
+   *
+   * Semantics
+   * - This corresponds to SQL `LIMIT f` (or dialect equivalent). When combined with [drop]
+   *   (i.e. `OFFSET`), SQL returns up to `LIMIT` rows after skipping `OFFSET` rows.
+   * - This differs from [take], which preserves Kotlin collection semantics and may introduce a
+   *   nested subquery when combined with [drop].
+   *
+   * Why both take and limit?
+   * - Some users expect collection-style chaining (use [take]).
+   * - Others want native SQL pagination behavior where `LIMIT` controls the maximum number of rows
+   *   regardless of `OFFSET` (use `limit`).
+   *
+   * Examples
+   * - SQL-native pagination:
+   *   - `sql { Table<Person>().limit(3).drop(2) }`
+   *   - SQL (conceptually): `SELECT * FROM people p LIMIT 3 OFFSET 2`
+   *   - Result count: up to 3 rows (e.g., rows 3–5 if at least 5 exist).
+   *
+   * Compare to collection semantics:
+   * - `sql { Table<Person>().take(3).drop(2) }` translates conceptually to a nested query:
+   *   `(SELECT * FROM people p LIMIT 3) OFFSET 2` which yields at most 1 row.
+   */
+  fun <T> SqlQuery<T>.limit(f: Int): SqlQuery<T> = errorCap("The take expression of the Query was not inlined")
+
+  @Dsl
+  /**
+   * Drops (skips) the first [f] rows. This is a synonym for [offset] and is provided purely for
+   * convenience and readability when thinking in collection terms (take/drop).
+   *
+   * Behavior: identical to [offset].
+   */
   fun <T> SqlQuery<T>.drop(f: Int): SqlQuery<T> = errorCap("The drop expression of the Query was not inlined")
+
+  /**
+   * Offsets the result by [f] rows. This is a synonym for [drop] and is provided purely for convenience
+   * and readability when thinking in SQL terms (LIMIT/OFFSET).
+   *
+   * Behavior: identical to [drop].
+   */
+  @Dsl
+  fun <T> SqlQuery<T>.offset(f: Int): SqlQuery<T> = errorCap("The offset expression of the Query was not inlined")
 
   @Dsl
   fun <T> SqlQuery<T>.size(): SqlQuery<Int> = errorCap("The size expression of the Query was not inlined")

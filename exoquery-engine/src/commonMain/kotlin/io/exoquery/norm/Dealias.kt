@@ -64,6 +64,11 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
           Take.cs(an, num) to ant
         }
 
+        is Limit -> {
+          val (an, ant) = invoke(head)
+          Limit.cs(an, num) to ant
+        }
+
         is Drop -> {
           val (an, ant) = invoke(head)
           Drop.cs(an, num) to ant
