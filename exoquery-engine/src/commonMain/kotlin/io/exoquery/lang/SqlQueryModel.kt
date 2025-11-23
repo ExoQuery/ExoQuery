@@ -574,8 +574,6 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             val filterVariableIsUnused = !filterVariableIsUsed
             val filterVariablesAreInFrom = collectAliases(b.from).contains(id.name)
 
-            val containsImpurities = b.select.first().expr.containsImpurities()
-
             // If we don't have an existing where-clause we can usually tack it on since nested groupBy's etc.. already have a nested layer (i.e. flattening) in the base
             // (Btw: If the filter-variable is used, it needs to be a from-clause)
             if (b.where == null && (filterVariableIsUnused || filterVariablesAreInFrom))
