@@ -634,9 +634,11 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
           is XR.Drop -> {
             val b = base(head, alias, nestNextMap = false)
-            // TODO When it comes to b.limit==null, situations with distinctOn caused this to be a problem. Check of offset is
-            //      problematic with distinctOn. We could either check if head is a flatMap (like quill does in TakeDropFlatten with superceeds
-            //      this or just check of head is a distinctOn)
+            // Table.offset is the same as Collection.drop but Collection.take is not the same as Table.limit.
+            // Doing Table.limit(3).offset(2) will have 3 results so long as the whole table has at least 5,
+            // Doing Collection.take(3).drop(2) will give you only 1 result!
+            // The only way to rectify that in SQL is by doing a nested query i.e. (SELECT * from Table.limit(3)).offset(2)
+            // which is what the `limit == null` clause does.
             if (b.offset == null && b.limit == null)
               trace("Flattening| Drop [Simple]") andReturn {
                 b.copy(offset = num, type = type)
