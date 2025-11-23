@@ -1,6 +1,6 @@
 package io.exoquery
 
-class QueryFilterFlatteningReq: GoldenSpecDynamic(GoldenQueryFile.Empty, Mode.ExoGoldenTest(), {
+class QueryFilterFlatteningReq: GoldenSpecDynamic(QueryFilterFlatteningReqGoldenDynamic, Mode.ExoGoldenTest(), {
   data class Person(val id: Int, val name: String, val age: Int)
   data class Address(val id: Int, val personId: Int, val city: String)
 
