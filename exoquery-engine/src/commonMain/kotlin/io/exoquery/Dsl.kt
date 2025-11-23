@@ -427,7 +427,22 @@ interface CapturedBlock {
   fun <T> SqlQuery<T>.limit(f: Int): SqlQuery<T> = errorCap("The take expression of the Query was not inlined")
 
   @Dsl
+  /**
+   * Drops (skips) the first [f] rows. This is a synonym for [offset] and is provided purely for
+   * convenience and readability when thinking in collection terms (take/drop).
+   *
+   * Behavior: identical to [offset].
+   */
   fun <T> SqlQuery<T>.drop(f: Int): SqlQuery<T> = errorCap("The drop expression of the Query was not inlined")
+
+  /**
+   * Offsets the result by [f] rows. This is a synonym for [drop] and is provided purely for convenience
+   * and readability when thinking in SQL terms (LIMIT/OFFSET).
+   *
+   * Behavior: identical to [drop].
+   */
+  @Dsl
+  fun <T> SqlQuery<T>.offset(f: Int): SqlQuery<T> = errorCap("The offset expression of the Query was not inlined")
 
   @Dsl
   fun <T> SqlQuery<T>.size(): SqlQuery<Int> = errorCap("The size expression of the Query was not inlined")

@@ -64,6 +64,9 @@ class VerifySqlQuery {
     fun XR.Expression?.verifyOrSkip(): FreeVariables.Result =
       this?.let { verifyAst(it) } ?: FreeVariables.Result.None
 
+    fun LimitClause?.verifyOrSkip(): FreeVariables.Result =
+      this?.value?.verifyOrSkip() ?: FreeVariables.Result.None
+
     fun List<XR.Expression>.verifyOrSkip(): FreeVariables.Result =
       this.map { it.verifyOrSkip() }.reduce { a, b -> a + b }
 
