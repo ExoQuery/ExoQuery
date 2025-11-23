@@ -294,7 +294,6 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
         else ->
           trace("Construct SqlQuery from: Query").andReturn {
-            // TODO need to parse interpolations
             flatten(this, XR.Ident("x", type, XR.Location.Synth))
           }
       }
@@ -573,32 +572,33 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             // If the filter body uses the filter id, make sure it matches one of the aliases in the fromContexts
             val filterVariableIsUsed = CollectXR.byType<XR.Ident>(body).map { it.name }.contains(id.name)
             val filterVariableIsUnused = !filterVariableIsUsed
-            val filterVariableIsInFrom = collectAliases(b.from).contains(id.name)
+            val filterVariablesAreInFrom = collectAliases(b.from).contains(id.name)
+
+            val containsImpurities = b.select.first().expr.containsImpurities()
+
             // If we don't have an existing where-clause we can usually tack it on since nested groupBy's etc.. already have a nested layer (i.e. flattening) in the base
             // (Btw: If the filter-variable is used, it needs to be a from-clause)
-            if (b.where == null && (filterVariableIsUnused || filterVariableIsInFrom))
+            if (b.where == null && (filterVariableIsUnused || filterVariablesAreInFrom))
               trace("Flattening| Filter(Ident) [where=null]") andReturn {
                 b.copy(where = body, type = type)
               }
-            // TODO need to try this
             // If the base is trivial (i.e. only from+select) even if it already has a 'where' we can tack on the content of the filter
-            //else if (b.where != null && b.isTrivialQuery() && (filterVariableIsUnused || filterVariableIsInFrom)) {
-            //  trace("Flattening| Filter(Ident) [TrivialQuery]") andReturn {
-            //    b.copy(where = b.where _And_ body, type = type)
-            //  }
-            //}
-            // with this query:
-            //            val normalizedAnomalies = sql.select {
-            //                val reading = from(Table<SolarReading>())
-            //                val normalizedFlux =
-            //                    free("normalize_flux(${reading.rawFlux}, ${reading.panelTemp})").asPure<Double>()
-            //                where { normalizedFlux > 1.5 }
-            //                Triple(reading.panelId, normalizedFlux, reading.panelTemp)
-            //            }
+            // for example something like:
+            // sql { select { val p = from(Person); where(p.age > 10); p }.filter(p => p.name == "Bob") }
             //
-            //            val filteredNormalizedAnomilies = sql { normalizedAnomalies.filter { a -> a.second > 2.1 } }
+            // This is possible so long as we can reduce the filter-variable to what is actually being projected in the base...
+            // and that contains no impurities (e.g. a rand() function called from a free).
+            // For example this cannot be reduced:
+            // sql { select { val p = from(Person); where(p.age > 10); free("rand()")<Int>() + p.age }.filter(p => p.name == "Bob") }
             //
-            //            fun main(): Unit = filteredNormalizedAnomilies.buildPrettyFor.Postgres().runSample()
+            // I.e. since the select-value is SelectValue(expr: free("rand()")<Int>() + p.age })
+            // Also note that in general here in SqlQueryModel most of the time b.select will be a single value because it is only expanded
+            // in to multiple values later during the ExpandNestedQueries phase.
+            else if (b.where != null && b.isTrivialQuery() && b.select.size == 1 && !b.select.first().expr.containsImpurities()) //!b.select.first().expr.containsType<XR.Query>()
+              trace("Flattening| Filter(Ident) [TrivialQuery]") andReturn {
+                val newBody = BetaReduction(body, id to b.select.first().expr).asExpr()
+                b.copy(where = b.where _And_ newBody, type = type)
+              }
             else
               trace("Flattening| Filter(Ident) [Complex]") andReturn {
                 FlattenSqlQuery(

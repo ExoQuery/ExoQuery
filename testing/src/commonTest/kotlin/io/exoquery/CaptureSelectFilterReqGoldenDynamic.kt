@@ -44,22 +44,14 @@ object CaptureSelectFilterReqGoldenDynamic: GoldenQueryFile {
     "sql select filter should expand correctly/sql select filter simple" to cr(
       """
       SELECT
-        ccc.id,
-        ccc.name,
-        ccc.age
+        p.id,
+        p.name,
+        p.age
       FROM
-        (
-          SELECT
-            p.id,
-            p.name,
-            p.age
-          FROM
-            Person p
-          WHERE
-            p.age > 18
-        ) AS ccc
+        Person p
       WHERE
-        ccc.name = 'Main St'
+        p.age > 18
+        AND p.name = 'Main St'
       """
     ),
     "sql select filter should expand correctly/sql select(where,groupBy) filter/XR" to kt(

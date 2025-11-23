@@ -82,18 +82,6 @@ internal class SwapTagsTransformer(tagMap: Map<BID, BID>) : TransformXR(
   }
 )
 
-fun XR.Map.containsImpurities(): Boolean =
-  CollectXR(this) {
-    with(it) {
-      when {
-        this is XR.GlobalCall && !this.isPure() -> this
-        this is XR.MethodCall && !this.isPure() -> this
-        this is XR.Free && !this.pure -> this
-        else -> null
-      }
-    }
-  }.isNotEmpty()
-
 
 /*
 def unapply(ast: Ast) =
@@ -140,11 +128,23 @@ class CondThenElse {
     }
 }
 
-// TODO definitely want to early-exist this and make more efficient
 fun XR.contains(other: XR) =
-  CollectXR(this) {
-    if (it == other) it else null
-  }.isNotEmpty()
+  ContainsXR(this) { xr -> xr == other }
+
+inline fun <reified T> XR.containsType() =
+  ContainsXR(this) { xr -> xr is T }
+
+fun XR.containsImpurities(): Boolean =
+  ContainsXR(this) {
+    with(it) {
+      when {
+        this is XR.GlobalCall && !this.isPure() -> true
+        this is XR.MethodCall && !this.isPure() -> true
+        this is XR.Free && !this.pure -> true
+        else -> false
+      }
+    }
+  }
 
 val XR.BinaryOp.Companion.ProductNullCheck get() = ProductNullCheck()
 
