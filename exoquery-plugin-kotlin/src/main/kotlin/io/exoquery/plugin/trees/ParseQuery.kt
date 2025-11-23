@@ -246,11 +246,12 @@ object ParseQuery {
           else -> parseError("Invalid sortedBy method: ${symName}", expr)
         }
       },
-      case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlQuery<*>>(), Is.of("take", "drop"), Is()]).thenThis { head, num ->
+      case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlQuery<*>>(), Is.of("take", "drop", "limit"), Is()]).thenThis { head, num ->
         when (symName) {
           "take" -> XR.Take(parse(head), ParseExpression.parse(num), expr.loc)
           "drop" -> XR.Drop(parse(head), ParseExpression.parse(num), expr.loc)
-          else -> parseError("Invalid take/drop method: ${symName}", expr)
+          "limit" -> XR.Limit(parse(head), ParseExpression.parse(num), expr.loc)
+          else -> parseError("Invalid take/drop/limit method: ${symName}", expr)
         }
       },
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlQuery<*>>(), Is.of("union", "unionAll", "plus"), Is()]).thenThis { head, tail ->

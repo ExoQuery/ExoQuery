@@ -432,6 +432,20 @@ sealed interface XR {
 
   @Serializable
   @Mat
+  data class Limit(@Slot val head: XR.Query, @Slot val num: XR.Expression, override val loc: Location = Location.Synth) : Query, PC<Limit> {
+    @Transient
+    override val productComponents = productOf(this, head, num)
+    override val type get() = head.type
+
+    companion object {}
+
+    override fun toString() = show()
+    override fun hashCode(): Int = 31 * head.hashCode() + num.hashCode()
+    override fun equals(other: Any?): Boolean = other is Limit && other.head == head && other.num == num
+  }
+
+  @Serializable
+  @Mat
   data class Drop(@Slot val head: XR.Query, @Slot val num: XR.Expression, override val loc: Location = Location.Synth) : Query, PC<Drop> {
     @Transient
     override val productComponents = productOf(this, head, num)

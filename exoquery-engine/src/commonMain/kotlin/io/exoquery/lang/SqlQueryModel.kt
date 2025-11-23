@@ -190,13 +190,24 @@ final data class SelectValue(val expr: XR.Expression, val alias: List<String> = 
 }
 
 @Serializable
+sealed interface LimitClause {
+  val value: XR.Expression
+
+  @Serializable
+  data class Limit(override val value: XR.Expression) : LimitClause
+
+  @Serializable
+  data class Take(override val value: XR.Expression) : LimitClause
+}
+
+@Serializable
 final data class FlattenSqlQuery(
   val from: List<FromContext> = emptyList(),
   val where: XR.Expression? = null,
   val having: XR.Expression? = null,
   val groupBy: XR.Expression? = null,
   val orderBy: List<XR.OrderField> = emptyList(),
-  val limit: XR.Expression? = null,
+  val limit: LimitClause? = null,
   val offset: XR.Expression? = null,
   val select: List<SelectValue> = emptyList(),
   val distinct: DistinctKind = DistinctKind.None,
@@ -217,7 +228,12 @@ final data class FlattenSqlQuery(
       having = having?.let { f(it) },
       groupBy = groupBy?.let { f(it) },
       orderBy = orderBy.map { ord -> ord.transform { f(it) } },
-      limit = limit?.let { f(it) },
+      limit = limit?.let { lc ->
+        when (lc) {
+          is LimitClause.Limit -> lc.copy(value = f(lc.value))
+          is LimitClause.Take -> lc.copy(value = f(lc.value))
+        }
+      },
       offset = offset?.let { f(it) },
       select = select.map { it.copy(expr = f(it.expr)) }
     )
@@ -266,7 +282,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
         // e.g. Take(people.flatMap(p => addresses:Query), 3) -> `select ... from people, addresses... limit 3`
         is XR.Take if head is FlatMap ->
           trace("Construct SqlQuery from: TakeDropFlatten") andReturn {
-            flatten(head, head.id.copy(name = "x")).copy(limit = num, type = query.type)
+            flatten(head, head.id.copy(name = "x")).copy(limit = LimitClause.Take(num), type = query.type)
           }
         // e.g. Drop(people.flatMap(p => addresses:Query), 3) -> `select ... from people, addresses... offset 3`
         is XR.Drop if head is FlatMap ->
@@ -619,13 +635,30 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             val b = base(head, alias, nestNextMap = false)
             if (b.limit == null)
               trace("Flattening| Take [Simple]") andReturn {
-                b.copy(limit = num, type = type)
+                b.copy(limit = LimitClause.Take(num), type = type)
               }
             else
               trace("Flattening| Take [Complex]") andReturn {
                 FlattenSqlQuery(
                   from = listOf(QueryContext(invoke(head), alias.name)),
-                  limit = num,
+                  limit = LimitClause.Take(num),
+                  select = select(alias.name, type, alias.loc),
+                  type = type
+                )
+              }
+          }
+
+          is XR.Limit -> {
+            val b = base(head, alias, nestNextMap = false)
+            if (b.limit == null)
+              trace("Flattening| Limit [Simple]") andReturn {
+                b.copy(limit = LimitClause.Limit(num), type = type)
+              }
+            else
+              trace("Flattening| Limit [Complex]") andReturn {
+                FlattenSqlQuery(
+                  from = listOf(QueryContext(invoke(head), alias.name)),
+                  limit = LimitClause.Limit(num),
                   select = select(alias.name, type, alias.loc),
                   type = type
                 )
@@ -639,7 +672,9 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             // Doing Collection.take(3).drop(2) will give you only 1 result!
             // The only way to rectify that in SQL is by doing a nested query i.e. (SELECT * from Table.limit(3)).offset(2)
             // which is what the `limit == null` clause does.
-            if (b.offset == null && b.limit == null)
+            // Now ExoQuery also has SqlQuery.limit function which acts like Table.limit as opposed to Collection.take
+            // in order to allow people to use this behavior if they want it.
+            if (b.offset == null && (b.limit == null || b.limit is LimitClause.Limit /* as opposed to LimitClause.Take */))
               trace("Flattening| Drop [Simple]") andReturn {
                 b.copy(offset = num, type = type)
               }

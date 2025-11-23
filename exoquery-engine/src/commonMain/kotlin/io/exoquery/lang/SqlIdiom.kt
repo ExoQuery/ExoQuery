@@ -479,7 +479,7 @@ interface SqlIdiom : HasPhasePrinting {
           else -> +"$withHaving ${tokenOrderBy(orderBy)}"
         }
       }
-      val withLimitOffset by lazy { limitOffsetToken(withOrderBy, limit, offset) }
+      val withLimitOffset by lazy { limitOffsetToken(withOrderBy, limit?.value, offset) }
 
       +"SELECT ${withLimitOffset}"
     }
