@@ -22,13 +22,12 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
     context(CX.Scope)
     fun withFullMsg(msg: String, element: IrElement, file: IrFile, location: CompilerMessageSourceLocation, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): ParseError {
       val fullMsg: String = run {
-        val printingElement = element //.prepareForPrinting()
         val rawExpression =
           try {
-            printingElement.dumpKotlinLike().prepareForPrintingAdHoc()
+            element.dumpKotlinLike().prepareForPrintingAdHoc()
           } catch (e: Throwable) {
             try {
-              element.dumpKotlinLike()
+              "${element.dumpKotlinLike()}\n----------------- Could not prepare for printing due to error: -----------------\n${e.stackTraceToString()}"
             } catch (e: Throwable) {
               limitedStackTraceFromScope(e)
             }
@@ -46,7 +45,7 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
 
         val rawExpressionTree =
           try {
-            printingElement.dumpSimple(errorDetailsColor)
+            element.dumpSimple(errorDetailsColor)
           } catch (e: Throwable) {
             try {
               element.dumpSimple(errorDetailsColor)

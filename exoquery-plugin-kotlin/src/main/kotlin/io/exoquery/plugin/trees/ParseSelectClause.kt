@@ -26,7 +26,7 @@ object ParseSelectClause {
 
   context(CX.Scope, CX.Parsing) fun processSelectLambda(statementsFromRet: List<IrStatement>, sourceElement: IrElement): SelectClause {
     if (statementsFromRet.isEmpty()) parseError("A select-clause usually should have two statements, a from(query) and an output. This one has neither", sourceElement) // TODO provide example in the error
-    if (statementsFromRet.last() !is IrReturn) parseError("A select-clause must return a plain (i.e. not SqlQuery) value.", sourceElement)
+    if (statementsFromRet.last() !is IrReturn) parseError("Nothing was returned from the sql.select clause. A sql.select clause must return a value, usually a primitive or instance of a data class", sourceElement)
     val ret = statementsFromRet.last()
     val retXR = ParseExpression.parse((ret as IrReturn).value)
     if (ret !is IrReturn) parseError("The last statement in a select-clause must be a return statement", ret) // TODO provide example in the error

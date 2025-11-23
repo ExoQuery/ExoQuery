@@ -6,6 +6,7 @@ import io.exoquery.plugin.trees.PT
 import io.exoquery.unpackAction
 import io.exoquery.unpackExpr
 import io.exoquery.unpackQuery
+import io.exoquery.unpackQueryModel
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.irCall
@@ -22,6 +23,11 @@ public fun String.prepareForPrintingAdHoc() =
     .replace(Regex("unpackQuery\\(query = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackQuery(${unpackQuery(it).show()})" } ?: "<ERROR_UNPACKING>" }
     .replace(Regex("unpackExpr\\(expr = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackExpr(${unpackExpr(it).show()})" } ?: "<ERROR_UNPACKING>" }
     .replace(Regex("unpackAction\\(action = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackAction(${unpackAction(it).show()})" } ?: "<ERROR_UNPACKING>" }
+    .replace(Regex("unpackQueryModel\\(action = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackAction(${unpackQueryModel(it).show()})" } ?: "<ERROR_UNPACKING>" }
+    .replace(Regex("unpackQueryLazy\\(query = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackQueryLazy(${unpackQuery(it).show()})" } ?: "<ERROR_UNPACKING>" }
+    .replace(Regex("unpackQueryModelLazy\\(query = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackQueryModelLazy(${unpackQueryModel(it).show()})" } ?: "<ERROR_UNPACKING>" }
+    .replace(Regex("unpackExprLazy\\(expr = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackExprLazy(${unpackExpr(it).show()})" } ?: "<ERROR_UNPACKING>" }
+    .replace(Regex("unpackActionLazy\\(action = \"([a-zA-Z0-9]+)\"\\)")) { result -> result.groups[1]?.value?.let { "unpackActionLazy(${unpackAction(it).show()})" } ?: "<ERROR_UNPACKING>" }
 
 
 // Note that if you don't do `.deepCopyWithSymbols()` then the actual Transformer will modify the original tree adding the XR.show into the unpackQuery/unpackExpr calls
