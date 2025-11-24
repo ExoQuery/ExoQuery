@@ -271,6 +271,8 @@ class MirrorIdiom(val renderOpts: RenderOptions = RenderOptions()) {
           stmt("${head.token}.sortBy { ${criteria.map { it.token }.mkStmt()} }")
         is XR.Take ->
           stmt("${head.token}.take(${num.token})")
+        is XR.Limit ->
+          stmt("${head.token}.limit(${num.token})")
         is XR.Drop ->
           stmt("${head.token}.drop(${num.token})")
         is XR.Union ->

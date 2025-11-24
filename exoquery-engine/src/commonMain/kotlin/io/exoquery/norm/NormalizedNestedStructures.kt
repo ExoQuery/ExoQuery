@@ -23,6 +23,7 @@ class NormalizeNestedStructures(val normalize: StatelessTransformer) {
         is Filter -> Filter.cs(normalize(head), id, normalize(body)).nullIfSameAs(q)
         is SortBy -> SortBy.cs(normalize(head), id, criteria.map { ord -> ord.transform { normalize(it) } }).nullIfSameAs(q)
         is Take -> Take.cs(normalize(head), normalize(num)).nullIfSameAs(q)
+        is Limit -> Limit.cs(normalize(head), normalize(num)).nullIfSameAs(q)
         is Drop -> Drop.cs(normalize(head), normalize(num)).nullIfSameAs(q)
         is Union -> Union.cs(normalize(a), normalize(b)).nullIfSameAs(q)
         is UnionAll -> UnionAll.cs(normalize(a), normalize(b)).nullIfSameAs(q)

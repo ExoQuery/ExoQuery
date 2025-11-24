@@ -190,18 +190,32 @@ final data class SelectValue(val expr: XR.Expression, val alias: List<String> = 
 }
 
 @Serializable
+sealed interface LimitClause {
+  val value: XR.Expression
+
+  @Serializable
+  data class Limit(override val value: XR.Expression) : LimitClause
+
+  @Serializable
+  data class Take(override val value: XR.Expression) : LimitClause
+}
+
+@Serializable
 final data class FlattenSqlQuery(
   val from: List<FromContext> = emptyList(),
   val where: XR.Expression? = null,
   val having: XR.Expression? = null,
   val groupBy: XR.Expression? = null,
   val orderBy: List<XR.OrderField> = emptyList(),
-  val limit: XR.Expression? = null,
+  val limit: LimitClause? = null,
   val offset: XR.Expression? = null,
   val select: List<SelectValue> = emptyList(),
   val distinct: DistinctKind = DistinctKind.None,
   override val type: XRType
 ) : SqlQueryModel {
+
+  fun isTrivialQuery() =
+    having == null && groupBy == null && orderBy.isEmpty() && limit == null && offset == null && distinct.isDistinct == false
 
   // Overriding so make this return a more-specific type
   override fun transformXR(f: StatelessTransformer): FlattenSqlQuery =
@@ -214,7 +228,12 @@ final data class FlattenSqlQuery(
       having = having?.let { f(it) },
       groupBy = groupBy?.let { f(it) },
       orderBy = orderBy.map { ord -> ord.transform { f(it) } },
-      limit = limit?.let { f(it) },
+      limit = limit?.let { lc ->
+        when (lc) {
+          is LimitClause.Limit -> lc.copy(value = f(lc.value))
+          is LimitClause.Take -> lc.copy(value = f(lc.value))
+        }
+      },
       offset = offset?.let { f(it) },
       select = select.map { it.copy(expr = f(it.expr)) }
     )
@@ -263,7 +282,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
         // e.g. Take(people.flatMap(p => addresses:Query), 3) -> `select ... from people, addresses... limit 3`
         is XR.Take if head is FlatMap ->
           trace("Construct SqlQuery from: TakeDropFlatten") andReturn {
-            flatten(head, head.id.copy(name = "x")).copy(limit = num, type = query.type)
+            flatten(head, head.id.copy(name = "x")).copy(limit = LimitClause.Take(num), type = query.type)
           }
         // e.g. Drop(people.flatMap(p => addresses:Query), 3) -> `select ... from people, addresses... offset 3`
         is XR.Drop if head is FlatMap ->
@@ -275,7 +294,6 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
         else ->
           trace("Construct SqlQuery from: Query").andReturn {
-            // TODO need to parse interpolations
             flatten(this, XR.Ident("x", type, XR.Location.Synth))
           }
       }
@@ -552,10 +570,32 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             // If it's a filter, pass on the value of nestNextMap in case there is a future map we need to nest
             val b = base(head, id, nestNextMap)
             // If the filter body uses the filter id, make sure it matches one of the aliases in the fromContexts
-            if (b.where == null && (!CollectXR.byType<XR.Ident>(body).map { it.name }
-                .contains(id.name) || collectAliases(b.from).contains(id.name)))
-              trace("Flattening| Filter(Ident) [Simple]") andReturn {
+            val filterVariableIsUsed = CollectXR.byType<XR.Ident>(body).map { it.name }.contains(id.name)
+            val filterVariableIsUnused = !filterVariableIsUsed
+            val filterVariablesAreInFrom = collectAliases(b.from).contains(id.name)
+
+            // If we don't have an existing where-clause we can usually tack it on since nested groupBy's etc.. already have a nested layer (i.e. flattening) in the base
+            // (Btw: If the filter-variable is used, it needs to be a from-clause)
+            if (b.where == null && (filterVariableIsUnused || filterVariablesAreInFrom))
+              trace("Flattening| Filter(Ident) [where=null]") andReturn {
                 b.copy(where = body, type = type)
+              }
+            // If the base is trivial (i.e. only from+select) even if it already has a 'where' we can tack on the content of the filter
+            // for example something like:
+            // sql { select { val p = from(Person); where(p.age > 10); p }.filter(p => p.name == "Bob") }
+            //
+            // This is possible so long as we can reduce the filter-variable to what is actually being projected in the base...
+            // and that contains no impurities (e.g. a rand() function called from a free).
+            // For example this cannot be reduced:
+            // sql { select { val p = from(Person); where(p.age > 10); free("rand()")<Int>() + p.age }.filter(p => p.name == "Bob") }
+            //
+            // I.e. since the select-value is SelectValue(expr: free("rand()")<Int>() + p.age })
+            // Also note that in general here in SqlQueryModel most of the time b.select will be a single value because it is only expanded
+            // in to multiple values later during the ExpandNestedQueries phase.
+            else if (b.where != null && b.isTrivialQuery() && b.select.size == 1 && !b.select.first().expr.containsImpurities()) //!b.select.first().expr.containsType<XR.Query>()
+              trace("Flattening| Filter(Ident) [TrivialQuery]") andReturn {
+                val newBody = BetaReduction(body, id to b.select.first().expr).asExpr()
+                b.copy(where = b.where _And_ newBody, type = type)
               }
             else
               trace("Flattening| Filter(Ident) [Complex]") andReturn {
@@ -593,13 +633,30 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             val b = base(head, alias, nestNextMap = false)
             if (b.limit == null)
               trace("Flattening| Take [Simple]") andReturn {
-                b.copy(limit = num, type = type)
+                b.copy(limit = LimitClause.Take(num), type = type)
               }
             else
               trace("Flattening| Take [Complex]") andReturn {
                 FlattenSqlQuery(
                   from = listOf(QueryContext(invoke(head), alias.name)),
-                  limit = num,
+                  limit = LimitClause.Take(num),
+                  select = select(alias.name, type, alias.loc),
+                  type = type
+                )
+              }
+          }
+
+          is XR.Limit -> {
+            val b = base(head, alias, nestNextMap = false)
+            if (b.limit == null)
+              trace("Flattening| Limit [Simple]") andReturn {
+                b.copy(limit = LimitClause.Limit(num), type = type)
+              }
+            else
+              trace("Flattening| Limit [Complex]") andReturn {
+                FlattenSqlQuery(
+                  from = listOf(QueryContext(invoke(head), alias.name)),
+                  limit = LimitClause.Limit(num),
                   select = select(alias.name, type, alias.loc),
                   type = type
                 )
@@ -608,7 +665,14 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
           is XR.Drop -> {
             val b = base(head, alias, nestNextMap = false)
-            if (b.offset == null && b.limit == null) // not sure why `&& b.limit == null`. Need to look into why it was introduced to Quill.
+            // Table.offset is the same as Collection.drop but Collection.take is not the same as Table.limit.
+            // Doing Table.limit(3).offset(2) will have 3 results so long as the whole table has at least 5,
+            // Doing Collection.take(3).drop(2) will give you only 1 result!
+            // The only way to rectify that in SQL is by doing a nested query i.e. (SELECT * from Table.limit(3)).offset(2)
+            // which is what the `limit == null` clause does.
+            // Now ExoQuery also has SqlQuery.limit function which acts like Table.limit as opposed to Collection.take
+            // in order to allow people to use this behavior if they want it.
+            if (b.offset == null && (b.limit == null || b.limit is LimitClause.Limit /* as opposed to LimitClause.Take */))
               trace("Flattening| Drop [Simple]") andReturn {
                 b.copy(offset = num, type = type)
               }

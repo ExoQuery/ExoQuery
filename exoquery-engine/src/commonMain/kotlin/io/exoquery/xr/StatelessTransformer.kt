@@ -96,6 +96,7 @@ interface StatelessTransformer {
         is UnionAll -> UnionAll.csf(invoke(a), invoke(b))(this)
         is Distinct -> Distinct.csf(invoke(head))(this)
         is DistinctOn -> DistinctOn.csf(invoke(head), invokeIdent(id), invoke(by))(this)
+        is Limit -> Limit(invoke(head), invoke(num), loc)
         is Drop -> Drop.csf(invoke(head), invoke(num))(this)
         is SortBy -> SortBy.csf(invoke(head), invokeIdent(id), criteria.map { invoke(it) })(this)
         is Take -> Take.csf(invoke(head), invoke(num))(this)

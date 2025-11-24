@@ -15,6 +15,7 @@ import io.exoquery.xr.XR.ExprToQuery
 import io.exoquery.xr.XR.QueryToExpr
 import io.exoquery.xr.XR.SortBy
 import io.exoquery.xr.XR.Take
+import io.exoquery.xr.XR.Limit
 import io.exoquery.xr.XR.Drop
 import io.exoquery.xr.XR.Union
 import io.exoquery.xr.XR.UnionAll
@@ -76,6 +77,9 @@ fun SortBy.cs(head: XR.Query, id: XR.Ident, criteria: List<XR.OrderField>) = io.
 
 val Take.Take get() = this
 fun Take.cs(head: XR.Query, num: XR.Expression) = io.exoquery.xr.XR.Take.csf(head, num)(this)
+
+val Limit.Limit get() = this
+fun Limit.cs(head: XR.Query, num: XR.Expression) = io.exoquery.xr.XR.Limit.csf(head, num)(this)
 
 val Drop.Drop get() = this
 fun Drop.cs(head: XR.Query, num: XR.Expression) = io.exoquery.xr.XR.Drop.csf(head, num)(this)
