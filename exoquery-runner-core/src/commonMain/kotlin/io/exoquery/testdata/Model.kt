@@ -27,15 +27,15 @@ data class PersonWithId(val id: PersonId, val firstName: String, val lastName: S
 data class PersonNullable(val id: Int, val firstName: String?, val lastName: String?, val age: Int?)
 
 @Serializable
-data class Address(val ownerId: Int, val street: String, val zip: String)
+data class Address(val ownerId: Int, val street: String, val zip: Int)
 
 @Serializable
 @ExoEntity("address")
-data class AddressWithId(val ownerId: PersonId, val street: String, val zip: String)
+data class AddressWithId(val ownerId: PersonId, val street: String, val zip: Int)
 
 @Serializable
 @ExoEntity("address")
-data class AddressWithIdCtx(val ownerId: PersonId, val street: String, val zip: String)
+data class AddressWithIdCtx(val ownerId: PersonId, val street: String, val zip: Int)
 
 @Serializable
 data class Robot(val ownerId: Int, val model: String, val age: Int)

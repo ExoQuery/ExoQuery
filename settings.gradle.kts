@@ -34,6 +34,7 @@ if (isLocal || isLinux) {
 }
 
 include("exoquery-runner-native")
+include("exoquery-runner-r2dbc")
 include("testing")
 include("testing-compile")
 

@@ -1598,7 +1598,7 @@ use them to write queries queries right away.
 Let's say that you have a fairly consistent Postgres database schema that looks like this:
 ```sql
 CREATE TABLE Person (id SERIAL PRIMARY KEY, first_name VARCHAR, last_name VARCHAR, age INT);
-CREATE TABLE Address (id SERIAL PRIMARY KEY, owner_id INT REFERENCES Person(id), street VARCHAR, zip VARCHAR);
+CREATE TABLE Address (id SERIAL PRIMARY KEY, owner_id INT REFERENCES Person(id), street VARCHAR, zip INT);
 ```
 
 Firstly, add the JDBC driver to your ExoQuery plugin dependencies. For example:

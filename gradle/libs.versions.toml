@@ -8,7 +8,7 @@ gradle           = "9.2.1"
 nexus-publish    = "1.1.0"
 dokka            = "1.9.20"
 android-gradle   = "8.2.0"
-controller       = "3.2.3"
+controller       = "4.2.0"
 decomat          = "1.0.0"
 terpal           = "2.2.20-2.0.1.PL"
 pprint           = "3.0.0"
@@ -57,6 +57,7 @@ controller-android                 = { module = "io.exoquery:controller-android"
 controller-core                    = { module = "io.exoquery:controller-core", version.ref = "controller" }
 controller-jdbc                    = { module = "io.exoquery:controller-jdbc", version.ref = "controller" }
 controller-native                  = { module = "io.exoquery:controller-native", version.ref = "controller" }
+controller-r2dbc                   = { module = "io.exoquery:controller-r2dbc", version.ref = "controller" }
 decomat-core                       = { module = "io.exoquery:decomat-core", version.ref = "decomat" }
 decomat-ksp                        = { module = "io.exoquery:decomat-ksp", version.ref = "decomat" }
 terpal-runtime                     = { module = "io.exoquery:terpal-runtime", version.ref = "terpal" }
