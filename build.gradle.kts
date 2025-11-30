@@ -33,6 +33,7 @@ tasks.register("publishLinux") {
     ":${Release.Project.`exoquery-runner-android`}:publishAllPublicationsToOssRepository",
     ":${Release.Project.`exoquery-runner-native`}:publishAllPublicationsToOssRepository",
     ":${Release.Project.`exoquery-runner-jdbc`}:publishAllPublicationsToOssRepository",
+    ":${Release.Project.`exoquery-runner-r2dbc`}:publishAllPublicationsToOssRepository",
   )
 }
 
@@ -46,6 +47,7 @@ tasks.register("publishLinuxLocal") {
     ":${Release.Project.`exoquery-runner-android`}:publishToMavenLocal",
     ":${Release.Project.`exoquery-runner-native`}:publishToMavenLocal",
     ":${Release.Project.`exoquery-runner-jdbc`}:publishToMavenLocal",
+    ":${Release.Project.`exoquery-runner-r2dbc`}:publishToMavenLocal",
   )
 }
 
@@ -108,6 +110,7 @@ object Release {
     val `exoquery-runner-jdbc` = "exoquery-runner-jdbc"
     val `exoquery-runner-native` = "exoquery-runner-native"
     val `exoquery-runner-android` = "exoquery-runner-android"
+    val `exoquery-runner-r2dbc` = "exoquery-runner-r2dbc"
   }
 
   val macBuildCommands =

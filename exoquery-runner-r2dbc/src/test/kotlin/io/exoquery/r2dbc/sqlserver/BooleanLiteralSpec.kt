@@ -4,7 +4,6 @@ import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
-import io.exoquery.jdbc.runOn
 import io.exoquery.testdata.Person
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe

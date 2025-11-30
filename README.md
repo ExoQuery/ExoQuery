@@ -280,10 +280,16 @@ plugins {
 }
 
 // Then add a runner...
-// For Java:
+// For Java (JDBC):
 dependencies {
   implementation("io.exoquery:exoquery-runner-jdbc:1.7.1.PL")
   implementation("org.postgresql:postgresql:42.7.0") // Remember to include the right JDBC Driver
+}
+
+// For Java (R2DBC - Reactive):
+dependencies {
+  implementation("io.exoquery:exoquery-runner-r2dbc:1.7.1.PL")
+  implementation("io.r2dbc:r2dbc-postgresql:1.0.5.RELEASE") // Remember to include the right R2DBC Driver
 }
 
 // For: IOS, OSX, Native Linux, and Mingw using Kotlin Multiplatform
@@ -298,12 +304,14 @@ dependencies {
   implementation("androidx.sqlite:sqlite-framework:2.4.0")
 }
 ```
-> *Why the funny verision numbers?* <br /> 
+> *Why the funny verision numbers?* <br />
 > ExoQuery's Compiler Plugin component has versions that look like this: `<KotlinVersion-ExoQueryPluginVersion.PL(.RC?)>`
 > <br />
 > The runners have a version that looks like this: `<ExoQueryPluginVersion.PL(.RC?)>`.
 > <br />
 > That way the only the plugin-version needs to be bumped whenever a new version of Kotlin is released, not all of the runners too.
+
+## Getting Started with JDBC
 
 You can get started writing queries like this:
 
@@ -321,9 +329,119 @@ val query = sql {
 val output = query.buildFor.Postgres().runOn(controller)
 ```
 
+## Getting Started with R2DBC (Reactive)
+
+ExoQuery provides full support for R2DBC (Reactive Relational Database Connectivity), enabling non-blocking,
+reactive database operations. R2DBC is ideal for high-concurrency applications and reactive frameworks
+like Spring WebFlux or Ktor.
+
+### Setup
+
+First, add the R2DBC driver dependency for your database:
+
+```kotlin
+dependencies {
+  implementation("io.exoquery:exoquery-runner-r2dbc:1.7.1.PL")
+
+  // Choose your database driver:
+  implementation("io.r2dbc:r2dbc-postgresql:1.0.5.RELEASE")  // PostgreSQL
+  // implementation("io.asyncer:r2dbc-mysql:1.0.5")          // MySQL
+  // implementation("io.r2dbc:r2dbc-mssql:1.0.2.RELEASE")    // SQL Server
+  // implementation("io.r2dbc:r2dbc-h2:1.0.0.RELEASE")       // H2
+}
+```
+
+### Basic Usage
+
+```kotlin
+import io.r2dbc.spi.ConnectionFactories
+import io.r2dbc.spi.ConnectionFactoryOptions
+import io.exoquery.controller.r2dbc.R2dbcControllers
+
+// Create an R2DBC connection factory
+val connectionFactory = ConnectionFactories.get(
+  ConnectionFactoryOptions.builder()
+    .option(ConnectionFactoryOptions.DRIVER, "postgresql")
+    .option(ConnectionFactoryOptions.HOST, "localhost")
+    .option(ConnectionFactoryOptions.PORT, 5432)
+    .option(ConnectionFactoryOptions.DATABASE, "mydb")
+    .option(ConnectionFactoryOptions.USER, "user")
+    .option(ConnectionFactoryOptions.PASSWORD, "password")
+    .build()
+)
+
+// Create an R2DBC controller
+val controller = R2dbcControllers.Postgres(connectionFactory = connectionFactory)
+
+// Write queries using the same DSL as JDBC
+val query = sql {
+  Table<Person>().filter { p -> p.age > 21 }
+}
+
+// Execute the query reactively
+val results: List<Person> = query.buildFor.Postgres().runOn(controller)
+```
+
+### Supported Databases
+
+R2DBC support is available for:
+- **PostgreSQL** - Full support including RETURNING clauses and DISTINCT ON
+- **MySQL** - Full support with ON DUPLICATE KEY UPDATE
+- **SQL Server** - Full support with OUTPUT clauses and IDENTITY_INSERT handling
+- **H2** - Full support for testing and development
+- **Oracle** - Infrastructure ready (connection factory available)
+
+### Custom Type Encoding
+
+R2DBC supports custom encoders/decoders for domain-specific types:
+
+```kotlin
+import io.exoquery.controller.r2dbc.R2dbcEncodingConfig
+import io.exoquery.controller.r2dbc.R2dbcBasicEncoding
+
+// Define a custom type
+data class PersonId(val value: Int)
+
+// Create a controller with custom encoding
+val controller = R2dbcControllers.Postgres(
+  encodingConfig = R2dbcEncodingConfig.Default(
+    encoders = setOf(
+      R2dbcBasicEncoding.IntEncoder.contramap { id: PersonId -> id.value }
+    ),
+    decoders = setOf(
+      R2dbcBasicEncoding.IntDecoder.map { PersonId(it) }
+    )
+  ),
+  connectionFactory = connectionFactory
+)
+```
+
+### Key Features
+
+- **Non-blocking I/O** - Fully reactive, non-blocking database operations
+- **Identical DSL** - Same query syntax as JDBC for easy migration
+- **Type Safety** - Compile-time type checking for queries
+- **Backpressure** - Built-in support through reactive streams
+- **All Query Features** - Supports joins, aggregations, subqueries, window functions, etc.
+- **Batch Operations** - Efficient batch inserts, updates, and deletes
+- **Transactions** - Full transaction support with the same API as JDBC
+
+### When to Use R2DBC
+
+R2DBC provides benefits in:
+- High-concurrency applications
+- Reactive frameworks (Spring WebFlux, Ktor)
+- I/O-bound workloads
+- Microservices requiring non-blocking behavior
+- Applications needing efficient resource utilization
+
+For CPU-bound operations or simpler applications, JDBC may be more appropriate.
+
+---
+
 Have a look at code samples for starter projects here:
 
-- Basic Java project - https://github.com/ExoQuery/exoquery-sample-jdbc
+- Basic Java project (JDBC) - https://github.com/ExoQuery/exoquery-sample-jdbc
 - Basic Linux Native project: TBD
 - Android and OSX project: https://github.com/ExoQuery/exoquery-sample-kmp
 

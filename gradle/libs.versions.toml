@@ -1,4 +1,7 @@
 [versions]
+# ---- The ExoQuery plugin version that will be released! ----
+pluginVersion    = "2.0.0.PL.RC3"
+# ---- All the other versions used ----
 kotlin           = "2.2.20"
 ksp              = "2.2.20-2.0.3"
 serialization    = "1.7.3"
@@ -17,7 +20,6 @@ jackson          = "2.17.0"
 sql-formatter    = "2.0.4"
 jb-annotations   = "26.0.2"
 koog             = "0.3.0"
-pluginVersion    = "2.0.0.PL.RC2"
 buildconfig      = "3.1.0"
 gradle-publish   = "1.1.0"
 mapdb            = "3.1.0"

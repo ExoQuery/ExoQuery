@@ -10,7 +10,6 @@ import io.exoquery.r2dbc.peopleWithIdCtx
 import io.exoquery.testdata.AddressWithId
 import io.exoquery.testdata.AddressWithIdCtx
 import io.exoquery.testdata.PersonWithId
-import io.exoquery.jdbc.runOn
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder

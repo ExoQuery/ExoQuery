@@ -1,4 +1,4 @@
-package io.exoquery.jdbc
+package io.exoquery.r2dbc
 
 import io.exoquery.SqlCompiledBatchAction
 import io.exoquery.checkActionKindValidity

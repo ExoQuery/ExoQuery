@@ -4,7 +4,6 @@ import io.exoquery.*
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.controller.runActions
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
-import io.exoquery.jdbc.runOn
 import io.exoquery.r2dbc.allPeople
 import io.exoquery.r2dbc.batchDeletePeople
 import io.exoquery.r2dbc.batchInsertPeople
