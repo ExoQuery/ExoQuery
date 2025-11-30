@@ -9,6 +9,7 @@ import io.exoquery.testdata.Robot
 import io.exoquery.sql
 import io.exoquery.controller.runActions
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
+import io.exoquery.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder

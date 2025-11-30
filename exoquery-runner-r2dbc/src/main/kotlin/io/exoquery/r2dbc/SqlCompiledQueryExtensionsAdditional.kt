@@ -3,6 +3,9 @@ package io.exoquery.r2dbc
 import io.exoquery.SqlCompiledQuery
 import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
+import io.exoquery.controller.streamOn
+import io.exoquery.controller.toControllerQuery
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import io.exoquery.runOn as runOnCommon
@@ -19,3 +22,10 @@ inline suspend fun <reified T : Any> SqlCompiledQuery<T>.runOnPostgres(connectio
   val controller = R2dbcControllers.Postgres(connectionFactory = connectionFactory)
   this.runOn(controller, serializer<T>())
 }
+
+// Stream equivalents
+inline suspend fun <reified T> SqlCompiledQuery<T>.streamOn(database: R2dbcController): Flow<T> =
+  this.toControllerQuery(serializer<T>()).streamOn(database)
+
+suspend fun <T> SqlCompiledQuery<T>.streamOn(database: R2dbcController, serializer: KSerializer<T>): Flow<T> =
+  this.toControllerQuery(serializer).streamOn(database)

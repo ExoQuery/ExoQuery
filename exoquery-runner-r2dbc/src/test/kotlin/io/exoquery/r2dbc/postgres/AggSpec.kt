@@ -4,6 +4,7 @@ import io.exoquery.PostgresDialect
 import io.exoquery.controller.runActions
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
+import io.exoquery.runOn
 import io.exoquery.sql
 import io.exoquery.testdata.Person
 import io.kotest.core.spec.style.FreeSpec

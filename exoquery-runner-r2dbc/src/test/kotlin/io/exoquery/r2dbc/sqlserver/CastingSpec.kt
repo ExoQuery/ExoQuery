@@ -3,6 +3,7 @@ package io.exoquery.r2dbc.sqlserver
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.sql
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
+import io.exoquery.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 

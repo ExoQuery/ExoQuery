@@ -7,9 +7,11 @@ import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.controller.r2dbc.R2dbcExecutionOptions
 import io.exoquery.printing.MessagesRuntime
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import io.exoquery.runOn as runOnCommon
+import io.exoquery.controller.streamOn
 import io.r2dbc.spi.ConnectionFactory
 
 fun R2dbcController.isSqlServer(): Boolean = this is R2dbcControllers.SqlServer

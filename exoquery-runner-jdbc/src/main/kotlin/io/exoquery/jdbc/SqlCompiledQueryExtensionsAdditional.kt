@@ -5,7 +5,9 @@ import io.exoquery.controller.jdbc.JdbcController
 import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.jdbc.JdbcExecutionOptions
 import io.exoquery.controller.runOn
+import io.exoquery.controller.streamOn
 import io.exoquery.controller.toControllerQuery
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import javax.sql.DataSource
@@ -28,3 +30,10 @@ inline suspend fun <reified T : Any> SqlCompiledQuery<T>.runOnPostgres(dataSourc
   val controller = JdbcControllers.Postgres(dataSource)
   this.runOn(controller, serializer<T>())
 }
+
+// Stream equivalents
+inline suspend fun <reified T> SqlCompiledQuery<T>.streamOn(database: JdbcController): Flow<T> =
+  this.toControllerQuery(serializer<T>()).streamOn(database)
+
+suspend fun <T> SqlCompiledQuery<T>.streamOn(database: JdbcController, serializer: KSerializer<T>): Flow<T> =
+  this.toControllerQuery(serializer).streamOn(database)

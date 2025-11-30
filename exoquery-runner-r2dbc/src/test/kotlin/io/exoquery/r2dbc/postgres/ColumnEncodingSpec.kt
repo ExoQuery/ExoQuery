@@ -11,6 +11,7 @@ import io.exoquery.testdata.AddressWithId
 import io.exoquery.testdata.AddressWithIdCtx
 import io.exoquery.testdata.PersonWithId
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
+import io.exoquery.r2dbc.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
