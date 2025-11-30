@@ -249,7 +249,7 @@ class QuerySpec {
     deconstuct.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
       Triple(
         Person(2, "Joe", "Doggs", 222),
-        Address(2, "789 Oak St", "54321"),
+        Address(2, "789 Oak St", 54321),
         Robot(2, "R2D2", 22)
       )
     )
@@ -263,9 +263,9 @@ class QuerySpec {
       p to a
     }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
-      Person(1, "Joe", "Bloggs", 111) to Address(1, "123 Main St", "12345"),
-      Person(1, "Joe", "Bloggs", 111) to Address(1, "456 Elm St", "67890"),
-      Person(2, "Joe", "Doggs", 222) to Address(2, "789 Oak St", "54321")
+      Person(1, "Joe", "Bloggs", 111) to Address(1, "123 Main St", 12345),
+      Person(1, "Joe", "Bloggs", 111) to Address(1, "456 Elm St", 67890),
+      Person(2, "Joe", "Doggs", 222) to Address(2, "789 Oak St", 54321)
     )
   }
 
@@ -277,9 +277,9 @@ class QuerySpec {
       p to a
     }
     q.build<SqliteDialect>().runOn(ctx) shouldContainExactlyInAnyOrder listOf(
-      Person(1, "Joe", "Bloggs", 111) to Address(1, "123 Main St", "12345"),
-      Person(1, "Joe", "Bloggs", 111) to Address(1, "456 Elm St", "67890"),
-      Person(2, "Joe", "Doggs", 222) to Address(2, "789 Oak St", "54321"),
+      Person(1, "Joe", "Bloggs", 111) to Address(1, "123 Main St", 12345),
+      Person(1, "Joe", "Bloggs", 111) to Address(1, "456 Elm St", 67890),
+      Person(2, "Joe", "Doggs", 222) to Address(2, "789 Oak St", 54321),
       Person(3, "Jim", "Roogs", 333) to null
     )
   }
