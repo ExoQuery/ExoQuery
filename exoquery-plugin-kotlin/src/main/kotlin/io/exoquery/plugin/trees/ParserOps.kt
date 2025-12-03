@@ -2,6 +2,7 @@ package io.exoquery.plugin.trees
 
 import io.decomat.Is
 import io.exoquery.CapturedBlock
+import io.exoquery.ParseError
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
 import io.exoquery.annotation.SqlDynamic
@@ -18,7 +19,6 @@ import io.exoquery.xr.XRType
 import io.exoquery.xr.of
 import org.jetbrains.kotlin.backend.common.serialization.proto.IrGetObject
 import org.jetbrains.kotlin.builtins.PrimitiveType
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -245,11 +245,11 @@ fun IrDeclarationReference.showLineageAdvanced(): List<Pair<String, IrElement>> 
 
 
 context(CX.Scope)
-fun getSerializerForValueClass(type: IrType, originalElement: IrElement) =
+fun getSerializerClassForValueClassType(type: IrType, originalElementOrigin: ParseError.Origin) =
   if (type.classOrNull?.owner?.isValue ?: false) {
     with (makeBuilderCtx()) {
-      when (val ser = type.inferSerializer()) {
-        is KnownSerializer.Ref -> ser.buildExpression(type, originalElement)
+      when (val ser = type.inferSerializerForPropertyType()) {
+        is KnownSerializer.Ref -> ser.buildExpression(type, originalElementOrigin)
         is KnownSerializer.Implicit -> ser.buildExpression(type)
         is KnownSerializer.None -> null
       }
@@ -259,7 +259,58 @@ fun getSerializerForValueClass(type: IrType, originalElement: IrElement) =
   }
 
 context(CX.Scope)
-fun getSerializerForType(type: IrType): ClassId? = run {
+fun getSingleSerializerForLeafType(type: IrType, origin: ParseError.Origin): ParamBind.Type.Single? = run {
+  getSerializerClassForPrimitiveType(type)?.let { ParamBind.Type.ParamStatic(it) }
+    ?: getSerializerClassForValueClassType(type, origin)?.let { ParamBind.Type.ParamCustom(it, type) }
+    ?: getSingleSerializerClassForContextualType(type)
+    ?: run {
+      if (type.classOrNull?.owner?.hasAnnotation(PT.controller_SqlJsonValue) ?: false) {
+        ParamBind.Type.ParamCustomImplicit(type)
+      } else null
+    }
+}
+
+context(CX.Scope)
+fun getMultiSerializerForLeafType(type: IrType, origin: ParseError.Origin): ParamBind.Type.Multi? = run {
+  getSerializerClassForPrimitiveType(type)?.let { ParamBind.Type.ParamListStatic(it) }
+    ?: getSerializerClassForValueClassType(type, origin)?.let { ParamBind.Type.ParamListCustom(it, type) }
+    ?: getMultiSerializerClassForContextualType(type)
+    ?: run {
+      if (type.classOrNull?.owner?.hasAnnotation(PT.controller_SqlJsonValue) ?: false) {
+        ParamBind.Type.ParamListCustomImplicit(type)
+      } else null
+    }
+}
+
+context(CX.Scope)
+private fun isContextualSerializeableType(type: IrType): Boolean =
+  type.isClass<java.util.UUID>() ||
+    type.isClass<java.math.BigDecimal>() ||
+    type.isClass<java.util.Date>() ||
+    type.isClass<java.time.LocalDate>() ||
+    type.isClass<java.time.LocalTime>() ||
+    type.isClass<java.time.LocalDateTime>() ||
+    type.isClass<java.time.ZonedDateTime>() ||
+    type.isClass<java.time.Instant>() ||
+    type.isClass<java.time.OffsetTime>() ||
+    type.isClass<java.time.OffsetDateTime>()
+
+context(CX.Scope)
+private fun getSingleSerializerClassForContextualType(type: IrType): ParamBind.Type.Single? =
+  if (isContextualSerializeableType(type))
+    ParamBind.Type.ParamCtx(type)
+  else
+    null
+
+context(CX.Scope)
+private fun getMultiSerializerClassForContextualType(type: IrType): ParamBind.Type.Multi? =
+  if (isContextualSerializeableType(type))
+    ParamBind.Type.ParamListCtx(type)
+  else
+    null
+
+context(CX.Scope)
+private fun getSerializerClassForPrimitiveType(type: IrType): ClassId? = run {
   val isNullable = type.isNullable()
   type.getPrimitiveType()?.let { primitiveType ->
     when {
@@ -290,20 +341,6 @@ fun getSerializerForType(type: IrType): ClassId? = run {
     type.isClassStrict<kotlinx.datetime.LocalTime>() -> classIdOf<ParamSerializer.LocalTime>()
     type.isClassStrict<kotlinx.datetime.LocalDateTime>() -> classIdOf<ParamSerializer.LocalDateTime>()
     type.isClassStrict<kotlinx.datetime.Instant>() -> classIdOf<ParamSerializer.Instant>()
-
-    //type.isClassStrict<java.util.Date>() -> classIdOf<ParamSerializer.Date>(),
-
-    /*
-    val JDateEncoder: SqlEncoder<Session, Stmt, Date>
-    val JLocalDateEncoder: SqlEncoder<Session, Stmt, LocalDate>
-    val JLocalTimeEncoder: SqlEncoder<Session, Stmt, LocalTime>
-    val JLocalDateTimeEncoder: SqlEncoder<Session, Stmt, LocalDateTime>
-    val JZonedDateTimeEncoder: SqlEncoder<Session, Stmt, ZonedDateTime>
-    val JInstantEncoder: SqlEncoder<Session, Stmt, Instant>
-    val JOffsetTimeEncoder: SqlEncoder<Session, Stmt, OffsetTime>
-    val JOffsetDateTimeEncoder: SqlEncoder<Session, Stmt, OffsetDateTime>
-     */
-
     else -> null
   }
 }

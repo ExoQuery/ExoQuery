@@ -1,16 +1,16 @@
 package io.exoquery.plugin.trees
 
+import io.exoquery.ParseError
 import io.exoquery.annotation.ExoField
 import io.exoquery.parseError
 import io.exoquery.plugin.dataClassProperties
 import io.exoquery.plugin.firstConstStringOrNull
 import io.exoquery.plugin.getAnnotationArgs
-import io.exoquery.plugin.inferSerializer
+import io.exoquery.plugin.inferSerializerForPropertyType
 import io.exoquery.plugin.isDataClass
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.callWithParams
 import io.exoquery.xr.XRType
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGetObject
@@ -28,9 +28,9 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 sealed interface KnownSerializer {
   data class Ref(val serializer: IrClassReference): KnownSerializer {
     context(CX.Scope, CX.Builder)
-    fun buildExpression(expectedType: IrType, originalElement: IrElement) = run {
+    fun buildExpression(expectedType: IrType, originalElementOrigin: ParseError.Origin) = run {
       // Don't know if it's always safe to make the assumption that an IrClassReference.symbol is an IrClassSymbol so return a specific error
-      val symbol: IrClassSymbol = serializer.symbol as? IrClassSymbol ?: parseError("Error getting the class symbol of the class reference ${serializer.dumpKotlinLike()}. The reference was not an IrClassSymbol", originalElement)
+      val symbol: IrClassSymbol = serializer.symbol as? IrClassSymbol ?: parseError("Error getting the class symbol of the class reference ${serializer.dumpKotlinLike()}. The reference was not an IrClassSymbol", originalElementOrigin)
       builder.irGetObject(symbol)
     }
   }
@@ -103,7 +103,7 @@ object Elaborate {
               ?.let { it as? IrClassReference }?.let { KnownSerializer.Ref(it) }
 
           val propertyOnFieldOrType =
-            propertyOnTheField ?: propertyType.inferSerializer()
+            propertyOnTheField ?: propertyType.inferSerializerForPropertyType()
 
           propertyOnFieldOrType ?: KnownSerializer.None
         }

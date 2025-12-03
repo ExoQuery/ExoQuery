@@ -1589,6 +1589,90 @@ See
 the [Playing Well using Row-Surrogate Encoder](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/PlayingWell_RowSurrogate.kt)
 section for more details.
 
+## JSON Columns
+
+> **Note:** JSON column support is currently only available for PostgreSQL.
+
+ExoQuery provides support for working with JSON and JSONB columns in PostgreSQL. You can select entire JSON objects, query specific fields, and insert JSON data using regular Kotlin data classes.
+
+### Setup
+
+To use JSON columns, annotate your Kotlin data class with `@SqlJsonValue`. This tells ExoQuery to serialize/deserialize the class as JSON when interacting with the database:
+
+```kotlin
+@SqlJsonValue
+@Serializable
+data class ContactInfo(val email: String, val phone: String)
+
+@Serializable
+data class User(val id: Int, val name: String, val contacts: ContactInfo)
+```
+
+### Database Schema
+
+Your PostgreSQL table can use either `JSON` or `JSONB` column types:
+
+```sql
+CREATE TABLE Users (
+    id       SERIAL PRIMARY KEY,
+    name     VARCHAR(255),
+    contacts JSONB
+);
+```
+
+### Selecting Entire Rows
+
+You can select entire rows including JSON columns, and ExoQuery will automatically deserialize the JSON data:
+
+```kotlin
+val users = sql {
+  Table<User>()
+}.buildFor.Postgres().runOn(ctx)
+//> SELECT id, name, contacts FROM Users
+// [User(1, "Alice", ContactInfo("alice@example.com", "555-1234"))]
+```
+
+### Selecting JSON Fields
+
+You can map to just the JSON field, which will be deserialized into your Kotlin object:
+
+```kotlin
+val contacts = sql {
+  Table<User>().map { it.contacts }
+}.buildFor.Postgres().runOn(ctx)
+//  SELECT contacts FROM Users
+//> [ContactInfo("alice@example.com", "555-1234")]
+```
+
+### Inserting JSON Data
+
+Use `param()` to insert JSON data just like any other value:
+
+```kotlin
+val newContacts = ContactInfo("bob@example.com", "555-5678")
+val q = sql {
+  insert<User> {
+    set(id to 2, name to "Bob", contacts to param(newContacts))
+  }
+}
+q.build<PostgresDialect>().runOn(ctx)
+//> INSERT INTO Users (id, name, contacts) VALUES (?, ?, ?)
+```
+> In this situation, ExoQuery automatically delegates `param(newContacts)` to the `paramCustom` method. 
+
+The `ContactInfo` object will be automatically serialized to JSON format when inserted into the database.
+
+### Inserting Complete Rows
+
+You can insert entire rows using `setParams()`:
+
+```kotlin
+val user = User(2, "Bob", ContactInfo("bob@example.com", "555-5678"))
+val q = sql {
+  insert<User> { setParams(user).excluding(id) }
+}
+```
+
 ## Dynamic Queries
 
 There are certain situations where ExoQuery cannot generate a query at compile-time. Most notably this happens when

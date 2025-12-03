@@ -67,16 +67,15 @@ data class ParamBind(val bid: BID, val value: IrExpression, val paramSerializer:
       context (CX.Scope, CX.Builder) fun makeValue(originalValue: IrExpression): IrExpression = originalValue
     }
 
+    sealed interface Multi : Type {
+      context (CX.Scope, CX.Builder) fun makeSerializer(): IrExpression
+      context (CX.Scope, CX.Builder) fun makeValue(originalValue: IrExpression): IrExpression = originalValue
+    }
+
     companion object {
       context(CX.Scope)
-      fun auto(expr: IrExpression) = run {
-        // Both isNullablePrimitiveType() and isPrimitiveType() are not needed (the 1st one takes care of both) but doing this for clarity
-        if (expr.type.isNullablePrimitiveType() || expr.type.isPrimitiveType() || expr.type.isString() || expr.type.isNullableString())
-          ParamStatic(getSerializerForType(expr.type) ?: parseError("Could not create a primitive-type parser of the type ${expr.type.dumpKotlinLike()} whose class-id is ${expr.type.classId()}", expr))
-        //ParamStatic(expr.type.classId()!!)
-        else
-          ParamCtx(expr.type)
-      }
+      fun auto(expr: IrExpression) =
+        getSingleSerializerForLeafType(expr.type, ParseError.Origin.from(expr)) ?: ParamCtx(expr.type)
     }
 
     context (CX.Scope, CX.Builder) fun build(bid: BID, originalValue: IrExpression, lifter: Lifter): IrExpression
@@ -137,24 +136,9 @@ data class ParamBind(val bid: BID, val value: IrExpression, val paramSerializer:
                 if (expression.symbol.owner == batchVariable) expression.symbol = newSymbol
                 return super.visitGetValue(expression)
               }
-              //override fun visitValueParameter(declaration: IrValueParameter): IrStatement =
-              //  when {
-              //    declaration == batchVariable -> batchVariableCopy
-              //    else -> super.visitValueParameter(declaration)
-              //  }
             }
 
           val newMadeValue = transformer.visitElement(madeValue) as IrExpression
-
-          //val symbolRemapper =
-          //  object: DeepCopySymbolRemapper() {
-          //    init {
-          //      valueParameters.put(batchVariable.symbol, newSymbol)
-          //    }
-          //    //override val valueParameters = hashMapOf<IrValueParameterSymbol, IrValueParameterSymbol>(batchVariable.symbol to newSymbol)
-          //  }
-          //val batchVariableCopy = batchVariable.deepCopyWithSymbols(symbolRemapper)
-
           val refinerLambda = createLambda1(newMadeValue, batchVariableCopy, currentDeclarationParentOrFail())
           val description = if (perFileDebugConfig.addParamDescriptions) refinerLambda.dumpKotlinLike().lift() else builder.irNull()
           make<ParamBatchRefiner<*, *>>(bid.lift(), refinerLambda, param.makeSerializer(), description)
@@ -209,6 +193,19 @@ data class ParamBind(val bid: BID, val value: IrExpression, val paramSerializer:
         }
     }
 
+    data class ParamCustomImplicit(val type: IrType) : Type, Single {
+      context (CX.Scope, CX.Builder) override fun makeSerializer() = run {
+        val constructSerializer = callWithParams("kotlinx.serialization", "serializer", listOf(type))()
+        callWithParams("io.exoquery.serial", "customSerializer", listOf(type)).invoke(constructSerializer)
+      }
+      context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValue: IrExpression, lifter: Lifter) =
+        with(lifter) {
+          val value = makeValue(originalValue)
+          val description = if (perFileDebugConfig.addParamDescriptions) value.dumpKotlinLike().lift() else builder.irNull()
+          make<ParamSingle<*>>(bid.lift(), value, makeSerializer())
+        }
+    }
+
     /** valueWithSet is the ValueWithSerializer instance passed to param */
     data class ParamCustomValue(val valueWithSerializer: IrExpression) : Type, Single {
       context (CX.Scope, CX.Builder) override fun makeSerializer() = constructValueSerializer(valueWithSerializer)
@@ -235,19 +232,21 @@ data class ParamBind(val bid: BID, val value: IrExpression, val paramSerializer:
      * for params(listOf(...))
      * originalValues is the list
      */
-    data class ParamListStatic(val classId: ClassId) : Type {
+    data class ParamListStatic(val classId: ClassId) : Multi, Type {
+      context(CX.Scope, CX.Builder) override fun makeSerializer() = makeObjectFromId(classId)
       context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValues: IrExpression, lifter: Lifter) =
         with(lifter) {
           val valueType = originalValues.type.simpleTypeArgs.firstOrNull() ?: parseError("Could not get the first type-argument of the static-param list type: ${originalValues.dumpKotlinLike()}", originalValues)
-          make<ParamMulti<*>>(bid.lift(), originalValues, makeObjectFromId(classId))
+          make<ParamMulti<*>>(bid.lift(), originalValues, makeSerializer())
         }
     }
 
-    data class ParamListCtx(val type: IrType) : Type {
+    data class ParamListCtx(val type: IrType) : Multi, Type {
+      context(CX.Scope, CX.Builder) override fun makeSerializer() = callWithParams("io.exoquery.serial", "contextualSerializer", listOf(type)).invoke()
       context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValues: IrExpression, lifter: Lifter) =
         with(lifter) {
           val valueType = originalValues.type.simpleTypeArgs.firstOrNull() ?: parseError("Could not get the first type-argument of the context-param list type: ${originalValues.dumpKotlinLike()}", originalValues)
-          make<ParamMulti<*>>(bid.lift(), originalValues, callWithParams("io.exoquery.serial", "contextualSerializer", listOf(type)).invoke())
+          make<ParamMulti<*>>(bid.lift(), originalValues, makeSerializer())
         }
     }
 
@@ -257,21 +256,34 @@ data class ParamBind(val bid: BID, val value: IrExpression, val paramSerializer:
      * which is created via `io.exoquery.serial.customSerializer` below. The type is the type to use when calling it.
      * originalValues is the `values` arg of the params call above.
      */
-    data class ParamListCustom(val ktSerializer: IrExpression, val type: IrType) : Type {
-      context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValues: IrExpression, lifter: Lifter) =
+    data class ParamListCustom(val ktSerializer: IrExpression, val type: IrType) : Multi, Type {
+      context(CX.Scope, CX.Builder) override fun makeSerializer() = callWithParams("io.exoquery.serial", "customSerializer", listOf(type)).invoke(ktSerializer)
+        context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValues: IrExpression, lifter: Lifter) =
         with(lifter) {
           val valueType = originalValues.type.simpleTypeArgs.firstOrNull() ?: parseError("Could not get the first type-argument of the custom-param list type: ${originalValues.dumpKotlinLike()}", originalValues)
-          make<ParamMulti<*>>(bid.lift(), originalValues, callWithParams("io.exoquery.serial", "customSerializer", listOf(type)).invoke(ktSerializer))
+          make<ParamMulti<*>>(bid.lift(), originalValues, makeSerializer())
         }
     }
 
-    data class ParamListCustomValue(val valueWithSerializer: IrExpression) : Type {
+    data class ParamListCustomImplicit(val type: IrType) : Multi, Type {
+      context(CX.Scope, CX.Builder) override fun makeSerializer() = run {
+        val constructSerializer = callWithParams("kotlinx.serialization", "serializer", listOf(type))()
+        callWithParams("io.exoquery.serial", "customSerializer", listOf(type)).invoke(constructSerializer)
+      }
+      context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValues: IrExpression, lifter: Lifter) =
+        with(lifter) {
+          val valueType = originalValues.type.simpleTypeArgs.firstOrNull() ?: parseError("Could not get the first type-argument of the custom-param list type: ${originalValues.dumpKotlinLike()}", originalValues)
+          make<ParamMulti<*>>(bid.lift(), originalValues, makeSerializer())
+        }
+    }
+
+    data class ParamListCustomValue(val valueWithSerializer: IrExpression) : Multi, Type {
+      context(CX.Scope, CX.Builder) override fun makeSerializer() = constructValueListSerializer(valueWithSerializer)
       context (CX.Scope, CX.Builder) override fun build(bid: BID, originalValue: IrExpression, lifter: Lifter) = run {
-        val paramSerializer = constructValueListSerializer(valueWithSerializer)
         val value = originalValue.callDispatch("values")()
         with(lifter) {
           val valueType = value.type.simpleTypeArgs.firstOrNull() ?: parseError("Could not get the first type-argument of the custom-param-value list type: ${value.dumpKotlinLike()}", value)
-          make<ParamMulti<*>>(bid.lift(), value, paramSerializer)
+          make<ParamMulti<*>>(bid.lift(), value, makeSerializer())
         }
       }
     }

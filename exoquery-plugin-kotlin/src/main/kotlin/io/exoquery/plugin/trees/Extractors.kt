@@ -11,6 +11,7 @@ import io.exoquery.parseError
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.ReceiverCaller
+import io.exoquery.plugin.trees.PT.controller_SqlJsonValue
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -22,6 +23,7 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isTypeParameter
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.statements
@@ -191,6 +193,8 @@ object Ir {
 
     object DataClass {
       data class Name(val name: String, val isRenamed: Boolean)
+      // TODO need change isMarkedValue to specific type which includes @SqlJsonValue ExoValue is same as contextual but we should preserve it's basic meaning until laster
+      //      anyway, we need a coproduct that contains these categories and uses them later for rendering
       data class Prop(val name: String, val type: IrType, val isMarkedValue: Boolean, val isRenamed: Boolean, val originalName: String)
 
       context(CX.Scope) operator fun <AP : Pattern<Name>, BP : Pattern<List<DataClass.Prop>>> get(name: AP, fields: BP) =
@@ -214,7 +218,7 @@ object Ir {
                     ?: irProp.getAnnotationArgs<kotlinx.serialization.SerialName>().firstConstStringOrNull()?.let { it to true }
                     ?: (propName to false)
 
-                val isValue = hasFieldAnnotation || irProp.hasAnnotation<ExoValue>() || cls.owner.hasAnnotation<Contextual>() || cls.owner.hasAnnotation<ExoValue>()
+                val isValue = hasFieldAnnotation || irProp.hasAnnotation<ExoValue>() || cls.owner.hasAnnotation<Contextual>() || cls.owner.hasAnnotation<ExoValue>() || cls.owner.hasAnnotation(controller_SqlJsonValue)
                 val isRenamed = hasFieldAnnotation
                 DataClass.Prop(realPropName, propType, isValue, isRenamed, propName)
               }
@@ -290,11 +294,15 @@ object Ir {
             it.isClassStrict<java.sql.Timestamp>() ||
             it.isClassStrict<java.math.BigDecimal>() ||
             it.isClassStrict<java.math.BigInteger>() ||
+            it.isClassStrict<java.util.UUID>() ||
+            it.isClassStrict<java.util.Date>() ||
             it.isClass<ValueWithSerializer<*>>() ||
             it.hasAnnotation<Contextual>() ||
             (it.classOrNull?.owner?.hasAnnotation<Contextual>() ?: false) ||
             it.hasAnnotation<ExoValue>() ||
-            (it.classOrNull?.owner?.hasAnnotation<ExoValue>() ?: false)
+            it.hasAnnotation(controller_SqlJsonValue) ||
+            (it.classOrNull?.owner?.hasAnnotation<ExoValue>() ?: false) ||
+            (it.classOrNull?.owner?.hasAnnotation(controller_SqlJsonValue) ?: false)
 
       context(CX.Scope) operator fun get(type: Pattern0<IrType>) =
         customPattern1("Ir.Call.Value", type) { it: IrType ->

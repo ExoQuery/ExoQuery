@@ -5,6 +5,7 @@ import io.decomat.case
 import io.decomat.on
 import io.exoquery.BID
 import io.exoquery.CapturedBlock
+import io.exoquery.ParseError
 import io.exoquery.SqlAction
 import io.exoquery.annotation.ExoDelete
 import io.exoquery.annotation.ExoInsert
@@ -181,7 +182,7 @@ object ParseAction {
               val rawParam =
                 when (val ser = epath.knownSerializer) {
                   is KnownSerializer.Ref ->
-                    ParamBind.Type.ParamCustom(ser.buildExpression(epath.type, epath.invocation), expr.type)
+                    ParamBind.Type.ParamCustom(ser.buildExpression(epath.type, ParseError.Origin.from(epath.invocation)), expr.type)
                   is KnownSerializer.Implicit ->
                     ParamBind.Type.ParamCustom(ser.buildExpression(epath.type), expr.type)
                   is KnownSerializer.None ->

@@ -1,5 +1,48 @@
 # ExoQuery Changelog
 
+
+### Version 2.0.0.PL.RC3 (November 23, 2025)
+ ```kotlin
+plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-2.0.0.PL.RC3" }
+dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC3") }
+ ```
+
+- **Feature**: Implement R2dbc Support ([#68](https://github.com/ExoQuery/ExoQuery/pull/68))
+- **Testing**: Fix up streaming tests
+
+### Version 2.0.0.PL.RC2 (November 23, 2025)
+ ```kotlin
+plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-2.0.0.PL.RC2" }
+dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC2") }
+ ```
+- **Infrastructure**: Centralize dependency management and improve Kotlin 2.3.0+ compatibility ([#66](https://github.com/ExoQuery/ExoQuery/pull/66))
+- **Enhancement**: SqlQuery.limit and where reductions ([#67](https://github.com/ExoQuery/ExoQuery/pull/67))
+- **Enhancement**: Add stringColumn.contains(string) and better null reductions ([#65](https://github.com/ExoQuery/ExoQuery/pull/65))
+
+### Version 2.0.0.PL.RC1 (November 12, 2025)
+ ```kotlin
+plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-2.0.0.PL.RC1" }
+dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC1") }
+ ```
+
+- **Breaking**: Rename CapturedFunction → SqlFragment and CapturedDynamic → SqlDynamic ([#56](https://github.com/ExoQuery/ExoQuery/pull/56))
+- **Breaking**: Use `sql` instead of `capture` ([#53](https://github.com/ExoQuery/ExoQuery/pull/53))
+- **Enhancement**: Adding common SQL functions ([#55](https://github.com/ExoQuery/ExoQuery/pull/55))
+- **Enhancement**: Add support for IN (subquery) ([#54](https://github.com/ExoQuery/ExoQuery/pull/54))
+- **Performance**: Improve performance by removing unneeded materializations ([#64](https://github.com/ExoQuery/ExoQuery/pull/64))
+- **Enhancement**: Allow zero-args @SqlFragment functions ([#63](https://github.com/ExoQuery/ExoQuery/pull/63))
+- **Bugfix**: Fixing first-filter FlatUnit issue ([#62](https://github.com/ExoQuery/ExoQuery/pull/62))
+- **Bugfix**: Fix error duplication by providing accurate position data ([#61](https://github.com/ExoQuery/ExoQuery/pull/61))
+- **Enhancement**: Improve flatJoin API ([#59](https://github.com/ExoQuery/ExoQuery/pull/59))
+- **Infrastructure**: Improve compile error message testing and playground error rendering ([#57](https://github.com/ExoQuery/ExoQuery/pull/57), [#58](https://github.com/ExoQuery/ExoQuery/pull/58))
+
+### Version 1.7.2.PL (October 20, 2025)
+ ```kotlin
+plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.2.PL" }
+dependencies { implementation("io.exoquery:exoquery-runner-jdbc:1.7.2.PL") }
+ ```
+- **Enhancement**: Kotlin 2.2.20+ support and miscellaneous cleanups ([#52](https://github.com/ExoQuery/ExoQuery/pull/52))
+
 ### Version 1.7.1.PL (September 29, 2025)
  ```kotlin
 plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.1.PL" }

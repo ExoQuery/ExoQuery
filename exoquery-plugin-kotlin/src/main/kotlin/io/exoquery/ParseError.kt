@@ -18,9 +18,26 @@ class LiftingError(val msg: String) : Exception(msg)
 fun liftingError(msg: String): Nothing = throw LiftingError(msg)
 
 class ParseError(val fullMessage: String, val location: CompilerMessageSourceLocation?, val addStackToPrint: Boolean, val stackCount: Int) : Exception(fullMessage) {
+
+  /**
+   * In many situations we want to track the origin of the error to provide better context,
+   * however many functions that need to propagate it should not have access to the original element
+   * to avoid accidental misuse. Therefore we wrap it in this sealed interface to which only this file has access.
+   */
+  sealed interface Origin {
+    companion object {
+      context(CX.Scope)
+      fun from(element: IrElement): Origin = ErrorOriginElement(element, element.location())
+    }
+  }
+  private data class ErrorOriginElement(val element: IrElement, val location: CompilerMessageSourceLocation) : Origin
+
   companion object {
     context(CX.Scope)
-    fun withFullMsg(msg: String, element: IrElement, file: IrFile, location: CompilerMessageSourceLocation, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): ParseError {
+    fun withFullMsg(msg: String, origin: Origin, file: IrFile, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): ParseError {
+      val (element, location) = when (origin) {
+        is ErrorOriginElement -> origin.element to origin.location
+      }
       val fullMsg: String = run {
         val rawExpression =
           try {
@@ -35,12 +52,19 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
 
         val expressionPart =
           element.source()?.let { src ->
+            if (element is IrFile) {
+            """|
+               |------------ Source ------------
+               |File: ${element.fileEntry.name}
+               |""".trimMargin().trimEnd()
+            } else {
             """|
                |------------ Source ------------
                |${src}
                |------------ Raw Expression ------------
                |${rawExpression}
                |""".trimMargin().trimEnd()
+            }
           }
 
         val rawExpressionTree =
@@ -61,11 +85,32 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
             ""
           }
 
+        // If error details not enabled, walk through original error cause
+        // and so long as cause is a ParseError show that
+        fun traceOriginalCauseSummary(t: Throwable?): String =
+          when (t) {
+            null -> ""
+            is ParseError ->
+              t.fullMessage ?:
+                traceOriginalCauseSummary(t.cause).let { summary ->
+                  if (!summary.isBlank())
+                    "----- Caused by: -----\n$summary"
+                  else
+                    ""
+                }
+            else -> ""
+          }
+
         val originalErrorTrace =
           if (errorDetailsEnabled) {
             originalErrorTrace?.let { "\n----------------- Original Cause: -----------------\n${it.stackTraceToString()}\n" } ?: ""
           } else {
-            ""
+            val originalCauseSummary = traceOriginalCauseSummary(originalErrorTrace)
+            if (originalCauseSummary.isNotBlank()) {
+              "\n----------------- Original Cause: -----------------\n${originalCauseSummary}"
+            } else {
+              ""
+            }
           }
 
         val errorDetail =
@@ -119,15 +164,18 @@ private fun tryDump(dump: () -> String): String = try {
 
 context(CX.Scope)
 fun parseErrorFromType(msg: String, expr: IrElement, originalErrorTrace: Throwable? = null): Nothing =
-  throw ParseError.withFullMsg(io.exoquery.plugin.logging.Messages.TypeParseErrorMsg(msg), expr, currentFile, expr.location(), originalErrorTrace)
+  throw ParseError.withFullMsg(io.exoquery.plugin.logging.Messages.TypeParseErrorMsg(msg), ParseError.Origin.from(expr), currentFile, originalErrorTrace)
 
 context(CX.Scope) fun parseErrorAtCurrent(msg: String): Nothing =
-  throw ParseError.withFullMsg(msg, currentExpr, currentFile, currentExpr.location())
+  throw ParseError.withFullMsg(msg, ParseError.Origin.from(currentExpr), currentFile)
 
 context(CX.Scope) fun parseError(msg: String, expr: IrElement, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): Nothing =
-  throw ParseError.withFullMsg(msg, expr, currentFile, expr.location(), originalErrorTrace, showCrossFile)
+  throw ParseError.withFullMsg(msg, ParseError.Origin.from(expr), currentFile, originalErrorTrace, showCrossFile)
+
+context(CX.Scope) fun parseError(msg: String, origin: ParseError.Origin, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): Nothing =
+  throw ParseError.withFullMsg(msg, origin, currentFile, originalErrorTrace, showCrossFile)
 
 context(CX.Scope) fun parseErrorSimple(msg: String, expr: IrElement): Nothing = throw ParseError(msg, expr.location(), errorDetailsEnabled, stackCount)
 
 context(CX.Scope) fun parseErrorSym(expr: IrCall): Nothing =
-  throw ParseError.withFullMsg("Invalid function name or symbol: ${expr.symName}", expr, currentFile, expr.location())
+  throw ParseError.withFullMsg("Invalid function name or symbol: ${expr.symName}", ParseError.Origin.from(expr), currentFile)

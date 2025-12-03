@@ -55,6 +55,7 @@ kotlin {
 
   if (linuxCI) linuxArm64()
   // LinuxCI Needs to know the OSX and MingW dependencies exist even though it does not build them so it can put them in the mmodules-list metadata in maven-central.
+  if (linuxCI || macCI) macosX64()
   if (linuxCI || macCI) macosArm64()
   if (linuxCI || macCI) iosX64()
   if (linuxCI || macCI) iosArm64()

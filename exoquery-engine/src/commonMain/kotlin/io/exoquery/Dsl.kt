@@ -21,8 +21,9 @@ import io.exoquery.annotation.FlatJoin
 import io.exoquery.annotation.FlatJoinLeft
 import io.exoquery.annotation.ParamCtx
 import io.exoquery.annotation.ParamCustom
+import io.exoquery.annotation.ParamCustomImplicit
 import io.exoquery.annotation.ParamCustomValue
-import io.exoquery.annotation.ParamPrimitive
+import io.exoquery.annotation.ParamStaam
 import io.exoquery.annotation.ParamStatic
 import io.exoquery.generation.Code
 import io.exoquery.innerdsl.SqlActionFilterable
@@ -618,7 +619,7 @@ interface CapturedBlock {
     errorCap("Compile time plugin did not transform the tree")
 
   @Dsl
-  @ParamPrimitive
+  @ParamStaam
   fun <T> param(value: T): T =
     errorCap("Compile time plugin did not transform the tree")
 
@@ -629,6 +630,11 @@ interface CapturedBlock {
   @Dsl
   @ParamCustom
   fun <T : Any> paramCustom(value: T, serializer: SerializationStrategy<T>): @ExoValue T =
+    errorCap("Compile time plugin did not transform the tree")
+
+  @Dsl
+  @ParamCustomImplicit
+  fun <T : Any> paramCustom(value: T): @ExoValue T =
     errorCap("Compile time plugin did not transform the tree")
 
   @Dsl
@@ -654,7 +660,7 @@ interface CapturedBlock {
 
   // TODO remove this and introduce the ones above when @SignatureName is available in KMP: https://youtrack.jetbrains.com/issue/KT-52009/Kotlin-binary-signature-name
   @Dsl
-  @ParamPrimitive
+  @ParamStaam
   fun <T : Any> params(values: List<T>): Params<@ExoValue T> =
     errorCap("Compile time plugin did not transform the tree")
 

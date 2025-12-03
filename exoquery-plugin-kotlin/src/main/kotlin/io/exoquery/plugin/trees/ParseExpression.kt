@@ -206,17 +206,19 @@ object ParseExpression {
               // serializer should be the 2nd arg i.e. paramCustom(value, serializer)
               ParamBind.Type.ParamCustom(args.lastOrNull() ?: parseError("ParamCustom annotation must have a second argument that is a class-reference (e.g. PureFunction::class)", this), paramValue.type)
             }
+            this.ownerHasAnnotation<io.exoquery.annotation.ParamCustomImplicit>() -> {
+              ParamBind.Type.ParamCustomImplicit(paramValue.type)
+            }
             this.ownerHasAnnotation<io.exoquery.annotation.ParamCustomValue>() -> {
               ParamBind.Type.ParamCustomValue(paramValue)
             }
             this.ownerHasAnnotation<io.exoquery.annotation.ParamCtx>() -> {
               ParamBind.Type.ParamCtx(paramValue.type)
             }
-            this.ownerHasAnnotation<io.exoquery.annotation.ParamPrimitive>() -> {
-              getSerializerForType(expr.type)?.let { ParamBind.Type.ParamStatic(it) }
-                ?: getSerializerForValueClass(expr.type, expr)?.let { ParamBind.Type.ParamCustom(it, expr.type) }
+            this.ownerHasAnnotation<io.exoquery.annotation.ParamStaam>() -> {
+              getSingleSerializerForLeafType(expr.type, ParseError.Origin.from(expr))
                 ?: parseError(
-                  "Could not find primitive-serializer for type: ${expr.type.dumpKotlinLike()}. Primitive serializers are only defined for: Int, Long, Float, Double, String, Boolean, and the kotlinx LocalDate, LocalTime, LocalDateTime, and Instant as well as value-classes.",
+                  Messages.usedParamWrongMessage(expr.type.dumpKotlinLike()),
                   expr
                 )
             }
@@ -306,10 +308,9 @@ object ParseExpression {
               val classId = staticRef.classType.classId() ?: parseError("Could not find classId for ParamStatic annotation", this)
               ParamBind.Type.ParamListStatic(classId)
             }
-            this.ownerHasAnnotation<io.exoquery.annotation.ParamPrimitive>() -> {
+            this.ownerHasAnnotation<io.exoquery.annotation.ParamStaam>() -> {
               val irType = this.typeArguments.firstOrNull() ?: parseError("params-call must have a single type argument", this)
-              getSerializerForType(irType)?.let { ParamBind.Type.ParamListStatic(it) }
-                ?: getSerializerForValueClass(expr.type, expr)?.let { ParamBind.Type.ParamListCustom(it, expr.type) }
+              getMultiSerializerForLeafType(irType, ParseError.Origin.from(expr))
                 ?: parseError(
                   Messages.usedParamWrongMessage(irType.dumpKotlinLike()),
                   this

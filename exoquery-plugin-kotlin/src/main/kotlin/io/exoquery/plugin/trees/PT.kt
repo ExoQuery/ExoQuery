@@ -1,5 +1,7 @@
 package io.exoquery.plugin.trees
 
+import org.jetbrains.kotlin.name.FqName
+
 // Common Dsl Paths used for extracting/calling Ir. Want to keep the name of this brief in order to minimize syntactic noise
 object PT {
   val io_exoquery_util_scaffoldCapFunctionQuery = "io.exoquery.util.scaffoldCapFunctionQuery"
@@ -25,4 +27,6 @@ object PT {
 
   // this matches the function-call Runtimes.Empty which is needed for an SqlQuery/SqlExpression to be uprootable
   val EmptyRuntimes = "Empty"
+
+  val controller_SqlJsonValue = FqName("io.exoquery.controller.SqlJsonValue")
 }

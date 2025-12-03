@@ -87,12 +87,17 @@ annotation class ParamCtx
 @ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-annotation class ParamPrimitive
+annotation class ParamStaam
 
 @ExoInternal
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class ParamCustom
+
+@ExoInternal
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.BINARY)
+annotation class ParamCustomImplicit
 
 @ExoInternal
 @Target(AnnotationTarget.FUNCTION)
