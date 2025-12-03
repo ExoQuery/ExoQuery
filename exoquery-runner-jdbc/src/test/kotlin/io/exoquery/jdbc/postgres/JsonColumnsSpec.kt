@@ -34,6 +34,7 @@ class JsonColumnsSpec : FreeSpec({
     @Serializable
     data class JsonbExample(val id: Int, val value: Person)
 
+    val joe = Person("Joe", 123)
     val jim = Person("Jim", 456)
 
     "json" - {
@@ -82,6 +83,13 @@ class JsonColumnsSpec : FreeSpec({
     "jsonb" - {
       "select product" {
         sql { Table<JsonbExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+          JsonbExample(1, Person("Joe", 123))
+        )
+      }
+      "select product with filter+params" {
+        sql {
+          Table<JsonbExample>().filter { it.value in params(listOf(joe, jim)) }
+        }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
           JsonbExample(1, Person("Joe", 123))
         )
       }

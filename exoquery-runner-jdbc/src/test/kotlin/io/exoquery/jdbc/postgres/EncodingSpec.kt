@@ -33,12 +33,15 @@ class EncodingSpec: FreeSpec({
           )
         }
       }.buildFor.Postgres().runOn(ctx)
-      val res =
-        sql { Table<JavaTestEntity>() }.buildFor.Postgres()
-          .runOn(ctx)
-          .let { it.firstOrNull() ?: error("Expected one element list but got: ${it}") }
+      val res = sql { Table<JavaTestEntity>() }.buildFor.Postgres().runOn(ctx).let { it.firstOrNull() ?: error("Expected one element list but got: ${it}") }
       verify(res, ent)
     }
-
+    "insert - setParams" {
+      sql {
+        insert<JavaTestEntity> { setParams(ent) }
+      }.buildFor.Postgres().runOn(ctx)
+      val res = sql { Table<JavaTestEntity>() }.buildFor.Postgres().runOn(ctx).let { it.firstOrNull() ?: error("Expected one element list but got: ${it}") }
+      verify(res, ent)
+    }
   }
 })
