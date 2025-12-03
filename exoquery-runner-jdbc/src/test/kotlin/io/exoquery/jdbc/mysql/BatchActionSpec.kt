@@ -2,12 +2,13 @@ package io.exoquery.jdbc.mysql
 
 import io.exoquery.testdata.Person
 import io.exoquery.MySqlDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.jdbc.allPeople
 import io.exoquery.jdbc.batchDeletePeople
 import io.exoquery.jdbc.batchInsertPeople
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.george
 import io.exoquery.jdbc.insertAllPeople
 import io.exoquery.jdbc.insertPerson
@@ -20,8 +21,9 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 class BatchActionSpec : FreeSpec({
   val ctx = TestDatabases.mysql
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       ALTER TABLE Person AUTO_INCREMENT = 1;

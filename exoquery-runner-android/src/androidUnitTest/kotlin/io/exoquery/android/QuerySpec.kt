@@ -4,9 +4,10 @@ import io.exoquery.testdata.Address
 import io.exoquery.Ord
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.testdata.Robot
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.printing.pprintMisc
 import junit.framework.TestCase.assertEquals
 import kotlinx.serialization.Serializable
@@ -29,9 +30,10 @@ infix fun <T> List<T>.shouldContainExactlyInAnyOrder(expected: List<T>) {
 class QuerySpec {
   private val ctx = TestDatabase.ctx
 
+  @OptIn(TerpalSqlUnsafe::class)
   @Before
   fun setup(): Unit = runBlocking {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

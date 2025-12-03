@@ -2,9 +2,10 @@ package io.exoquery.jdbc.postgres
 
 import io.exoquery.testdata.Person
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.transaction
 import io.exoquery.jdbc.runOn
 import io.kotest.assertions.throwables.shouldThrow
@@ -14,8 +15,9 @@ import io.kotest.matchers.shouldBe
 class TransactionSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

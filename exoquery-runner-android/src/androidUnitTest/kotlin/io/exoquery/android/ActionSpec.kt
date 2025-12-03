@@ -2,9 +2,10 @@ package io.exoquery.android
 
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.sql
 import io.exoquery.controller.android.AndroidDatabaseController
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -15,9 +16,10 @@ import org.robolectric.RobolectricTestRunner
 class ActionSpec {
   private val ctx = TestDatabase.ctx
 
+  @OptIn(TerpalSqlUnsafe::class)
   @Before
   fun setup(): Unit = runBlocking {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
             DELETE FROM Person;
             DELETE FROM Address;
@@ -119,9 +121,9 @@ class ActionSpec {
     ctx.people().isEmpty() shouldBe true
   }
 
-
+  @OptIn(TerpalSqlUnsafe::class)
   private suspend fun AndroidDatabaseController.insertGeorgeAndJim() =
-    this.runActions(
+    this.runActionsUnsafe(
       """
             INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'George', 'Googs', 555);
             INSERT INTO Person (id, firstName, lastName, age) VALUES (2, 'Jim', 'Roogs', 222);

@@ -4,8 +4,9 @@ import io.exoquery.testdata.Person
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.r2dbc.joe
 import io.exoquery.r2dbc.people
 import io.exoquery.controller.r2dbc.R2dbcControllers
@@ -18,8 +19,9 @@ import io.kotest.matchers.shouldBe
 class FreeClauseSpec : FreeSpec({
   val ctx = R2dbcControllers.Postgres(connectionFactory = TestDatabasesR2dbc.postgres)
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       TRUNCATE TABLE Person RESTART IDENTITY CASCADE;
       TRUNCATE TABLE Address RESTART IDENTITY CASCADE;
@@ -37,8 +39,9 @@ class FreeClauseSpec : FreeSpec({
     ctx.people() shouldBe listOf(joe)
   }
 
+  @OptIn(TerpalSqlUnsafe::class)
   "whole-body select" {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       INSERT INTO Person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 111)
       """

@@ -3,10 +3,11 @@ package io.exoquery.r2dbc.postgres
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.testdata.Robot
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
 import io.exoquery.r2dbc.streamOn
 import io.kotest.core.spec.style.FreeSpec
@@ -17,8 +18,9 @@ import kotlinx.coroutines.flow.toList
 class StreamSpec : FreeSpec({
   val ctx = R2dbcControllers.Postgres(connectionFactory = TestDatabasesR2dbc.postgres)
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeSpec {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

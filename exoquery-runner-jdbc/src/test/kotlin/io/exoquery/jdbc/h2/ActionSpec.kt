@@ -5,11 +5,12 @@ import io.exoquery.H2Dialect
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.sql
 import io.exoquery.controller.jdbc.JdbcController
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.joe
 import io.exoquery.jdbc.people
 import io.exoquery.jdbc.runOn
 import io.exoquery.SqlServerDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
@@ -17,8 +18,9 @@ import io.kotest.matchers.shouldBe
 class ActionSpec : FreeSpec({
   val ctx = TestDatabases.h2
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       ALTER TABLE Person ALTER COLUMN id RESTART WITH 1;
@@ -105,8 +107,9 @@ class ActionSpec : FreeSpec({
   val george = Person(1, "George", "Googs", 555)
   val jim = Person(2, "Jim", "Roogs", 222)
 
+  @OptIn(TerpalSqlUnsafe::class)
   suspend fun JdbcController.insertGeorgeAndJim() =
-    this.runActions(
+    this.runActionsUnsafe(
       """
         INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'George', 'Googs', 555);
         INSERT INTO Person (id, firstName, lastName, age) VALUES (2, 'Jim', 'Roogs', 222);

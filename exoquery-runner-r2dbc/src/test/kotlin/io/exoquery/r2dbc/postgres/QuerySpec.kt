@@ -4,10 +4,11 @@ import io.exoquery.testdata.Address
 import io.exoquery.Ord
 import io.exoquery.testdata.Person
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.testdata.Robot
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
 import io.exoquery.runOn
 import io.kotest.core.spec.style.FreeSpec
@@ -20,8 +21,9 @@ class QuerySpec : FreeSpec({
   // Build a Postgres R2DBC controller from the embedded Postgres connection factory
   val ctx = R2dbcControllers.Postgres(connectionFactory = TestDatabasesR2dbc.postgres)
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeSpec {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

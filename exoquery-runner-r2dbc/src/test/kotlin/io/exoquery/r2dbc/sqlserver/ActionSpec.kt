@@ -3,10 +3,11 @@ package io.exoquery.r2dbc.sqlserver
 import io.exoquery.testdata.Person
 import io.exoquery.SqlAction
 import io.exoquery.SqlServerDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.r2dbc.joe
 import io.exoquery.r2dbc.people
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
@@ -18,8 +19,9 @@ import io.kotest.matchers.shouldBe
 class ActionSpec : FreeSpec({
   val ctx = R2dbcControllers.SqlServer(connectionFactory = TestDatabasesR2dbc.sqlServer)
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       TRUNCATE TABLE Person; DBCC CHECKIDENT ('Person', RESEED, 1);
       DELETE FROM Address;
@@ -100,8 +102,9 @@ class ActionSpec : FreeSpec({
   val george = Person(1, "George", "Googs", 555)
   val jim = Person(2, "Jim", "Roogs", 222)
 
+  @OptIn(TerpalSqlUnsafe::class)
   suspend fun R2dbcController.insertGeorgeAndJim() =
-    this.runActions(
+    this.runActionsUnsafe(
       """
         SET IDENTITY_INSERT Person ON
         INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'George', 'Googs', 555)

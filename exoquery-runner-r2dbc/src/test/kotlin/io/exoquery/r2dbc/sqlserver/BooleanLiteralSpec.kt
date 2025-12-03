@@ -1,8 +1,9 @@
 package io.exoquery.r2dbc.sqlserver
 
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
 import io.exoquery.runOn
 import io.exoquery.testdata.Person
@@ -12,8 +13,9 @@ import io.kotest.matchers.shouldBe
 class BooleanLiteralSpec : FreeSpec({
   val ctx = R2dbcControllers.SqlServer(connectionFactory = TestDatabasesR2dbc.sqlServer)
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeSpec {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       // Note when doing 'SET IDENTITY_INSERT Person ON INSERT INTO Person' DONT put ';' because then the statement will be executed in a different run and the setting will not take
       """
       DELETE FROM Person;

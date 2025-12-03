@@ -1,7 +1,8 @@
 package io.exoquery
 
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.jdbc.JdbcControllers
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.runOn
 import io.exoquery.testdata.Person
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
@@ -14,10 +15,10 @@ fun main() {
     Table<Person>().filter { p -> p.lastName == "Ioffe" }
   }
 
+  @OptIn(TerpalSqlUnsafe::class)
   runBlocking {
-
     val postgres = JdbcControllers.Postgres(ds)
-    postgres.runActions(
+    postgres.runActionsUnsafe(
       """
       CREATE TABLE Person (
         id SERIAL PRIMARY KEY,

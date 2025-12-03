@@ -79,12 +79,11 @@ CREATE TABLE EncodingTestEntity
     customOpt    VARCHAR(255)
 );
 
-CREATE TABLE JavaTestEntity
-(
-    bigDecimalMan   DECIMAL(5, 2),
-    javaUtilDateMan DATETIME,
-    uuidMan         VARCHAR(255),
-    bigDecimalOpt   DECIMAL(5, 2),
-    javaUtilDateOpt DATETIME,
-    uuidOpt         VARCHAR(255)
+CREATE TABLE JavaTestEntity(
+    bigDecimalMan DECIMAL(5,2),
+    javaUtilDateMan DATETIMEOFFSET, -- java.util.Date i.e. legacy date with time zone
+    uuidMan VARCHAR(255),
+    bigDecimalOpt DECIMAL(5,2),
+    javaUtilDateOpt DATETIMEOFFSET, -- java.util.Date i.e. legacy date with time zone
+    uuidOpt VARCHAR(255)
 );

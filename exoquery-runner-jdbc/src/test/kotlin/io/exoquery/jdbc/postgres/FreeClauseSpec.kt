@@ -4,9 +4,10 @@ import io.exoquery.testdata.Person
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.joe
 import io.exoquery.jdbc.people
 import io.exoquery.jdbc.runOn
@@ -17,8 +18,9 @@ import io.kotest.matchers.shouldBe
 class FreeClauseSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       TRUNCATE TABLE Person RESTART IDENTITY CASCADE;
       TRUNCATE TABLE Address RESTART IDENTITY CASCADE;
@@ -38,7 +40,8 @@ class FreeClauseSpec : FreeSpec({
   }
 
   "whole-body select" {
-    ctx.runActions(
+    @OptIn(TerpalSqlUnsafe::class)
+    ctx.runActionsUnsafe(
       """
       INSERT INTO Person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 111)
       """

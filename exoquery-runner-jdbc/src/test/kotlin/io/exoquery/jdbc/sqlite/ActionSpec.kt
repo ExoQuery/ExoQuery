@@ -2,10 +2,11 @@ package io.exoquery.jdbc.sqlite
 
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.sql
 import io.exoquery.controller.jdbc.JdbcController
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.joe
 import io.exoquery.jdbc.people
 import io.exoquery.jdbc.runOn
@@ -16,8 +17,9 @@ import io.kotest.matchers.shouldBe
 class ActionSpec : FreeSpec({
   val ctx = TestDatabases.sqlite
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       // The `test` table is used to determine column increments, drop it to reset the IDs. However, in case it doesn't exist yet we need to create it.
       """
       CREATE TABLE test(id INTEGER PRIMARY KEY AUTOINCREMENT); DROP TABLE test;
@@ -96,8 +98,9 @@ class ActionSpec : FreeSpec({
   val george = Person(1, "George", "Googs", 555)
   val jim = Person(2, "Jim", "Roogs", 222)
 
+  @OptIn(TerpalSqlUnsafe::class)
   suspend fun JdbcController.insertGeorgeAndJim() =
-    this.runActions(
+    this.runActionsUnsafe(
       """
         INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'George', 'Googs', 555);
         INSERT INTO Person (id, firstName, lastName, age) VALUES (2, 'Jim', 'Roogs', 222);

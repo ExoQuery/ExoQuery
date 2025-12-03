@@ -3,7 +3,9 @@ package io.exoquery.jdbc.postgres
 import io.exoquery.*
 import kotlinx.serialization.Serializable
 import io.exoquery.controller.SqlJsonValue
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlInternal
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -12,8 +14,9 @@ import io.kotest.matchers.shouldBe
 class JsonColumnsSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM JsonExample;
       DELETE FROM JsonbExample;

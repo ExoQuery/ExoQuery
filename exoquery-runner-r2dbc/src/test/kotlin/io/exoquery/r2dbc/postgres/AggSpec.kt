@@ -1,7 +1,8 @@
 package io.exoquery.r2dbc.postgres
 
 import io.exoquery.PostgresDialect
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
 import io.exoquery.runOn
@@ -13,8 +14,9 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 class AggSpec : FreeSpec({
   val ctx = R2dbcControllers.Postgres(connectionFactory = TestDatabasesR2dbc.postgres)
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeSpec {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

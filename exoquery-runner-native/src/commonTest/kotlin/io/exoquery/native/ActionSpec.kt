@@ -3,9 +3,10 @@ package io.exoquery.native
 import io.exoquery.IllegalSqlOperation
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.sql
 import io.exoquery.controller.native.NativeDatabaseController
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.postgres.people
 import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
@@ -24,9 +25,10 @@ infix fun <T> List<T>.shouldContainExactlyInAnyOrder(expected: List<T>) {
 class ActionSpec {
   private val ctx = TestDatabase.ctx
 
+  @OptIn(TerpalSqlUnsafe::class)
   @BeforeTest
   fun setup(): Unit = runBlocking {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;
@@ -35,8 +37,9 @@ class ActionSpec {
     )
   }
 
+  @OptIn(TerpalSqlUnsafe::class)
   suspend fun NativeDatabaseController.insertGeorgeAndJim() =
-    this.runActions(
+    this.runActionsUnsafe(
       """
         INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'George', 'Googs', 555);
         INSERT INTO Person (id, firstName, lastName, age) VALUES (2, 'Jim', 'Roogs', 222);

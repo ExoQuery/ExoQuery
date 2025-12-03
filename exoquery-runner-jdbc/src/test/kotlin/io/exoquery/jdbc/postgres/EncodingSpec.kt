@@ -1,7 +1,9 @@
 package io.exoquery.jdbc.postgres
 
 import io.exoquery.*
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlInternal
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.jdbc.encodingdata.JavaTestEntity
 import io.exoquery.jdbc.encodingdata.verify
@@ -10,8 +12,9 @@ import io.kotest.core.spec.style.FreeSpec
 class EncodingSpec: FreeSpec({
   val ctx = TestDatabases.postgres
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM JavaTestEntity
       """

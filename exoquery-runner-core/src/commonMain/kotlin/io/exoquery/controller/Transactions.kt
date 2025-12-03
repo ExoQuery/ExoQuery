@@ -8,6 +8,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 
 suspend fun <T, Session, Stmt, ExecutionOpts> ControllerTransactional<Session, Stmt, ExecutionOpts>.transaction(executionOptions: ExecutionOpts, block: suspend CommonTransactionScope<ExecutionOpts>.() -> T): T =
+  @OptIn(TerpalSqlInternal::class)
   withTransactionScope(executionOptions) {
     val coroutineScope = this
     block(CommonTransactionScope<ExecutionOpts>(coroutineScope, this@transaction))
@@ -21,6 +22,7 @@ class CommonTransactionScope<ExecutionOpts>(private val scope: CoroutineScope, p
   internal val ctx: Controller<ExecutionOpts> = ctxInput
 
   suspend fun <T> SqlCompiledQuery<T>.runOnTransaction(serializer: KSerializer<T>, options: ExecutionOpts = ctx.DefaultOpts()) =
+    @OptIn(TerpalSqlInternal::class)
     ctx.run(this.toControllerQuery(serializer), options)
 
   inline suspend fun <reified T : Any> SqlCompiledQuery<T>.runOnTransaction(options: ExecutionOpts = ctx.DefaultOpts()) =

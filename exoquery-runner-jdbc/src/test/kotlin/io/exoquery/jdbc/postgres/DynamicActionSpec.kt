@@ -5,8 +5,9 @@ import io.exoquery.PostgresDialect
 import io.exoquery.SqlExpression
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.annotation.SqlDynamic
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.george
 import io.exoquery.jdbc.insertAllPeople
 import io.exoquery.jdbc.people
@@ -18,8 +19,9 @@ import io.kotest.matchers.shouldBe
 class DynamicActionSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       TRUNCATE TABLE Person RESTART IDENTITY CASCADE;
       TRUNCATE TABLE Address RESTART IDENTITY CASCADE;

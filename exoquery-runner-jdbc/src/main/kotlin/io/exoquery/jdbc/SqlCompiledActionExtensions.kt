@@ -8,6 +8,7 @@ import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.jdbc.JdbcExecutionOptions
 import io.exoquery.printing.MessagesRuntime
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import javax.sql.DataSource
@@ -50,25 +51,24 @@ inline suspend fun <reified Input, reified Output> SqlCompiledAction<Input, Outp
   this.runOn(controller, serializer<Output>())
 }
 
-// TODO Streaming not implemented yet in terpal for action-returning, uncomment this when done
-//suspend fun <Input, Output> SqlCompiledAction<Input, Output>.streamOn(database: JdbcController, serializer: KSerializer<Output>, options: JdbcExecutionOptions = JdbcExecutionOptions()): Flow<Output> {
-//  val actionKind = this.actionKind
-//  val dbType = identityDatabaseType(database)
-//  return when (val action = this.toControllerAction(serializer)) {
-//    is ControllerAction ->
-//      action.runOn(database, options) as Flow<Output>
-//    is ControllerActionReturning.Id<Output> -> {
-//      checkActionKindValidity(actionKind, dbType)
-//      action.streamOn(database)
-//    }
-//    is ControllerActionReturning.Row<Output> -> {
-//      when {
-//        database.isH2() ->
-//          throw IllegalStateException("H2 Server does not support the action.returning(...) API. Only `returningKeys` can be used with H2 and only in INSERT and UPDATE queries.\n${MessagesRuntime.ReturningExplanation}")
-//      }
-//      action.streamOn(database)
-//    }
-//  }
-//}
-//inline fun <Input, reified Output> SqlCompiledAction<Input, Output>.streamOn(database: JdbcController, options: JdbcExecutionOptions = JdbcExecutionOptions()): Flow<Output> =
-//  this.streamOn(database, serializer<Output>(), options)
+suspend fun <Input, Output> SqlCompiledAction<Input, Output>.streamOn(database: JdbcController, serializer: KSerializer<Output>, options: JdbcExecutionOptions = JdbcExecutionOptions()): Flow<Output> {
+  val actionKind = this.actionKind
+  val dbType = identityDatabaseType(database)
+  return when (val action = this.toControllerAction(serializer)) {
+    is ControllerAction ->
+      flowOf(action.runOn(database, options)) as Flow<Output>
+    is ControllerActionReturning.Id<Output> -> {
+      checkActionKindValidity(actionKind, dbType)
+      action.streamOn(database)
+    }
+    is ControllerActionReturning.Row<Output> -> {
+      when {
+        database.isH2() ->
+          throw IllegalStateException("H2 Server does not support the action.returning(...) API. Only `returningKeys` can be used with H2 and only in INSERT and UPDATE queries.\n${MessagesRuntime.ReturningExplanation}")
+      }
+      action.streamOn(database)
+    }
+  }
+}
+inline suspend fun <Input, reified Output> SqlCompiledAction<Input, Output>.streamOn(database: JdbcController, options: JdbcExecutionOptions = JdbcExecutionOptions()): Flow<Output> =
+  this.streamOn(database, serializer<Output>(), options)

@@ -3,8 +3,9 @@ package io.exoquery.r2dbc.postgres
 import io.exoquery.testdata.PersonId
 import io.exoquery.testdata.PersonWithIdCtx
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.r2dbc.peopleWithId
 import io.exoquery.r2dbc.peopleWithIdCtx
 import io.exoquery.testdata.AddressWithId
@@ -19,8 +20,9 @@ import io.kotest.matchers.shouldBe
 class ColumnEncodingSpec : FreeSpec({
   val ctx = TestDatabasesR2dbc.PostgresContextForEncoding
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       TRUNCATE TABLE Person RESTART IDENTITY CASCADE;
       TRUNCATE TABLE Address RESTART IDENTITY CASCADE;

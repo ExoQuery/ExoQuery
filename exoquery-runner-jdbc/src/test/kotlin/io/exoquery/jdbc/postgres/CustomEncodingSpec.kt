@@ -4,9 +4,10 @@ import io.exoquery.jdbc.TestDatabases
 import io.exoquery.annotation.ExoField
 import io.exoquery.annotation.ExoValue
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.runOn
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import kotlinx.serialization.KSerializer
@@ -38,8 +39,9 @@ object FirstNameAnnotatedSerializer: KSerializer<FirstNameAnnotated> {
 class CustomEncodingSpec : FreeSpec({
   val ctx = TestDatabases.postgres
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       TRUNCATE TABLE Person RESTART IDENTITY CASCADE;
       TRUNCATE TABLE Address RESTART IDENTITY CASCADE;

@@ -3,12 +3,13 @@ package io.exoquery.r2dbc.mysql
 import io.exoquery.testdata.Person
 import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.r2dbc.insertPerson
 import io.exoquery.r2dbc.joe
 import io.exoquery.r2dbc.people
 import io.exoquery.r2dbc.jdbc.TestDatabasesR2dbc
 import io.exoquery.MySqlDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.r2dbc.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -16,8 +17,9 @@ import io.kotest.matchers.shouldBe
 class ActionOnConflictSpec : FreeSpec({
   val ctx = R2dbcControllers.Mysql(connectionFactory = TestDatabasesR2dbc.mysql)
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
      DELETE FROM Person;
       ALTER TABLE Person AUTO_INCREMENT = 1;

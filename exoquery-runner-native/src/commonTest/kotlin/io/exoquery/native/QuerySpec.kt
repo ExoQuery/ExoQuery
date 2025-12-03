@@ -4,9 +4,10 @@ import io.exoquery.testdata.Address
 import io.exoquery.Ord
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.testdata.Robot
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlin.test.BeforeTest
@@ -16,9 +17,10 @@ import kotlin.to
 class QuerySpec {
   private val ctx = TestDatabase.ctx
 
+  @OptIn(TerpalSqlUnsafe::class)
   @BeforeTest
   fun setup() = runBlocking {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

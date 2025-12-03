@@ -2,9 +2,10 @@ package io.exoquery.android
 
 import io.exoquery.testdata.Person
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.transaction
 import io.exoquery.PostgresDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.runner.RunWith
@@ -16,9 +17,10 @@ class TransactionSpec {
 
   private val ctx = TestDatabase.ctx
 
+  @OptIn(TerpalSqlUnsafe::class)
   @Before
   fun setup(): Unit = runBlocking {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
             DELETE FROM Person;
             DELETE FROM Address;

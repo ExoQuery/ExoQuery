@@ -2,12 +2,13 @@ package io.exoquery.jdbc.sqlite
 
 import io.exoquery.testdata.Person
 import io.exoquery.SqliteDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.jdbc.allPeople
 import io.exoquery.jdbc.batchDeletePeople
 import io.exoquery.jdbc.batchInsertPeople
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.george
 import io.exoquery.jdbc.insertAllPeople
 import io.exoquery.jdbc.insertPerson
@@ -20,8 +21,9 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 class BatchActionSpec : FreeSpec({
   val ctx = TestDatabases.sqlite
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       // The `test` table is used to determine column increments, drop it to reset the IDs. However, in case it doesn't exist yet we need to create it.
       """
       CREATE TABLE test(id INTEGER PRIMARY KEY AUTOINCREMENT); DROP TABLE test;

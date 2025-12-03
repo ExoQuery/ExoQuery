@@ -4,13 +4,14 @@ import io.exoquery.testdata.Person
 import io.exoquery.PostgresDialect
 import io.exoquery.SqlAction
 import io.exoquery.SqlServerDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.jdbc.allPeople
 import io.exoquery.jdbc.batchDeletePeople
 import io.exoquery.jdbc.batchInsertPeople
 import io.exoquery.sql
 import io.exoquery.controller.jdbc.JdbcController
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.george
 import io.exoquery.jdbc.insertPerson
 import io.exoquery.jdbc.joe
@@ -22,8 +23,9 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 class BatchActionSpec : FreeSpec({
   val ctx = TestDatabases.sqlServer
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       TRUNCATE TABLE Person; DBCC CHECKIDENT ('Person', RESEED, 1);
       DELETE FROM Address;

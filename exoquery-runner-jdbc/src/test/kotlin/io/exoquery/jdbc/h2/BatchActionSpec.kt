@@ -2,13 +2,14 @@ package io.exoquery.jdbc.h2
 
 import io.exoquery.testdata.Person
 import io.exoquery.H2Dialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.jdbc.allPeople
 import io.exoquery.jdbc.batchDeletePeople
 import io.exoquery.jdbc.batchInsertPeople
 import io.exoquery.sql
 import io.exoquery.controller.jdbc.JdbcController
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.george
 import io.exoquery.jdbc.insertAllPeople
 import io.exoquery.jdbc.insertPerson
@@ -21,8 +22,9 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 class BatchActionSpec : FreeSpec({
   val ctx = TestDatabases.h2
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       ALTER TABLE Person ALTER COLUMN id RESTART WITH 1;
@@ -185,15 +187,17 @@ class BatchActionSpec : FreeSpec({
   val allPeople = people + george
   val george = Person(1, "George", "Googs", 555)
 
+  @OptIn(TerpalSqlUnsafe::class)
   suspend fun JdbcController.insertPerson(person: Person) =
-    this.runActions(
+    this.runActionsUnsafe(
       """
         INSERT INTO Person (id, firstName, lastName, age) VALUES (${person.id}, '${person.firstName}', '${person.lastName}', ${person.age});
       """.trimIndent()
     )
 
+  @OptIn(TerpalSqlUnsafe::class)
   suspend fun JdbcController.insertAllPeople() =
-    this.runActions(
+    this.runActionsUnsafe(
       """
         INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'George', 'Googs', 555);
         INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'Joe', 'Bloggs', 111);

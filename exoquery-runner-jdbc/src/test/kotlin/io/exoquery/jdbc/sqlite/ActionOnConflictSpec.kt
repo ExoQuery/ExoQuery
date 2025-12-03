@@ -1,10 +1,11 @@
 package io.exoquery.jdbc.sqlite
 
 import io.exoquery.SqliteDialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.testdata.Person
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.insertPerson
 import io.exoquery.jdbc.joe
 import io.exoquery.jdbc.people
@@ -15,8 +16,9 @@ import io.kotest.matchers.shouldBe
 class ActionOnConflictSpec : FreeSpec({
   val ctx = TestDatabases.sqlite
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       CREATE TABLE test(id INTEGER PRIMARY KEY AUTOINCREMENT); DROP TABLE test;
       DELETE FROM Person;

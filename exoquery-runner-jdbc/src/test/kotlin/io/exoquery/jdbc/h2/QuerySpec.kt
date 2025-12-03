@@ -4,10 +4,11 @@ import io.exoquery.testdata.Address
 import io.exoquery.Ord
 import io.exoquery.testdata.Person
 import io.exoquery.H2Dialect
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.testdata.Robot
 import io.exoquery.jdbc.TestDatabases
 import io.exoquery.sql
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -18,8 +19,9 @@ import kotlin.to
 class QuerySpec : FreeSpec({
   val ctx = TestDatabases.h2
 
+  @OptIn(TerpalSqlUnsafe::class)
   beforeSpec {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;
