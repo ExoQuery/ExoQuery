@@ -219,6 +219,7 @@ interface SqlIdiom : HasPhasePrinting {
       "toDouble" -> +"CAST(${head.token} AS DOUBLE PRECISION)"
       "toFloat" -> +"CAST(${head.token} AS REAL)"
       "toBoolean" -> +"CAST(${head.token} AS BOOLEAN)"
+      "toBigDecimal" -> +"CAST(${head.token} AS DECIMAL)"
       "toString" -> +"${head.token}"
       else -> throw IllegalArgumentException("Unknown conversion function: ${name}")
     }
@@ -234,6 +235,7 @@ interface SqlIdiom : HasPhasePrinting {
       name == "toFloat" && !isKotlinSynthetic -> +"CAST(${head.token} AS REAL)"
       name == "toBoolean" -> +"CAST(${head.token} AS BOOLEAN)"
       name == "toString" -> +"CAST(${head.token} AS ${varcharType()})"
+      name == "toBigDecimal" -> +"CAST(${head.token} AS DECIMAL)"
       // toInt, toLong, toShort reply in implicit casting
       else -> +"${head.token}"
     }
@@ -247,7 +249,7 @@ interface SqlIdiom : HasPhasePrinting {
       name == "toShort" && !isKotlinSynthetic -> +"CAST(${head.token} AS SMALLINT)"
       name == "toBoolean" -> +"CAST(${head.token} AS BOOLEAN)"
       name == "toString" -> +"CAST(${head.token} AS ${varcharType()})"
-      // toFloat, toDouble reply in implicit casting
+      // toFloat, toDouble, toBigDecimal reply in implicit casting
       else -> +"${head.token}"
     }
   }
@@ -255,7 +257,6 @@ interface SqlIdiom : HasPhasePrinting {
   // Certain dialects require varchar sizes so allow this to be overridden
   fun varcharType(): Token = "VARCHAR".token
 
-  // TODO needs lots of refinement
   val XR.MethodCall.token
     get(): Token = run {
       val argsToken = (listOf(head) + args).map { it -> it.token }.mkStmt()

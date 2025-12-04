@@ -4,7 +4,11 @@ import io.exoquery.jdbc.TestDatabases
 import io.exoquery.sql
 import io.exoquery.runOn
 import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 
 class CastingSpec : FreeSpec({
   val ctx = TestDatabases.postgres
@@ -12,6 +16,22 @@ class CastingSpec : FreeSpec({
   "Int to String" {
     val q = sql.select { 1.toString() }
     q.buildFor.Postgres().runOn(ctx).first() shouldBe "1"
+  }
+
+  @Serializable
+  data class Wrapper(@Contextual val value: BigDecimal)
+
+  "Int to BigDecimal" {
+    val q = sql.select { Wrapper(1.toBigDecimal()) }
+    q.buildFor.Postgres().runOn(ctx).first().value shouldBeEqualIgnoringScale BigDecimal(1)
+  }
+  "Float to BigDecimal" {
+    val q = sql.select { Wrapper(1.1f.toBigDecimal()) }
+    q.buildFor.Postgres().runOn(ctx).first().value shouldBeEqualIgnoringScale BigDecimal("1.1")
+  }
+  "Double to BigDecimal" {
+    val q = sql.select { Wrapper(1.1.toBigDecimal()) }
+    q.buildFor.Postgres().runOn(ctx).first().value shouldBeEqualIgnoringScale BigDecimal("1.1")
   }
 
   "String to Long" {

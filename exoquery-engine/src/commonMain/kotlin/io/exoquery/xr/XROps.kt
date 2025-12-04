@@ -365,6 +365,7 @@ object CID {
   val kotlin_Boolean = XR.ClassId("kotlin.Boolean")
   val exoquery_SqlQuery = XR.ClassId("io.exoquery.SqlQuery")
   val exoquery_Params = XR.ClassId("io.exoquery.Params")
+  val java_BigDecimal = XR.ClassId("java.math.BigDecimal")
 }
 
 fun XR.ClassId.isSqlQuery(): Boolean =
@@ -384,19 +385,19 @@ fun XR.ClassId.isWholeNumber(): Boolean =
 
 fun XR.ClassId.isFloatingPoint(): Boolean =
   when (this) {
-    CID.kotlin_Double, CID.kotlin_Float -> true
+    CID.kotlin_Double, CID.kotlin_Float, CID.java_BigDecimal -> true
     else -> false
   }
 
 fun XR.ClassId.isNumeric(): Boolean =
   when (this) {
-    CID.kotlin_Int, CID.kotlin_Long, CID.kotlin_Short, CID.kotlin_Double, CID.kotlin_Float -> true
+    CID.kotlin_Int, CID.kotlin_Long, CID.kotlin_Short, CID.kotlin_Double, CID.kotlin_Float, CID.java_BigDecimal -> true
     else -> false
   }
 
 fun String.isConverterFunction(): Boolean =
   when (this) {
-    "toLong", "toInt", "toShort", "toDouble", "toFloat", "toBoolean", "toString" -> true
+    "toLong", "toInt", "toShort", "toDouble", "toFloat", "toBoolean", "toString", "toBigDecimal" -> true
     else -> false
   }
 
