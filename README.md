@@ -1593,7 +1593,7 @@ section for more details.
 
 > **Note:** JSON column support is currently only available for PostgreSQL.
 
-ExoQuery provides support for working with JSON and JSONB columns in PostgreSQL. You can select entire JSON objects, query specific fields, and insert JSON data using regular Kotlin data classes.
+ExoQuery provides support for working with JSON and JSONB columns in PostgreSQL, MySQL, Sqlite, and SQL Server. You can select entire JSON objects, query specific fields, and insert JSON data using regular Kotlin data classes.
 
 ### Setup
 
@@ -1643,6 +1643,82 @@ val contacts = sql {
 //  SELECT contacts FROM Users
 //> [ContactInfo("alice@example.com", "555-1234")]
 ```
+
+#### Selecting JSON fields inside JSON objects (implicit JSON extraction)
+
+ExoQuery can also implicitly extract individual fields from JSON columns when the column’s Kotlin type is annotated with `@SqlJsonValue`.
+
+That means you can write normal Kotlin property access (e.g. `it.contacts.email`) and ExoQuery will translate this to the correct JSON operator for your database:
+
+- Postgres/SQLite: `->` for objects and `->>` for text values
+- MySQL: `JSON_EXTRACT(..., '$.path')` and `JSON_UNQUOTE(...)`
+- SQL Server: `JSON_QUERY(..., '$.path')` for objects and `JSON_VALUE(..., '$.path')` for scalar values
+
+This works recursively for nested JSON objects as well.
+
+##### Example A: row -> JSON Object -> field
+
+Suppose you have a `contacts` JSON column with `ContactInfo(email: String, phone: String)` and `@SqlJsonValue` is applied to `ContactInfo`:
+
+```kotlin
+@SqlJsonValue
+@Serializable
+data class ContactInfo(val email: String, val phone: String)
+
+@Serializable
+data class User(val id: Int, val name: String, val contacts: ContactInfo)
+
+val emails = sql {
+  Table<User>().map { it.contacts.email }
+}.buildFor.Postgres().runOn(ctx)
+// Postgres: SELECT contacts ->> 'email' AS value FROM Users
+// SQLite:   SELECT contacts ->> 'email' AS value FROM Users
+// MySQL:    SELECT JSON_UNQUOTE(JSON_EXTRACT(contacts, '$.email')) AS value FROM Users
+// SQLSrv:   SELECT JSON_VALUE(contacts, '$.email') AS value FROM Users
+```
+
+You can also filter by JSON fields using the same property syntax:
+
+```kotlin
+val q = sql { Table<User>().filter { it.contacts.phone == "555-1234" } }
+// Postgres/SQLite: WHERE contacts ->> 'phone' = '555-1234'
+// MySQL:           WHERE JSON_UNQUOTE(JSON_EXTRACT(contacts, '$.phone')) = '555-1234'
+// SQL Server:      WHERE JSON_VALUE(contacts, '$.phone') = '555-1234'
+```
+
+##### Example B: row -> JSON Object -> JSON Object -> field
+
+Now imagine an orders table with a `shipping` JSON column where `ShippingInfo` contains an `Address` JSON object, and all JSON types are annotated with `@SqlJsonValue`:
+
+```kotlin
+@SqlJsonValue
+@Serializable
+data class Address(val street: String, val city: String, val country: String)
+
+@SqlJsonValue
+@Serializable
+data class ShippingInfo(val carrier: String, val address: Address)
+
+@Serializable
+data class Order(val id: Int, val amount: Double, val shipping: ShippingInfo)
+
+val cities = sql {
+  Table<Order>().map { it.shipping.address.city }
+}.buildFor.Postgres().runOn(ctx)
+// Postgres: SELECT shipping -> 'address' ->> 'city' AS value FROM Orders
+// SQLite:   SELECT shipping -> 'address' ->> 'city' AS value FROM Orders
+// MySQL:    SELECT JSON_UNQUOTE(JSON_EXTRACT(JSON_EXTRACT(shipping, '$.address'), '$.city')) AS value FROM Orders
+// SQLSrv:   SELECT JSON_VALUE(JSON_QUERY(shipping, '$.address'), '$.city') AS value FROM Orders
+
+val canadianOrders = sql {
+  Table<Order>().filter { it.shipping.address.country == "CA" }
+}
+// Postgres/SQLite: WHERE shipping -> 'address' ->> 'country' = 'CA'
+// MySQL:           WHERE JSON_UNQUOTE(JSON_EXTRACT(JSON_EXTRACT(shipping, '$.address'), '$.country')) = 'CA'
+// SQL Server:      WHERE JSON_VALUE(JSON_QUERY(shipping, '$.address'), '$.country') = 'CA'
+```
+
+This implicit JSON-field selection lets you keep writing idiomatic Kotlin property access without hand-writing JSON operators. ExoQuery figures out the proper SQL JSON extraction for your target database — even for deeply nested structures.
 
 ### Inserting JSON Data
 

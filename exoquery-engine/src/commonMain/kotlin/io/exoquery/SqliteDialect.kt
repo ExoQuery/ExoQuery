@@ -174,8 +174,9 @@ open class SqliteDialect(override val traceConf: TraceConfig = TraceConfig.Compa
       else -> throw IllegalStateException("Invalid limit/offset combination")
     }
 
-  override fun XR.U.QueryOrExpression.stringConversionMapping(name: String): Token = run {
-    val head = this
+  override fun stringConversionMapping(call: XR.MethodCall): Token = run {
+    val name = call.name
+    val head = call.head
     when (name) {
       "toLong" -> stmt("CAST(${head.token} AS BIGINT)")
       "toInt" -> stmt("CAST(${head.token} AS INTEGER)")
@@ -187,45 +188,10 @@ open class SqliteDialect(override val traceConf: TraceConfig = TraceConfig.Compa
       else -> throw IllegalArgumentException("Unknown conversion function: ${name}")
     }
   }
+
+  override fun jsonExtract(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    +"${jsonExpr.token} -> ${pathExpr.token}"
+
+  override fun jsonExtractAsString(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    +"${jsonExpr.token} ->> ${pathExpr.token}"
 }
-
-
-//
-//  private val _emptySetContainsToken = StringToken("0")
-//
-//  override def emptySetContainsToken(field: Token): Token = _emptySetContainsToken
-//
-//  override def prepareForProbing(string: String): String = s"sqlite3_prepare_v2($string)"
-//
-//  override def astTokenizer(implicit
-//    astTokenizer: Tokenizer[Ast],
-//    strategy: NamingStrategy,
-//    idiomContext: IdiomContext
-//  ): Tokenizer[Ast] =
-//  Tokenizer[Ast] {
-//    case c: OnConflict => conflictTokenizer.token(c)
-//    case ast           => super.astTokenizer.token(ast)
-//  }
-//
-//  private[this] val omittedNullsOrdering = stmt"omitted (not supported by sqlite)"
-//  private[this] val omittedNullsFirst    = stmt"/* NULLS FIRST $omittedNullsOrdering */"
-//  private[this] val omittedNullsLast     = stmt"/* NULLS LAST $omittedNullsOrdering */"
-//
-//  override implicit def orderByCriteriaTokenizer(implicit
-//    astTokenizer: Tokenizer[Ast],
-//  strategy: NamingStrategy
-//  ): Tokenizer[OrderByCriteria] = Tokenizer[OrderByCriteria] {
-//    case OrderByCriteria(ast, Asc) =>
-//    stmt"${scopedTokenizer(ast)} ASC"
-//    case OrderByCriteria(ast, Desc) =>
-//    stmt"${scopedTokenizer(ast)} DESC"
-//    case OrderByCriteria(ast, AscNullsFirst) =>
-//    stmt"${scopedTokenizer(ast)} ASC $omittedNullsFirst"
-//    case OrderByCriteria(ast, DescNullsFirst) =>
-//    stmt"${scopedTokenizer(ast)} DESC $omittedNullsFirst"
-//    case OrderByCriteria(ast, AscNullsLast) =>
-//    stmt"${scopedTokenizer(ast)} ASC $omittedNullsLast"
-//    case OrderByCriteria(ast, DescNullsLast) =>
-//    stmt"${scopedTokenizer(ast)} DESC $omittedNullsLast"
-//  }
-//

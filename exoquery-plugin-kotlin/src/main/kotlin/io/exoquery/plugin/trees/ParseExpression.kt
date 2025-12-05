@@ -471,11 +471,19 @@ object ParseExpression {
       // TODO need to check for @SerialName("name_override") annotations from the Kotlin seriazation API and override the name
       //      (the parser also needs to be able to generated these based on a mapping)
       case(Ir.Call.Property[Is(), Is()]).thenThis { expr, propKind ->
+        val call = this
         // If a batch-alias is being dereferenced should we potentially search inside of it? Might have performance implications
-        if (expr.containsBatchParam()) parseError(Messages.batchParamError(), this)
+        if (expr.containsBatchParam()) parseError(Messages.batchParamError(), call)
 
         val core = parse(expr)
         when (propKind) {
+          is Ir.Call.Property.PropertyKind.JsonDeref -> {
+            if (propKind.isTailField)
+              XR.GlobalCall.PureSimple(XR.FqName.JsonExtractAsString, listOf(core, XR.Const.String(propKind.name, expr.loc)), core.type, expr.loc).jsonCastTo(call.type)
+                ?: parseError("Can only do implicit json field-extracts to String and Numeric types but got target type: ${expr.type.dumpKotlinLike()}", expr)
+            else
+              XR.GlobalCall.PureSimple(XR.FqName.JsonExtract, listOf(core, XR.Const.String(propKind.name, expr.loc)), core.type, expr.loc)
+          }
           is Ir.Call.Property.PropertyKind.Named ->
             XR.Property(core, propKind.name, XR.HasRename.hasOrNot(propKind.isRenamed), XR.Visibility.Visible, expr.loc)
           is Ir.Call.Property.PropertyKind.Component -> {

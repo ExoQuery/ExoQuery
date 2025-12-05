@@ -303,7 +303,7 @@ object ParseAction {
         if (!right.type.isSubtypeOf(left.type, typeSystem))
           parseError("Invalid assignment expression `${expr.source()}`. The left-hand type `${left.type.dumpKotlinLike()}` is different from the right-hand type `${right.type.dumpKotlinLike()}`", expr)
         if (property.type.isProduct())
-          parseError("Invalid assignment expression `${expr.source()}`. The left-hand type `${left.type.dumpKotlinLike()}` is a product-type which is not allowed.\n${Messages.ProductTypeInsertInstructions}", expr)
+          parseError("Invalid assignment expression `${expr.source()}`. The left-hand type `${left.type.dumpKotlinLike()}` is a product-type which is not allowed.\n${Messages.ProductTypeInsertInstructions}\n------------ Originally Parsed To ------------\n${property.show()}", expr)
 
         if (!((property.core() as? XR.Ident)?.let { it.isThisRef() } ?: false))
           parseError("Invalid assignment expression `${expr.source()}`. The left-hand side of the assignment must be a column of the entity\n${Messages.ActionExample}", expr)

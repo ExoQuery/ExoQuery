@@ -385,6 +385,9 @@ fun IrCall.printAnnotationData() =
 inline fun <reified T> IrCall.someOwnerHasAnnotation() =
   this.symbol.owner.hasAnnotation<T>() || this.symbol.owner.correspondingPropertySymbol?.owner?.hasAnnotation<T>() ?: false
 
+inline fun IrCall.someOwnerHasAnnotation(fqName: FqName) =
+  this.symbol.owner.hasAnnotation(fqName) || this.symbol.owner.correspondingPropertySymbol?.owner?.hasAnnotation(fqName) ?: false
+
 inline fun <reified T> IrElement.hasAnnotation() =
   when (this) {
     is IrAnnotationContainer ->
@@ -400,7 +403,7 @@ fun IrFunction.isCapturedFunction() =
 fun IrFunction.isVirginCapturedFunction() =
   this.hasAnnotation<SqlFragment>() && !this.hasAnnotation<CapturedFunctionSketch>()
 
-inline fun IrElement.hasAnnotation(fqName: FqName) =
+fun IrElement.hasAnnotation(fqName: FqName) =
   when (this) {
     is IrAnnotationContainer ->
       this.annotations.any { it.type.classFqName == fqName }
@@ -411,6 +414,9 @@ inline fun IrElement.hasAnnotation(fqName: FqName) =
 
 inline fun <reified T> IrType.hasAnnotation() =
   this.annotations.any { it.type.isClassStrict<T>() }
+
+fun IrType.hasAnnotation(fqName: FqName) =
+  this.annotations.any { it.type.classFqName == fqName }
 
 // IrFile is both a IrSymbolOwner and a IrAnnotationContainer so
 // have a override specifically for. Otherwise would need to use a @this for it

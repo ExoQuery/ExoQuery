@@ -175,7 +175,7 @@ val ProductTypeInsertInstructions =
 """
 The `set` function used inside of an Insert and an Update query can only be used to update leaf-level values. These are values
 that are either Kotlin primitives (e.g. String, Int, Boolean, etc...) or type that are explicitly marked with @ExoValue (or @Contextual).
-You cannot set who product types in a set-clause. That is to say, you cannot do this:
+You cannot set product types in a set-clause. That is to say, you cannot do this:
 
 data class Name(first: String, last: String)
 data class Person(name: Name, age: Int)

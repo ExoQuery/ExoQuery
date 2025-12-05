@@ -249,6 +249,9 @@ sealed interface XR {
       val Empty = FqName(listOf())
       val Cast = FqName(listOf("kotlinCast"))
       val CountDistinct = FqName("io.exoquery.CapturedBlock.countDistinct")
+
+      val JsonExtract = FqName(listOf("json_extract"))
+      val JsonExtractAsString = FqName(listOf("json_extract_as_string"))
     }
 
     private val str by lazy { path.joinToString(".") }
@@ -758,6 +761,12 @@ sealed interface XR {
   sealed interface CallType {
     val isPure: Boolean
 
+    // E.g. postgres ->>, -> etc...
+    @Serializable
+    data object PureOperator : CallType {
+      override val isPure = true
+    }
+
     @Serializable
     data object PureFunction : CallType {
       override val isPure = true
@@ -833,9 +842,14 @@ sealed interface XR {
     @Transient
     override val productComponents = productOf(this, name, args)
 
+    fun asPureOperator(): GlobalCall =
+      this.copy(callType = CallType.PureOperator)
+
     companion object {
       // using this when translating from Query-level aggs to Expression-level aggs in the SqlQuery
       fun Agg(name: String, vararg args: XR.U.QueryOrExpression) = GlobalCall(FqName(name), args.toList(), CallType.Aggregator, false, XRType.Value)
+      fun PureSimple(fqName: XR.FqName, args: List<XR.U.QueryOrExpression>, returnType: XRType, loc: Location = Location.Synth) =
+        GlobalCall(fqName, args, CallType.PureFunction, false, returnType, loc)
     }
 
     override fun toString() = show()

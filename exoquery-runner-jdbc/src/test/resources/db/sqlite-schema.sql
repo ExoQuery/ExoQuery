@@ -99,6 +99,32 @@ CREATE TABLE IF NOT EXISTS EncodingTestEntity
 )
     );
 
+CREATE TABLE IF NOT EXISTS JsonbExample
+(
+    id    INTEGER PRIMARY KEY,
+    value BLOB
+);
+
+CREATE TABLE IF NOT EXISTS JsonbExample2
+(
+    id     INTEGER PRIMARY KEY,
+    value1 BLOB,
+    value2 BLOB
+);
+
+CREATE TABLE IF NOT EXISTS JsonbExample3
+(
+    id     INTEGER PRIMARY KEY,
+    value  BLOB,
+    sample INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS JsonExample
+(
+    id    INTEGER PRIMARY KEY,
+    value TEXT
+);
+
 CREATE TABLE IF NOT EXISTS JavaTestEntity
 (
     bigDecimalMan

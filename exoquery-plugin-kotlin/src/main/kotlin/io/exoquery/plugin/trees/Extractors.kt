@@ -7,7 +7,6 @@ import io.exoquery.ValueWithSerializer
 import io.exoquery.annotation.ExoEntity
 import io.exoquery.annotation.ExoField
 import io.exoquery.annotation.ExoValue
-import io.exoquery.parseError
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.ReceiverCaller
@@ -218,7 +217,7 @@ object Ir {
                     ?: irProp.getAnnotationArgs<kotlinx.serialization.SerialName>().firstConstStringOrNull()?.let { it to true }
                     ?: (propName to false)
 
-                val isValue = hasFieldAnnotation || irProp.hasAnnotation<ExoValue>() || cls.owner.hasAnnotation<Contextual>() || cls.owner.hasAnnotation<ExoValue>() || cls.owner.hasAnnotation(controller_SqlJsonValue)
+                val isValue = hasFieldAnnotation || irProp.hasAnnotation<ExoValue>() || irProp.hasAnnotation(controller_SqlJsonValue) || cls.owner.hasAnnotation<Contextual>() || cls.owner.hasAnnotation<ExoValue>() || cls.owner.hasAnnotation(controller_SqlJsonValue)
                 val isRenamed = hasFieldAnnotation
                 DataClass.Prop(realPropName, propType, isValue, isRenamed, propName)
               }
@@ -297,12 +296,9 @@ object Ir {
             it.isClassStrict<java.util.UUID>() ||
             it.isClassStrict<java.util.Date>() ||
             it.isClass<ValueWithSerializer<*>>() ||
-            it.hasAnnotation<Contextual>() ||
-            (it.classOrNull?.owner?.hasAnnotation<Contextual>() ?: false) ||
-            it.hasAnnotation<ExoValue>() ||
-            it.hasAnnotation(controller_SqlJsonValue) ||
-            (it.classOrNull?.owner?.hasAnnotation<ExoValue>() ?: false) ||
-            (it.classOrNull?.owner?.hasAnnotation(controller_SqlJsonValue) ?: false)
+            it.isContextualColumn() ||
+            it.isExoValueColumn() ||
+            it.isSqlJsonColumn()
 
       context(CX.Scope) operator fun get(type: Pattern0<IrType>) =
         customPattern1("Ir.Call.Value", type) { it: IrType ->
@@ -849,13 +845,14 @@ object Ir {
       sealed interface PropertyKind {
         data class Named(val name: String, val isRenamed: Boolean) : PropertyKind
         data class Component(val index: Int) : PropertyKind
+        data class JsonDeref(val name: String, val isRenamed: Boolean, val isTailField: Boolean) : PropertyKind
       }
 
       context (CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<PropertyKind>> get(host: AP, name: BP) =
         customPattern2("Ir.Call.Property", host, name) { it: IrCall ->
           // if there exists both a dispatch reciever and an extension reciever it's an extension
           // of some class defined inside of some other class, in that case we only care about the extension reciever
-          val reciever = it.extensionArg ?: it.dispatchArg
+          val receiver = it.extensionArg ?: it.dispatchArg
           val isProperty =
             when (it.origin) {
               IrStatementOrigin.GET_PROPERTY -> true
@@ -871,9 +868,14 @@ object Ir {
           fun serialNameArgValue() =
             it.getPropertyAnnotationArgs<SerialName>().firstConstStringOrNull()
 
+          val isNamedProperty = isProperty && receiver != null && it.regularArgs.all { it != null }
+          val isJsonDeref = receiver != null && receiver is IrCall && receiver.isSqlJsonColumnField()
+          // If the thing coming back from the json deref is a data-class (and it's not specifically marked as a value) then we know it's not a tail-field (since more json-derefs are possible)
+          fun funIsJsonTailField() = !it.type.isNonValueDataClass()
+
           // if there is a reciever and a single value property then this is a property call and we return it, otherwise it is not
           when {
-            isProperty && reciever != null && it.regularArgs.all { it != null } -> {
+            isNamedProperty -> {
               // @ExoField name takes priority, then serialNameArgValue, then use the property name
               // In the future should add support for class-level naming schemes e.g. @ExoNaming(UnderScore), @ExoNaming(UnderScoreCapitalized)
               val (argValue, isRenamed) =
@@ -881,12 +883,18 @@ object Ir {
                   ?: serialNameArgValue()?.let { it to true }
                   ?: it.symbol.sanitizedSymbolName().let { it to false }
 
-              Components2(reciever, PropertyKind.Named(argValue, isRenamed))
+              Components2(
+                receiver,
+                if (isJsonDeref)
+                  PropertyKind.JsonDeref(argValue, isRenamed, funIsJsonTailField())
+                else
+                  PropertyKind.Named(argValue, isRenamed)
+              )
             }
 
             isComponent() ->
               // Note that component is actually a 1-based index so need to subtract 1 to make it line up XRType field names (which we choose from based on it)
-              Components2(reciever, PropertyKind.Component(it.symbol.safeName.removePrefix("component").toInt() - 1))
+              Components2(receiver, PropertyKind.Component(it.symbol.safeName.removePrefix("component").toInt() - 1))
 
             else -> null
           }

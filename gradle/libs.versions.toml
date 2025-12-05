@@ -1,6 +1,6 @@
 [versions]
 # ---- The ExoQuery plugin version that will be released! ----
-pluginVersion    = "2.0.0.PL"
+pluginVersion    = "2.0.0.PL.6"
 # ---- The Terpal Controller Version ----
 controller       = "4.4.0"
 # ---- All the other versions used ----

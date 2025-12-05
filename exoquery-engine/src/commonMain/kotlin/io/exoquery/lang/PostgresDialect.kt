@@ -3,6 +3,7 @@ package io.exoquery
 import io.exoquery.lang.*
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
+import io.exoquery.util.unaryPlus
 import io.exoquery.xr.BetaReduction
 import io.exoquery.xr.BetaReduction.Companion.invoke
 import io.exoquery.xr.XR
@@ -101,4 +102,58 @@ open class PostgresDialect(override val traceConf: TraceConfig = TraceConfig.Com
    */
   override fun tokenizeTable(name: String, hasRename: XR.HasRename): Token = escapeIfNeeded(name, hasRename.hasOrNot() && name.any { it.isUpperCase() })
   override fun tokenizeColumn(name: String, hasRename: XR.HasRename): Token = escapeIfNeeded(name, hasRename.hasOrNot() && name.any { it.isUpperCase() })
+
+  override fun jsonExtract(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    +"${jsonExpr.token} -> ${pathExpr.token}"
+
+  override fun jsonExtractAsString(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    +"${jsonExpr.token} ->> ${pathExpr.token}"
+
+  override fun stringConversionMapping(call: XR.MethodCall): Token = run {
+    fun scopedTokenizer(expr: XR.U.QueryOrExpression): Token =
+      when (expr) {
+        is XR.QueryToExpr -> scopedTokenizer(expr.head)
+        is XR.ExprToQuery -> scopedTokenizer(expr.head)
+        is XR.GlobalCall if expr.name == XR.FqName.JsonExtractAsString -> +"(${expr.token})"
+        else -> expr.token
+      }
+    val name = call.name
+    val head = call.head
+    when (name) {
+      "toLong" -> +"${scopedTokenizer(head).token}::BIGINT"
+      "toInt" -> +"${scopedTokenizer(head).token}::INTEGER"
+      "toShort" -> +"${scopedTokenizer(head).token}::SMALLINT"
+      "toDouble" -> +"${scopedTokenizer(head).token}::DOUBLE PRECISION"
+      "toFloat" -> +"${scopedTokenizer(head).token}::REAL"
+      "toBoolean" -> +"${scopedTokenizer(head).token}::BOOLEAN"
+      "toBigDecimal" -> +"${scopedTokenizer(head).token}::DECIMAL"
+      "toString" -> +"${head.token}"
+      else -> throw IllegalArgumentException("Unknown conversion function: ${name}")
+    }
+  }
+  override fun wholeNumberConversionMapping(head: XR.U.QueryOrExpression, name: String, isKotlinSynthetic: Boolean): Token = run {
+    when {
+      // Do numeric casts to decimal types, but only if the user explicitly does it
+      // we do not want to do it implicitly because Kotlin frequently does this and most DBs
+      // do implicit float<->int conversions just as well
+      name == "toDouble" && !isKotlinSynthetic -> +"${scopedTokenizer(head).token}:DOUBLE PRECISION"
+      name == "toFloat" && !isKotlinSynthetic -> +"${scopedTokenizer(head).token}:REAL"
+      name == "toBoolean" -> +"${scopedTokenizer(head).token}::BOOLEAN"
+      name == "toString" -> +"${scopedTokenizer(head).token}::${varcharType()}"
+      name == "toBigDecimal" -> +"${scopedTokenizer(head).token}::DECIMAL"
+      // toInt, toLong, toShort reply in implicit casting
+      else -> +"${head.token}"
+    }
+  }
+  override fun floatConversionMapping(head: XR.U.QueryOrExpression, name: String, isKotlinSynthetic: Boolean): Token = run {
+    when {
+      name == "toLong" && !isKotlinSynthetic -> +"${scopedTokenizer(head).token}::BIGINT"
+      name == "toInt" && !isKotlinSynthetic -> +"${scopedTokenizer(head).token}::INTEGER"
+      name == "toShort" && !isKotlinSynthetic -> +"${scopedTokenizer(head).token}::SMALLINT"
+      name == "toBoolean" -> +"${scopedTokenizer(head).token}::BOOLEAN"
+      name == "toString" -> +"${scopedTokenizer(head).token}::${varcharType()}"
+      // toFloat, toDouble, toBigDecimal reply in implicit casting
+      else -> +"${head.token}"
+    }
+  }
 }

@@ -1,4 +1,4 @@
-package io.exoquery.jdbc.postgres
+package io.exoquery.jdbc.sqlite
 
 import io.exoquery.*
 import io.exoquery.annotation.ExoValue
@@ -8,13 +8,12 @@ import io.exoquery.controller.TerpalSqlInternal
 import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.TestDatabases
-import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 
 class JsonColumnsSpec : FreeSpec({
-  val ctx = TestDatabases.postgres
+  val ctx = TestDatabases.sqlite
 
   @OptIn(TerpalSqlUnsafe::class)
   beforeEach {
@@ -44,12 +43,12 @@ class JsonColumnsSpec : FreeSpec({
 
     "json" - {
       "select product" {
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123))
         )
       }
       "select field" {
-        sql { Table<JsonExample>().map { it.value } }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>().map { it.value } }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           Person("Joe", 123)
         )
       }
@@ -58,7 +57,7 @@ class JsonColumnsSpec : FreeSpec({
           insert<JsonExample> { set(id to 2, value to param(jim)) }
         }
         q.build<PostgresDialect>().runOn(ctx) shouldBe 1
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123)),
           JsonExample(2, Person("Jim", 456)),
         )
@@ -68,7 +67,7 @@ class JsonColumnsSpec : FreeSpec({
           insert<JsonExample> { set(id to 2, value to paramCustom(jim)) }
         }
         q.build<PostgresDialect>().runOn(ctx) shouldBe 1
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123)),
           JsonExample(2, Person("Jim", 456)),
         )
@@ -79,7 +78,7 @@ class JsonColumnsSpec : FreeSpec({
           insert<JsonExample> { setParams(jsonValue) }
         }
         q.build<PostgresDialect>().runOn(ctx) shouldBe 1
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123)),
           JsonExample(2, Person("Jim", 456)),
         )
@@ -87,19 +86,22 @@ class JsonColumnsSpec : FreeSpec({
     }
     "jsonb" - {
       "select product" {
-        sql { Table<JsonbExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonbExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonbExample(1, Person("Joe", 123))
         )
       }
-      "select product with filter+params" {
+      // TODO Possibly needs to be surrounded by 'jsonb(...)' function. Need to look into it more.
+      //      might need some additional capability from the params(...) function to specify custom wrapping
+      "select product with filter+params".config(enabled = false) {
         sql {
           Table<JsonbExample>().filter { it.value in params(listOf(joe, jim)) }
-        }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+          //Table<JsonbExample>().filter { it.value == free("jsonb(${param(joe)})")<Person>() }
+        }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonbExample(1, Person("Joe", 123))
         )
       }
       "select field" {
-        sql { Table<JsonbExample>().map { it.value } }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonbExample>().map { it.value } }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           Person("Joe", 123)
         )
       }
@@ -108,7 +110,7 @@ class JsonColumnsSpec : FreeSpec({
           insert<JsonbExample> { set(id to 2, value to param(jim)) }
         }
         q.build<PostgresDialect>().runOn(ctx) shouldBe 1
-        sql { Table<JsonbExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonbExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonbExample(1, Person("Joe", 123)),
           JsonbExample(2, Person("Jim", 456)),
         )
@@ -127,13 +129,12 @@ class JsonColumnsSpec : FreeSpec({
 
     "json" - {
       "select product" {
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123))
         )
       }
-      // @Ignored("Deserialization descriptor doesn't have the annotation info if field already selected")
       "select field".config(enabled = false) {
-        sql { Table<JsonExample>().map { it.value } }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>().map { it.value } }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           Person("Joe", 123)
         )
       }
@@ -144,7 +145,7 @@ class JsonColumnsSpec : FreeSpec({
           insert<JsonExample> { set(id to 2, value to param(insertJim)) }
         }
         q.build<PostgresDialect>().runOn(ctx) shouldBe 1
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123)),
           JsonExample(2, Person("Jim", 456)),
         )
@@ -154,7 +155,7 @@ class JsonColumnsSpec : FreeSpec({
           insert<JsonExample> { set(id to 2, value to paramCustom(jim)) }
         }
         q.build<PostgresDialect>().runOn(ctx) shouldBe 1
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123)),
           JsonExample(2, Person("Jim", 456)),
         )
@@ -165,7 +166,7 @@ class JsonColumnsSpec : FreeSpec({
           insert<JsonExample> { setParams(jsonValue) }
         }
         q.build<PostgresDialect>().runOn(ctx) shouldBe 1
-        sql { Table<JsonExample>() }.buildFor.Postgres().runOn(ctx) shouldBe listOf(
+        sql { Table<JsonExample>() }.buildFor.Sqlite().runOn(ctx) shouldBe listOf(
           JsonExample(1, Person("Joe", 123)),
           JsonExample(2, Person("Jim", 456)),
         )

@@ -83,6 +83,12 @@ CREATE TABLE EncodingTestEntity
     customOpt    VARCHAR(255)
 );
 
+CREATE TABLE IF NOT EXISTS JsonExample
+(
+    id    INTEGER PRIMARY KEY,
+    value JSON
+);
+
 CREATE TABLE JavaTestEntity
 (
     bigDecimalMan   DECIMAL(5, 2),

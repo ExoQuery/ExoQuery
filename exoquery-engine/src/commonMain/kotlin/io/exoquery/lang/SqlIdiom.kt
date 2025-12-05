@@ -210,8 +210,9 @@ interface SqlIdiom : HasPhasePrinting {
   fun stringStartsWith(str: XR.U.QueryOrExpression, prefix: XR.U.QueryOrExpression): Token =
     +"starts_with(${str.token}, ${prefix.token})"
 
-  fun XR.U.QueryOrExpression.stringConversionMapping(name: String): Token = run {
-    val head = this
+  fun stringConversionMapping(call: XR.MethodCall): Token = run {
+    val name = call.name
+    val head = call.head
     when (name) {
       "toLong" -> +"CAST(${head.token} AS BIGINT)"
       "toInt" -> +"CAST(${head.token} AS INTEGER)"
@@ -225,8 +226,7 @@ interface SqlIdiom : HasPhasePrinting {
     }
   }
 
-  fun XR.U.QueryOrExpression.wholeNumberConversionMapping(name: String, isKotlinSynthetic: Boolean): Token = run {
-    val head = this
+  fun wholeNumberConversionMapping(head: XR.U.QueryOrExpression, name: String, isKotlinSynthetic: Boolean): Token = run {
     when {
       // Do numeric casts to decimal types, but only if the user explicitly does it
       // we do not want to do it implicitly because Kotlin frequently does this and most DBs
@@ -241,8 +241,7 @@ interface SqlIdiom : HasPhasePrinting {
     }
   }
 
-  fun XR.U.QueryOrExpression.floatConversionMapping(name: String, isKotlinSynthetic: Boolean): Token = run {
-    val head = this
+  fun floatConversionMapping(head: XR.U.QueryOrExpression, name: String, isKotlinSynthetic: Boolean): Token = run {
     when {
       name == "toLong" && !isKotlinSynthetic -> +"CAST(${head.token} AS BIGINT)"
       name == "toInt" && !isKotlinSynthetic -> +"CAST(${head.token} AS INTEGER)"
@@ -261,7 +260,6 @@ interface SqlIdiom : HasPhasePrinting {
     get(): Token = run {
       val argsToken = (listOf(head) + args).map { it -> it.token }.mkStmt()
       when {
-
         originalHostType.isSqlQuery() && name == "contains" -> {
           val headToken = when {
             // don't put parens around subqueries since the QueryToExpr tokenizer already does that
@@ -284,15 +282,15 @@ interface SqlIdiom : HasPhasePrinting {
 
         // rely on implicit-casts for numeric conversion
         originalHostType.isWholeNumber() && name.isConverterFunction() ->
-          head.wholeNumberConversionMapping(name, isKotlinSynthetic)
+          wholeNumberConversionMapping(head, name, isKotlinSynthetic)
 
         originalHostType.isFloatingPoint() && name.isConverterFunction() ->
-          head.floatConversionMapping(name, isKotlinSynthetic)
+          floatConversionMapping(head, name, isKotlinSynthetic)
 
         originalHostType.isString() -> {
           when {
             // Cast strings to numeric types if needed
-            name.isConverterFunction() -> head.stringConversionMapping(name)
+            name.isConverterFunction() -> stringConversionMapping(this)
             name == "substring" -> +"SUBSTRING(${head.token}, ${args.first().token}, ${args.last().token})"
             name == "startsWith" -> stringStartsWith(head, args.first())
             name == "uppercase" -> +"UPPER(${head.token})"
@@ -346,20 +344,27 @@ interface SqlIdiom : HasPhasePrinting {
 
   val methodMappings: Map<XR.FqName, String> get() = DefaultMethodMappings
 
+  fun jsonExtract(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    xrError("JSON extraction is only supported in Postgres and MySQL.")
+
+  fun jsonExtractAsString(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    xrError("JSON extraction is only supported in Postgres and MySQL.")
+
   val XR.GlobalCall.token
     get(): Token = run {
       val argsToken = args.map { it -> it.token }.mkStmt()
       // The parser translate casting operators into a XR.GlobalCall named "kotlinCast" with one argument.
       // In this case for now we want to just assume SQL will do an implicit cast. May want to change this in the future.
-      if (this.name == XR.FqName.Cast && args.size == 1)
-        argsToken
-      else if (this.name.name == "COUNT_STAR")
-        +"count(*)"
-      else if (this.name == XR.FqName.CountDistinct)
-        +"count(DISTINCT ${argsToken})"
-      else {
-        val functionName = methodMappings[this.name] ?: this.name.name
-        +"${functionName}(${argsToken})"
+      when {
+        this.name == XR.FqName.Cast && args.size == 1 -> argsToken
+        this.name.name == "COUNT_STAR" -> +"count(*)"
+        this.name == XR.FqName.CountDistinct -> +"count(DISTINCT ${argsToken})"
+        this.name == XR.FqName.JsonExtractAsString -> jsonExtractAsString(args[0], args[1])
+        this.name == XR.FqName.JsonExtract -> jsonExtract(args[0], args[1])
+        else -> {
+          val functionName = methodMappings[this.name] ?: this.name.name
+          +"${functionName}(${argsToken})"
+        }
       }
     }
 
@@ -653,7 +658,7 @@ interface SqlIdiom : HasPhasePrinting {
   fun scopedQueryTokenizer(ast: XR.Query) =
     +"(${ast.token})"
 
-  fun scopedTokenizer(ast: XR.Expression) =
+  fun scopedTokenizer(ast: XR.U.QueryOrExpression): Token =
     when (ast) {
       is XR.BinaryOp -> +"(${ast.token})"
       is XR.Product -> +"(${ast.token})"

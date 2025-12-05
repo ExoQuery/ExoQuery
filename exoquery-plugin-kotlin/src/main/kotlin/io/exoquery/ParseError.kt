@@ -122,7 +122,7 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
             ""
           }
 
-        """[ExoQuery] Could not understand an expression or query due to an error: ${msg}.${expressionPart}""" + errorDetail + originalErrorTrace + crossFileContent
+        """[ExoQuery] Could not understand an expression or query due to an error: ${msg}${expressionPart}""" + errorDetail + originalErrorTrace + crossFileContent
       }.trimEnd()
 
       return ParseError(fullMsg, location, errorDetailsEnabled, stackCount)

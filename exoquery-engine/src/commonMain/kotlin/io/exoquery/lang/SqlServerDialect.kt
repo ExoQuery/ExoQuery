@@ -287,8 +287,9 @@ open class SqlServerDialect(override val traceConf: TraceConfig = TraceConfig.em
     }
   }
 
-  override fun XR.U.QueryOrExpression.stringConversionMapping(name: String): Token = run {
-    val head = this
+  override fun stringConversionMapping(call: XR.MethodCall): Token = run {
+    val name = call.name
+    val head = call.head
     when (name) {
       "toLong" -> +"CAST(${head.token} AS BIGINT)"
       "toInt" -> +"CAST(${head.token} AS INTEGER)"
@@ -300,36 +301,18 @@ open class SqlServerDialect(override val traceConf: TraceConfig = TraceConfig.em
       else -> throw IllegalArgumentException("Unknown conversion function: ${name}")
     }
   }
+
+  private fun addPrefix(pathExpr: XR.U.QueryOrExpression) =
+    when (pathExpr) {
+      is XR.Const.String ->
+        XR.Const.String("$.${pathExpr.value}")
+      else ->
+        pathExpr
+    }
+
+  override fun jsonExtract(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    +"JSON_QUERY(${jsonExpr.token}, ${addPrefix(pathExpr).token})"
+
+  override fun jsonExtractAsString(jsonExpr: XR.U.QueryOrExpression, pathExpr: XR.U.QueryOrExpression): Token =
+    +"JSON_VALUE(${jsonExpr.token}, ${addPrefix(pathExpr).token})"
 }
-
-
-//
-// TODO add this warning
-//  override implicit def sqlQueryTokenizer(implicit
-//    astTokenizer: Tokenizer[Ast],
-//    strategy: NamingStrategy,
-//    idiomContext: IdiomContext
-//  ): Tokenizer[SqlQuery] =
-//    Tokenizer[SqlQuery] {
-//      case flatten: FlattenSqlQuery if flatten.orderBy.isEmpty && flatten.offset.nonEmpty =>
-//        fail(s"SQLServer does not support OFFSET without ORDER BY")
-//      case other => super.sqlQueryTokenizer.token(other)
-//    }
-//
-//  override protected def actionTokenizer(insertEntityTokenizer: Tokenizer[Entity])(implicit
-//    astTokenizer: Tokenizer[Ast],
-//    strategy: NamingStrategy,
-//    idiomContext: IdiomContext
-//  ): Tokenizer[ast.Action] =
-//    Tokenizer[ast.Action] {
-//      // Update(Filter(...)) and Delete(Filter(...)) usually cause a table alias i.e. `UPDATE People <alias> SET ... WHERE ...` or `DELETE FROM People <alias> WHERE ...`
-//      // since the alias is used in the WHERE clause. This functionality removes that because SQLServer doesn't support aliasing in actions.
-//      case Update(Filter(table: Entity, x, where), assignments) =>
-//        stmt"UPDATE ${table.token} SET ${assignments.token} WHERE ${where.token}"
-//      case Delete(Filter(table: Entity, x, where)) =>
-//        stmt"DELETE FROM ${table.token} WHERE ${where.token}"
-//      case other => super.actionTokenizer(insertEntityTokenizer).token(other)
-//    }
-//}
-//
-//object SQLServerDialect extends SQLServerDialect

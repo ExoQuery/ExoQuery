@@ -5,6 +5,7 @@ import io.exoquery.CapturedBlock
 import io.exoquery.ParseError
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
+import io.exoquery.annotation.ExoValue
 import io.exoquery.annotation.SqlDynamic
 import io.exoquery.annotation.SqlFragment
 import io.exoquery.parseError
@@ -14,9 +15,11 @@ import io.exoquery.plugin.trees.ParseExpression.Seg
 import io.exoquery.plugin.trees.RealOwner.VarType
 import io.exoquery.serial.ParamSerializer
 import io.exoquery.terpal.UnzipPartsParams
+import io.exoquery.xr.CID
 import io.exoquery.xr.XR
 import io.exoquery.xr.XRType
 import io.exoquery.xr.of
+import kotlinx.serialization.Contextual
 import org.jetbrains.kotlin.backend.common.serialization.proto.IrGetObject
 import org.jetbrains.kotlin.builtins.PrimitiveType
 import org.jetbrains.kotlin.ir.IrElement
@@ -284,7 +287,10 @@ fun getMultiSerializerForLeafType(type: IrType, origin: ParseError.Origin): Para
 
 context(CX.Scope)
 private fun isContextualSerializeableType(type: IrType): Boolean =
-  type.isClass<java.util.UUID>() ||
+  type.hasAnnotation<Contextual>() ||
+    type.hasAnnotation<ExoValue>() ||
+    type.hasAnnotation(PT.controller_SqlJsonValue) ||
+    type.isClass<java.util.UUID>() ||
     type.isClass<java.math.BigDecimal>() ||
     type.isClass<java.util.Date>() ||
     type.isClass<java.time.LocalDate>() ||
@@ -383,6 +389,22 @@ object ParseFree {
     }
   }
 }
+
+context(CX.Scope)
+fun XR.U.QueryOrExpression.jsonCastTo(type: IrType) =
+  when {
+    type.isString() -> "toString"
+    type.isInt() -> "toInt"
+    type.isLong() -> "toLong"
+    type.isShort() -> "toShort"
+    type.isDouble() -> "toDouble"
+    type.isFloat() -> "toFloat"
+    type.isBoolean() -> "toBoolean"
+    else -> null
+  }?.let { converterName ->
+    // Original host type is always kotlin.String because this function is called from json_extract_as_string
+    XR.MethodCall(this, converterName, emptyList(), XR.CallType.PureFunction, CID.kotlin_String, true, XRType.Value, this.loc)
+  }
 
 context(CX.Scope)
 fun ensureIsValidOp(expr: IrExpression, xExpr: IrExpression, yExpr: IrExpression, x: XR.Expression, y: XR.Expression, output: XR.Expression) {
