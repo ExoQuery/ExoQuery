@@ -30,6 +30,7 @@ import io.exoquery.innerdsl.SqlActionFilterable
 import io.exoquery.innerdsl.set
 import io.exoquery.innerdsl.setParams
 import io.exoquery.serial.ParamSerializer
+import io.exoquery.util.Globals
 import io.exoquery.util.TraceConfig
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
@@ -144,7 +145,13 @@ object sql {
     errorCap("The `generate` function was not inlined")
 }
 
-//fun <T> sql(block: CapturedBlock.() -> SqlQuery<T>): @Captured SqlQuery<T> = errorCap("Compile time plugin did not transform the tree")
+interface JsonDsl {
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class, Globals.JsonExtractFunctionName)
+  fun extract(column: Any, fieldName: String): String = errorCap("The `extractField` expression of the Query was not inlined")
+
+  @DslFunctionCall(DslFunctionCallType.PureFunction::class, Globals.JsonExtractAsStringFunctionName)
+  fun extractAsText(column: Any, fieldName: String): String = errorCap("The `extractFieldAsText` expression of the Query was not inlined")
+}
 
 interface StringSqlDsl {
   @DslFunctionCall(DslFunctionCallType.PureFunction::class)
@@ -352,6 +359,9 @@ interface CapturedBlock {
    */
   @DslNestingIgnore
   val String.sql @DslNestingIgnore get(): StringSqlDsl = errorCap("The `sql-dsl` expression of the Query was not inlined")
+
+  @DslNestingIgnore
+  val json @DslNestingIgnore get(): JsonDsl = errorCap("The `json-dsl` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.PureFunction::class)
   fun String.like(pattern: String): Boolean = errorCap("The `like` expression of the Query was not inlined")

@@ -1,11 +1,19 @@
 package io.exoquery
 
 import io.exoquery.PostgresDialect
+import io.exoquery.lang.GenericDialect
 import io.exoquery.testdata.Address
 import io.exoquery.testdata.Person
 
-class SqlUdfReq: GoldenSpecDynamic(SqlUdfReqGoldenDynamic, Mode.ExoGoldenTest(), {
+class SqlUdfReq: GoldenSpecDynamic(SqlUdfReqGoldenDynamic, Mode.ExoGoldenOverride(), {
   "does necessary casts" {
+    val q = sql {
+      Table<Person>().map { p -> p.age.toString() to p.name.toInt() }
+    }.dynamic()
+    shouldBeGolden(q.xr, "XR")
+    shouldBeGolden(q.build<GenericDialect>(), "SQL")
+  }
+  "does necessary casts - postgres" {
     val q = sql {
       Table<Person>().map { p -> p.age.toString() to p.name.toInt() }
     }.dynamic()

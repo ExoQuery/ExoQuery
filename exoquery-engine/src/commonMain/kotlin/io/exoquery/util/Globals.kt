@@ -4,6 +4,9 @@ expect fun getExoVariable(propName: String, envName: String, default: String): S
 
 object Globals {
 
+  const val JsonExtractFunctionName = "json_extract"
+  const val JsonExtractAsStringFunctionName = "json_extract_as_string"
+
   // This needs to be at the top for some reason, even if it is lazy
   private val cacheMap: MutableMap<String, Any> by lazy { mutableMapOf() }
 

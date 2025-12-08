@@ -34,12 +34,22 @@ class JsonOpSpec : FreeSpec({
       val ret = sql { Table<JsonExample>().map { it.value.name } }.buildFor.Postgres().runOn(ctx)
       ret shouldContainExactlyInAnyOrder listOf("Joe", "Jim")
     }
+    "select string field - explicit" {
+      val ret = sql { Table<JsonExample>().map { json.extractAsText(it.value, "name") } }.buildFor.Postgres().runOn(ctx)
+      ret shouldContainExactlyInAnyOrder listOf("Joe", "Jim")
+    }
     "select int field" {
       val ret = sql { Table<JsonExample>().map { it.value.age } }.buildFor.Postgres().runOn(ctx)
       ret shouldContainExactlyInAnyOrder listOf(123, 456)
     }
     "filter by int field" {
       val ret = sql { Table<JsonExample>().filter { it.value.age > 200 } }.buildFor.Postgres().runOn(ctx)
+      ret shouldContainExactlyInAnyOrder listOf(JsonExample(2, jim))
+    }
+    "filter by int field - explicit" {
+      val ret = sql {
+        Table<JsonExample>().filter { json.extractAsText(it.value, "age").toInt() > 200 }
+      }.buildFor.Postgres().runOn(ctx)
       ret shouldContainExactlyInAnyOrder listOf(JsonExample(2, jim))
     }
   }
@@ -70,12 +80,24 @@ class JsonOpSpec : FreeSpec({
       val ret = sql { Table<JsonExample>().map { it.value.address.street } }.buildFor.Postgres().runOn(ctx)
       ret shouldContainExactlyInAnyOrder listOf("Main St", "Second St")
     }
+    "select nested string field - explicit" {
+      val ret = sql { Table<JsonExample>().map { ex -> json.extractAsText(json.extract(ex.value, "address"), "street") } }.buildFor.Postgres().runOn(ctx)
+      ret shouldContainExactlyInAnyOrder listOf("Main St", "Second St")
+    }
+
     "select nested int field" {
       val ret = sql { Table<JsonExample>().map { it.value.address.number } }.buildFor.Postgres().runOn(ctx)
       ret shouldContainExactlyInAnyOrder listOf(123, 456)
     }
+
     "filter by nested int field" {
       val ret = sql { Table<JsonExample>().filter { it.value.address.number > 200 } }.buildFor.Postgres().runOn(ctx)
+      ret shouldContainExactlyInAnyOrder listOf(JsonExample(2, jim))
+    }
+    "filter by nested int field - explicit" {
+      val ret = sql {
+        Table<JsonExample>().filter { json.extractAsText(json.extract(it.value, "address"), "number").toInt() > 200 }
+      }.buildFor.Postgres().runOn(ctx)
       ret shouldContainExactlyInAnyOrder listOf(JsonExample(2, jim))
     }
   }

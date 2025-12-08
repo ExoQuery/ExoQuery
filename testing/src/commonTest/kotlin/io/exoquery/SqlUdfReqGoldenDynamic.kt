@@ -12,6 +12,12 @@ object SqlUdfReqGoldenDynamic: GoldenQueryFile {
     "does necessary casts/SQL" to cr(
       "SELECT CAST(p.age AS VARCHAR) AS first, CAST(p.name AS INTEGER) AS second FROM Person p"
     ),
+    "does necessary casts - postgres/XR" to kt(
+      "Table(Person).map { p -> Tuple(first = p.age.toString_MC(), second = p.name.toInt_MC()) }"
+    ),
+    "does necessary casts - postgres/SQL" to cr(
+      "SELECT p.age::VARCHAR AS first, p.name::INTEGER AS second FROM Person p"
+    ),
     "can handle de-nulling - element/XR" to kt(
       "Table(Test).map { p -> p.name }"
     ),

@@ -7,6 +7,7 @@ import io.exoquery.printing.PrintXR
 import io.exoquery.lang.MirrorIdiom
 import io.exoquery.lang.Renderer
 import io.exoquery.lang.Token
+import io.exoquery.util.Globals
 import io.exoquery.util.NumbersToWords
 import io.exoquery.util.ShowTree
 import io.exoquery.xr.XR.U.QueryOrExpression
@@ -250,8 +251,8 @@ sealed interface XR {
       val Cast = FqName(listOf("kotlinCast"))
       val CountDistinct = FqName("io.exoquery.CapturedBlock.countDistinct")
 
-      val JsonExtract = FqName(listOf("json_extract"))
-      val JsonExtractAsString = FqName(listOf("json_extract_as_string"))
+      val JsonExtract = FqName(listOf(Globals.JsonExtractFunctionName))
+      val JsonExtractAsString = FqName(listOf(Globals.JsonExtractAsStringFunctionName))
     }
 
     private val str by lazy { path.joinToString(".") }
