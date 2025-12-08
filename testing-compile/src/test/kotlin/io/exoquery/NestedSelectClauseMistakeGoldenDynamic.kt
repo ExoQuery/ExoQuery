@@ -9,7 +9,7 @@ object NestedSelectClauseMistakeGoldenDynamic: MessageSpecFile {
   override val messages = mapOf<String, GoldenResult>(
     "should report error for nested select clause mistake - unit error" to pl(
       """
-      [ExoQuery] Could not understand an expression or query due to an error: Nothing was returned from the sql.select clause. A sql.select clause must return a value, usually a primitive or instance of a data class.
+      [ExoQuery] Could not understand an expression or query due to an error: Nothing was returned from the sql.select clause. A sql.select clause must return a value, usually a primitive or instance of a data class
       ------------ Source ------------
       {
           val queryA = sql.select {
@@ -29,7 +29,7 @@ object NestedSelectClauseMistakeGoldenDynamic: MessageSpecFile {
     ),
     "should report error for nested select clause mistake - invalid functions inside" to pl(
       """
-      [ExoQuery] Could not understand an expression or query due to an error: Nothing was returned from the sql.select clause. A sql.select clause must return a value, usually a primitive or instance of a data class.
+      [ExoQuery] Could not understand an expression or query due to an error: Nothing was returned from the sql.select clause. A sql.select clause must return a value, usually a primitive or instance of a data class
       ------------ Source ------------
       {
           val queryA = sql.select {

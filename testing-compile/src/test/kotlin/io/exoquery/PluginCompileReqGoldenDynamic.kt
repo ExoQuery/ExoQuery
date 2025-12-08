@@ -26,7 +26,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       For example:
       @SqlFragment
       fun myCall(value: String): SqlExpression<String> = sql.expression { value + "_suffix" }
-      val myQuery = sql { Table<Person>().filter { p -> p.name == myCall("someValue").use }.
+      val myQuery = sql { Table<Person>().filter { p -> p.name == myCall("someValue").use }
       ------------ Source ------------
       externalFunction(p.name)
       ------------ Raw Expression ------------
@@ -52,7 +52,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       
       Where Customer and Order are:
       data class Customer(val id: Int, val name: String)
-      data class Order(val id: Int, val customerId: Int,  val total: Double).
+      data class Order(val id: Int, val customerId: Int,  val total: Double)
       ------------ Source ------------
       withOrder(Table<Customer>())
       ------------ Raw Expression ------------
@@ -79,7 +79,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       For example:
       @SqlFragment
       fun myCall(value: String): SqlExpression<String> = sql.expression { value + "_suffix" }
-      val myQuery = sql { Table<Person>().filter { p -> p.name == myCall("someValue").use }.
+      val myQuery = sql { Table<Person>().filter { p -> p.name == myCall("someValue").use }
       ------------ Source ------------
       externalFunction(p.name)
       ------------ Raw Expression ------------
@@ -114,7 +114,7 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       For example:
       @SqlFragment
       fun myCall(value: String): SqlExpression<String> = sql.expression { value + "_suffix" }
-      val myQuery = sql { Table<Person>().filter { p -> p.name == myCall("someValue").use }.
+      val myQuery = sql { Table<Person>().filter { p -> p.name == myCall("someValue").use }
       ------------ Source ------------
       externalFunction(p.name)
       ------------ Raw Expression ------------
