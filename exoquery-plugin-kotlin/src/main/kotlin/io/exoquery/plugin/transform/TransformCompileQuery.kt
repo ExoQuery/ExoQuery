@@ -116,7 +116,9 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
               parseError("The query could not be rendered: ${e.message}\n------------------\n${xr.showRaw()}", expr)
             }
           if (isPretty)
-            SqlFormatter.format(queryStringRaw)
+            SqlFormatter
+              .extend { cfg -> cfg.plusOperators("->", "->>") }
+              .format(queryStringRaw)
           else
             queryStringRaw
         }
