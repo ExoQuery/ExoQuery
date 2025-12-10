@@ -75,6 +75,10 @@ interface ParamSerializer<T> {
     override val serializer = ContextualSerializer(kotlinx.datetime.Instant::class)
     override val cls = kotlinx.datetime.Instant::class
   }
+  data object ByteArray : ParamSerializer<kotlin.ByteArray> {
+    override val serializer = ContextualSerializer(kotlin.ByteArray::class)
+    override val cls = kotlin.ByteArray::class
+  }
   data object String : ParamSerializer<kotlin.String> {
     override val serializer = serializer<kotlin.String>()
     override val cls = kotlin.String::class

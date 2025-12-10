@@ -335,6 +335,7 @@ private fun getSerializerClassForPrimitiveType(type: IrType): ClassId? = run {
       primitiveType == PrimitiveType.FLOAT -> classIdOf<ParamSerializer.Float>()
       primitiveType == PrimitiveType.DOUBLE -> classIdOf<ParamSerializer.Double>()
       primitiveType == PrimitiveType.BOOLEAN -> classIdOf<ParamSerializer.Boolean>()
+      primitiveType == PrimitiveType.BYTE -> classIdOf<ParamSerializer.Byte>()
       else -> null
     }
   } ?: when {
@@ -343,6 +344,7 @@ private fun getSerializerClassForPrimitiveType(type: IrType): ClassId? = run {
     type.isNullableNothing() -> classIdOf<ParamSerializer.NullType>()
     type.isNullableString() -> classIdOf<ParamSerializer.String>()
     type.isString() -> classIdOf<ParamSerializer.String>()
+    type.isClassStrict<kotlin.ByteArray>() -> classIdOf<ParamSerializer.ByteArray>()
     type.isClassStrict<kotlinx.datetime.LocalDate>() -> classIdOf<ParamSerializer.LocalDate>()
     type.isClassStrict<kotlinx.datetime.LocalTime>() -> classIdOf<ParamSerializer.LocalTime>()
     type.isClassStrict<kotlinx.datetime.LocalDateTime>() -> classIdOf<ParamSerializer.LocalDateTime>()
