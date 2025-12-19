@@ -43,7 +43,7 @@ import org.jetbrains.kotlin.name.Name
 
 class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Transformer<IrCall>() {
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     expression.symbol.owner.hasAnnotation<ExoExtras>()
 
@@ -52,15 +52,15 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
     data class Single(val ir: IrExpression) : MatchedType
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun transform(expression: IrCall): IrExpression =
-    with(compileLogger) {
+    with(scope.compileLogger) {
       with(makeLifter()) {
         on(expression).match(
           case(Ir.Call.FunctionUntethered1[Is("io.exoquery.printLineage"), Is()]).then { _, expr ->
             (expr as? IrDeclarationReference)?.let { declRef ->
               val line = expr.showLineageAdvanced().map { (heading, elem) ->  Messages.LineageElementDescription(heading, elem) }.joinToString("\n\n")
-              compileLogger.warn("========== Printing Lineage of ${expression.source()}\n$line")
+              scope.compileLogger.warn("========== Printing Lineage of ${expression.source()}\n$line")
               val output = line.lift()
 
               output
@@ -68,8 +68,8 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
           },
 
           case(Ir.Call.FunctionUntethered0[Is("io.exoquery.printStoredXRs")]).then { _ ->
-            val printedScope = storedXRsScope.scoped { storedXRs.printStored() }
-            builder.irString(printedScope)
+            val printedScope = scope.storedXRsScope.scoped { storedXRs.printStored() }
+            builder.builder.irString(printedScope)
           },
 
           case(Ir.Call.FunctionUntethered1[Is("io.exoquery.printSource"), Ir.FunctionExpression.withReturnOnlyBlock[Is()]]).then { _, (ret) ->
@@ -114,7 +114,7 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
     }
       ?: parseError("The expression was not a Global Function (with one argument-block)", expression)
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun transformPrintSource(argsRaw: MatchedType, applySuperTransform: Boolean = true) = run {
     val args = when (argsRaw) {
       is MatchedType.Single ->
@@ -129,7 +129,7 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
           argsRaw
     }
 
-    val printSourceExpr = pluginCtx
+    val printSourceExpr = scope.pluginCtx
       .referenceFunctions(
         CallableId(FqName("io.exoquery"), Name.identifier("printSourceExpr"))
       ).first()
@@ -140,9 +140,9 @@ class TransformPrintSource(val superTransformer: VisitTransformExpressions) : Tr
         is MatchedType.Multi -> Messages.PrintingMessageMulti(args.irs.statements, "Multi Return Statements")
       }
 
-    compileLogger.warn(message)
+    scope.compileLogger.warn(message)
 
-    with(builder) {
+    with(builder.builder) {
       this.irCall(printSourceExpr).apply {
         // Call the printSourceExpr function. We assume there are no receivers or context-parameters
         arguments[0] = irString(message)

@@ -89,7 +89,7 @@ import kotlin.collections.plus
  */
 class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions) : ElementTransformer<IrFunction>() {
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun matches(expr: IrFunction): Boolean =
     expr is IrSimpleFunction && expr.hasAnnotation<SqlFragment>() &&
         // If the function has a CapturedFunctionParamKinds annotation it has already been transformed
@@ -97,7 +97,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
 
   private fun errorText() = "A function annotated with @SqlFunction must return a single, single SqlQuery<T> or SqlExpression<T> instance"
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun transform(capFunRaw: IrFunction): IrFunction {
     val capFun = capFunRaw as? IrSimpleFunction ?: parseError("The function annotated with @SqlFunction must be a simple function.", capFunRaw)
 
@@ -132,7 +132,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
 
     val bodyIsNull = capFun.body == null
     val isCrossFile = CrossFile.isCrossFile(capFun)
-    val crossFilesDisabled = !(options?.enableCrossFileStore ?: ExoCompileOptions.EnableCrossFileStore)
+    val crossFilesDisabled = !(scope.options?.enableCrossFileStore ?: ExoCompileOptions.EnableCrossFileStore)
 
     return when {
       // The body of a captured function cannot be empty unless it is a cross-file function i.e. it's body is null
@@ -162,7 +162,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     }
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   private fun constructSqlContainer(capFun: IrSimpleFunction, capFunRaw: IrFunction) = run {
     val recieiverParam: XR.Ident? =
       capFun.extensionParam?.let { recieiverExpr ->
@@ -201,7 +201,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     ) ?: parseError(Messages.CapturedFunctionFormWrong("Invalid Sql Fragment Function body. ${errorText()}"), capFunReturn)
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   private fun constructReturnBody(capFun: IrFunction, newSqlContainer: IrExpression) =
     run {
       val body = capFun.body
@@ -218,7 +218,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
           // seems to be rebuilding the function body. If they are not enough
           // need to look into the exact IRs that are being generated and other ways to do things
           // (e.g. keeping the same IrBlockBody and just removing statements and adding the return)
-          capFun.body = builder.irBlockBody {
+          capFun.body = builder.builder.irBlockBody {
             val ret = irReturn(newSqlContainer)
             +ret
           }
@@ -227,7 +227,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
       capFun
     }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   private fun processQuery(recieverParam: XR.Ident?, rawQueryXR: XR, dynamics: DynamicsAccum, originalParams: List<IrValueParameter>, capFunLocation: XR.Location, capFunReturn: IrExpression, originalCall: IrFunction) = run {
     val xrLambdaParams = recieverParam.nullableAsList() + originalParams.map { Parser.scoped { Parser.parseValueParamter(it) } }
     val params = dynamics.makeParams()
@@ -237,7 +237,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
       val (expr, uprootable) = SqlQueryExpr.Uprootable.plantNewUprootableWithPacked(xrLambda.asQuery(), params)
       // ======== Special Case: If the CapturedFunction is in a different file to the call-site need to store it ========
       if (originalCall.isInline) {
-        storedXRsScope.scoped {
+        scope.storedXRsScope.scoped {
           CrossFile.putUprootableIfCrossFile(originalCall, OwnerChain.ContainerType.Query, uprootable)
         }
       }
@@ -252,7 +252,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
     }
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   private fun processExpression(recieverParam: XR.Ident?, rawQueryXR: XR, dynamics: DynamicsAccum, originalParams: List<IrValueParameter>, capFunLocation: XR.Location, capFunReturn: IrExpression, originalCall: IrFunction) = run {
     val xrLambdaParams = recieverParam.nullableAsList() + originalParams.map { Parser.scoped { Parser.parseValueParamter(it) } }
     val params = dynamics.makeParams()
@@ -262,7 +262,7 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
       val (expr, uprootable) = SqlExpressionExpr.Uprootable.plantNewUprootableWithPacked(xrLambda.asExpr(), params)
       // ======== Special Case: If the CapturedFunction is in a different file to the call-site need to store it ========
       if (originalCall.isInline) {
-        storedXRsScope.scoped {
+        scope.storedXRsScope.scoped {
           CrossFile.putUprootableIfCrossFile(originalCall, OwnerChain.ContainerType.Expr, uprootable)
         }
       }
@@ -289,12 +289,12 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
   }
 
   companion object {
-    context(CX.Scope, CX.Builder)
+    context(scope: CX.Scope, builder: CX.Builder)
     fun addInputSketch(capFun: IrSimpleFunction) {
       // Create a helper annotation so we know what the original Param-Kinds of the function so that later in
       // the TransformScaffoldAnnotatedFunctionCall we can reconstruct what the arguments of the function were
       // in order to know how to interpret the parameters.
-      val originalParamKindsAnnotation = Lifter(this@Builder).makeCapturedFunctionParamSketches(capFun.symbol.owner.parameters)
+      val originalParamKindsAnnotation = Lifter(builder).makeCapturedFunctionParamSketches(capFun.symbol.owner.parameters)
       capFun.annotations = capFun.annotations + listOf(originalParamKindsAnnotation)
     }
 
@@ -308,15 +308,15 @@ class TransformAnnotatedFunction(val superTransformer: VisitTransformExpressions
         capFun.dispatchReceiverParameter?.let { listOf(it) } ?: emptyList()
     }
 
-    context(CX.Scope)
+    context(scope: CX.Scope)
     fun validateAnnotatedFunctionCrossXRsExist(capFun: IrFunction) {
-      val alreadyStored = storedXRsScope.scoped {
+      val alreadyStored = scope.storedXRsScope.scoped {
         OwnerChain.ContainerType.identify(capFun.returnType)?.let {
           CrossFile.hasUprootableInStore(capFun, it)
         } ?: parseError("Could not look up the function from the store. The pre-compiled function `${capFun.symbol.safeName}` had an invalid return type. ${capFun.returnType.dumpKotlinLike()}", capFun)
       }
       if (!alreadyStored)
-        parseError("The cross-file Sql Fragment Function `${capFun.symbol.safeName}` was not found in the store. If this is a function in a different module to the one being compiled please make sure that the module containing the function is compiled first before compiling this module.\n------------ Contents of the store were: ------------\n${storedXRsScope.tryPrintStore()}", capFun)
+        parseError("The cross-file Sql Fragment Function `${capFun.symbol.safeName}` was not found in the store. If this is a function in a different module to the one being compiled please make sure that the module containing the function is compiled first before compiling this module.\n------------ Contents of the store were: ------------\n${scope.storedXRsScope.tryPrintStore()}", capFun)
     }
   }
 }

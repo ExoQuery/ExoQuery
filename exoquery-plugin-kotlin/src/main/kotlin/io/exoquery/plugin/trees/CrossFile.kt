@@ -20,16 +20,16 @@ import org.jetbrains.kotlin.name.FqName
 
 object CrossFile {
 
-  context(CX.Scope, CX.StoredXRsScope)
+  context(scope: CX.Scope, rsScope: CX.StoredXRsScope)
   fun printStoredValues(): Unit =
-    logger.warn(storedXRs.printStored())
+    scope.logger.warn(rsScope.storedXRs.printStored())
 
   // TODO Need to account for what happens if this is a class-member
-  context(CX.Scope)
+  context(scope: CX.Scope)
   private fun IrDeclarationParent.isNotCurrentFile() =
-    this is IrFile && this.fileEntry.name != currentFile.fileEntry.name
+    this is IrFile && this.fileEntry.name != scope.currentFile.fileEntry.name
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   private fun IrDeclarationParent.findRoot(): IrDeclarationParent {
     val origin = this
     fun recurseToRoot(accum: List<IrDeclarationParent>, current: IrDeclarationParent): IrDeclarationParent =
@@ -55,14 +55,14 @@ object CrossFile {
       else -> "Other(${this::class.simpleName})"
     }
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun isCrossFile(function: IrFunction): Boolean =
     function.returnType.hasAnnotation(FqName("io.exoquery.Captured")) &&
       !function.hasAnnotation<SqlDynamic>() &&
       (function.parent is IrExternalPackageFragment || function.findRoot().isNotCurrentFile()) &&
       function.isInline
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun validatePossibleCrossFileFunction(function: IrFunction, originalExpression: IrExpression): Unit =
     if (isCrossFile(function) && !function.isInline)
       // TODO mention that runtimes need to marked as @CapturedDynamic and don't need to be inline
@@ -70,45 +70,45 @@ object CrossFile {
     else
       Unit
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   private fun isCrossFile(function: IrField): Boolean =
     (function.parent is IrExternalPackageFragment || function.findRoot().isNotCurrentFile())
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun validatePossibleCrossFileField(field: IrField, originalExpression: IrExpression): Unit =
     if (isCrossFile(field))
       parseError("Fields cannot be used to share an SqlQuery (or SqlExpression/SqlAction/SqlBatchAction) across files because they cannot be inlined. Please use a inline-function instead of the field `${field.symbol.safeName}`.\n(DebugInfo: parent was ${field.parent.functionParentInfo()})", originalExpression)
     else
       Unit
 
-  context(CX.Scope, CX.StoredXRsScope)
+  context(scope: CX.Scope, rsScope: CX.StoredXRsScope)
   fun getUprootableFromStore(function: IrFunction, containerType: OwnerChain.ContainerType.Query) =
-    storedXRs.getStored(function, containerType)?.let { packedXR -> SqlQueryExpr.Uprootable(packedXR) }
-  context(CX.Scope, CX.StoredXRsScope)
+    rsScope.storedXRs.getStored(function, containerType)?.let { packedXR -> SqlQueryExpr.Uprootable(packedXR) }
+  context(scope: CX.Scope, rsScope: CX.StoredXRsScope)
   fun getUprootableFromStore(function: IrFunction, containerType: OwnerChain.ContainerType.Expr) =
-    storedXRs.getStored(function, containerType)?.let { packedXR -> SqlExpressionExpr.Uprootable(packedXR) }
-  context(CX.Scope, CX.StoredXRsScope)
+    rsScope.storedXRs.getStored(function, containerType)?.let { packedXR -> SqlExpressionExpr.Uprootable(packedXR) }
+  context(scope: CX.Scope, rsScope: CX.StoredXRsScope)
   fun getUprootableFromStore(function: IrFunction, containerType: OwnerChain.ContainerType.Action) =
-    storedXRs.getStored(function, containerType)?.let { packedXR -> SqlActionExpr.Uprootable(packedXR) }
-  context(CX.Scope, CX.StoredXRsScope)
+    rsScope.storedXRs.getStored(function, containerType)?.let { packedXR -> SqlActionExpr.Uprootable(packedXR) }
+  context(scope: CX.Scope, rsScope: CX.StoredXRsScope)
   fun getUprootableFromStore(function: IrFunction, containerType: OwnerChain.ContainerType.ActionBatch) =
-    storedXRs.getStored(function, containerType)?.let { packedXR -> SqlBatchActionExpr.Uprootable(packedXR) }
+    rsScope.storedXRs.getStored(function, containerType)?.let { packedXR -> SqlBatchActionExpr.Uprootable(packedXR) }
 
-  context(CX.Scope, CX.StoredXRsScope)
+  context(scope: CX.Scope, rsScope: CX.StoredXRsScope)
   fun hasUprootableInStore(function: IrFunction, containerType: OwnerChain.ContainerType) =
-    storedXRs.getStored(function, containerType) != null
+    rsScope.storedXRs.getStored(function, containerType) != null
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun hasUprootableInStoreIndependent(function: IrFunction, containerType: OwnerChain.ContainerType) =
-    storedXRsScope.scoped {
+    scope.storedXRsScope.scoped {
       storedXRs.getStored(function, containerType) != null
     }
 
 
-  context(CX.Scope, CX.StoredXRsScope)
+  context(scope: CX.Scope, rsScope: CX.StoredXRsScope)
   fun putUprootableIfCrossFile(function: IrFunction, containerType: OwnerChain.ContainerType, uprootable: UprootableExpr): Unit {
     if (function.isInline) {
-      storedXRs.putStored(function, containerType, uprootable.packedXR)
+      rsScope.storedXRs.putStored(function, containerType, uprootable.packedXR)
       // TODO need to add some kind of varaible to the scope to enable debugging the StoredXRs logging
       // logger.warn("PUTTING UPROOTABLE for cross-file function `${function.symbol.safeName}`\n================ Value ================\n${uprootable.show()}\n============ Values in Store ============\n${storedXRs.printStored()}")
     }

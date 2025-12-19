@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.name
 
 class CodegenFileBuilder(val options: ExoCompileOptions) {
-  context (CX.Scope)
+  context (scope: CX.Scope)
   operator fun invoke(dcs: List<Code.Entities>, thisFile: IrFile) {
     dcs.forEach { dc ->
 
@@ -26,12 +26,12 @@ class CodegenFileBuilder(val options: ExoCompileOptions) {
 
       try {
         val rootPath = "${options.entitiesBaseDir}/${options.targetName}/${options.sourceSetName}/kotlin"
-        val gen = dc.toGenerator(rootPath, options.projectDir, {msg -> logger.warn(msg)}).preparedForRuntime()
+        val gen = dc.toGenerator(rootPath, options.projectDir, {msg -> scope.logger.warn(msg)}).preparedForRuntime()
         val forceRegenString = if (options.forceRegen) " (forced-regen)" else ""
-        logger.warn("Attempting${forceRegenString} Entity-Gen for ${thisFile.name} in: ${rootPath}")
+        scope.logger.warn("Attempting${forceRegenString} Entity-Gen for ${thisFile.name} in: ${rootPath}")
         gen.run(options.forceRegen)
       } catch (t: Throwable) {
-         logger.error(
+         scope.logger.error(
            "Entity-Gen Failed for the database ${dc.driver.jdbcUrl}\n================== Cause ==================\n${t.stackTraceToString()}"
          )
       }

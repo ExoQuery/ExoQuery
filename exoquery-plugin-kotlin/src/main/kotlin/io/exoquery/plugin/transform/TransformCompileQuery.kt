@@ -36,14 +36,14 @@ import kotlin.time.measureTimedValue
 
 class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : TransformerWithQueryAccum<IrCall>() {
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun matches(expr: IrCall): Boolean =
     SqlBuildFunction.matches(expr)
 
   private data class BuildFunctionArgs(val queryLabel: String?)
 
   // Making args extraction somewhat modular so can add more args to the build function in the future
-  context(CX.Scope, CX.Builder, CX.QueryAccum)
+  context(scope: CX.Scope, builder: CX.Builder, accum: CX.QueryAccum)
   private fun extractArgsFromCall(expr: IrCall): BuildFunctionArgs = run {
     val partsWithParams = expr.zipArgsWithParamsOrFail()
     val queryLabel =
@@ -61,7 +61,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
     data class Failure(val error: Throwable): ProcessResult<Nothing>
   }
 
-  context(CX.Scope, CX.Builder, CX.QueryAccum)
+  context(scope: CX.Scope, builder: CX.Builder, accum: CX.QueryAccum)
   override fun transform(expr: IrCall): IrExpression {
 
     // Interesting IDEA. If the a file has a particular annotation, in the visitor before leaving it throw and error with the contents
@@ -91,7 +91,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
       case(SqlBuildFunction[Is()]).thenThis { (sqlQueryExprRaw, dialectType, isPretty) ->
         val parsedArgs = extractArgsFromCall(expr)
 
-        val compileLocation = expr.location(currentFile.fileEntry)
+        val compileLocation = expr.location(scope.currentFile.fileEntry)
         val fileLabel = (parsedArgs.queryLabel?.let { it + " - " } ?: "") + "file:${compileLocation.show()}"
 
         val (traceConfig, writeSource) = ComputeEngineTracing.invoke(fileLabel, dialectType)
@@ -152,17 +152,17 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
 
                     // Can include the sql-formatting library here since the compiler is always on the JVM!
                     val queryString = queryTokenized.renderQueryString(isPretty, xr)
-                    accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
+                    accum.accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
 
                     val msgAdd = parsedArgs.queryLabel?.let { " ($it)" } ?: ""
 
-                    if (options?.queryPrintingEnabled ?: false)
-                      this@Scope.logger.report(outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "query"), expr)
+                    if (scope.options?.queryPrintingEnabled ?: false)
+                      scope.logger.report(scope.outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "query"), expr)
                     SqlCompiledQueryExpr(sqlExpr, queryString, queryTokenized, queryTokenized.isStatic(), parsedArgs.queryLabel, Phase.CompileTime, uprootable.packedXR, query.encode()).plant()
 
                   }
                   is ProcessResult.Failure -> {
-                    logger.warn("The query could not be transformed at compile-time but encountered an error. Falling back to runtime transformation.\n------------------- Error -------------------\n${queryAndToken.error.stackTraceToString()}", expr.location())
+                    scope.logger.warn("The query could not be transformed at compile-time but encountered an error. Falling back to runtime transformation.\n------------------- Error -------------------\n${queryAndToken.error.stackTraceToString()}", expr.location())
                     callBuildRuntime(construct, traceConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
                   }
                 }
@@ -170,7 +170,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
             ) ?: run {
               // TODO when is not static android query need to fail build and explain
 
-              logger.warn("The query could not be transformed at compile-time", expr.location())
+              scope.logger.warn("The query could not be transformed at compile-time", expr.location())
               callBuildRuntime(construct, traceConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
             }
           }
@@ -192,20 +192,20 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
                 val actionKind = xr.toActionKind()
                 val actionReturningKind = ActionReturningKind.fromActionXR(xr)
                 val outputTypeXR = sqlQueryExprRaw.type.simpleTypeArgs[1].toClassIdXR() // 2nd arg is the output type of the action. Since the room-queries are only writes this value is not actually used yet
-                accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
+                accum.accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
 
                 val msgAdd = parsedArgs.queryLabel?.let { " ($it)" } ?: ""
-                if (options?.queryPrintingEnabled ?: false)
-                  logger.report(outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "action"), expr)
+                if (scope.options?.queryPrintingEnabled ?: false)
+                  scope.logger.report(scope.outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "action"), expr)
 
-                val sqlActionTmpVar = builder.scope.createTmpVariable(sqlExpr)
-                val output = SqlCompiledActionExpr(builder.irGet(sqlActionTmpVar), queryString, queryTokenized, actionKind, actionReturningKind, parsedArgs.queryLabel, Phase.CompileTime, uprootable.packedXR).plant()
+                val sqlActionTmpVar = builder.builder.scope.createTmpVariable(sqlExpr)
+                val output = SqlCompiledActionExpr(builder.builder.irGet(sqlActionTmpVar), queryString, queryTokenized, actionKind, actionReturningKind, parsedArgs.queryLabel, Phase.CompileTime, uprootable.packedXR).plant()
                 // IMPORTANT notes inside of makeRunFunction as to why this is used here
                 makeRunFunction(listOf(sqlActionTmpVar), output)
               }
             ) ?: run {
               //logger.warn("The action could not be transformed at compile-time", expr.location())
-              logger.warn("The action could not be transformed at compile-time", expr)
+              scope.logger.warn("The action could not be transformed at compile-time", expr)
               callBuildRuntime(construct, traceConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
             }
           }
@@ -228,18 +228,18 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
                 val actionKind = xr.action.toActionKind()
                 val actionReturningKind = ActionReturningKind.fromActionXR(xr.action)
                 val outputTypeXR = sqlQueryExprRaw.type.simpleTypeArgs[2].toClassIdXR() // 3rd arg is the output type of the action. Since the room-queries are only writes this value is not actually used yet
-                accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
+                accum.accum.addItem(PrintableQuery(queryString, xr, compileLocation, outputTypeXR, parsedArgs.queryLabel))
 
                 val msgAdd = parsedArgs.queryLabel?.let { " ($it)" } ?: ""
 
-                if (options?.queryPrintingEnabled ?: false)
-                  logger.report(outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "batch-action"), expr)
+                if (scope.options?.queryPrintingEnabled ?: false)
+                  scope.logger.report(scope.outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "batch-action"), expr)
 
                 SqlCompiledBatchActionExpr(sqlExpr, queryString, queryTokenized, actionKind, actionReturningKind, parsedArgs.queryLabel, Phase.CompileTime, uprootable.packedXR).plant()
               }
             ) ?: run {
-              logger.warn("The batch-action could not be transformed at compile-time", expr.location())
-              with(Lifter(this@Builder)) {
+              scope.logger.warn("The batch-action could not be transformed at compile-time", expr.location())
+              with(Lifter(builder)) {
                 val labelExpr = if (parsedArgs.queryLabel != null) parsedArgs.queryLabel.lift() else irBuilder.irNull()
                 // we still know it's x.build or x.buildPretty so just use that (for now ignore formatting if it is at runtime)
                 val dialect = buildRuntimeDialect(construct, traceConfig)
@@ -260,7 +260,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
     data object BatchAction : ContainerType
     data object RoomQuery : ContainerType
     companion object {
-      context(CX.Scope)
+      context(scope: CX.Scope)
       fun determine(type: IrType) =
         when {
           type.isClass<SqlQuery<*>>() -> RoomQuery // only for room-query generation
@@ -272,9 +272,9 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
     }
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun callBuildRuntime(construct: IrConstructorSymbol, traceConfig: TraceConfig, queryLabel: String?, isPretty: Boolean, sqlQueryExpr: IrExpression): IrExpression = run {
-    with(Lifter(this@Builder)) {
+    with(Lifter(builder)) {
       val labelExpr = if (queryLabel != null) queryLabel.lift() else irBuilder.irNull()
       // we still know it's x.build or x.buildPretty so just use that (for now ignore formatting if it is at runtime)
       val dialect = buildRuntimeDialect(construct, traceConfig)
@@ -282,18 +282,18 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
     }
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun buildRuntimeDialect(construct: IrConstructorSymbol, traceConfig: TraceConfig) =
-    builder.irCall(construct).apply {
+    builder.builder.irCall(construct).apply {
       with(makeLifter()) {
         // build the dialect e.g. call `PostgresDialect(traceConfig)` at runtime. We assume there are no receivers or context params
-        arguments[0] = traceConfig.lift(options?.projectDir)
+        arguments[0] = traceConfig.lift(scope.options?.projectDir)
       }
     }
 }
 
 object ConstructCompiletimeDialect {
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun of(fullPath: String, traceConfig: TraceConfig) =
     when {
       "io.exoquery.PostgresDialect" in fullPath -> PostgresDialect(traceConfig)

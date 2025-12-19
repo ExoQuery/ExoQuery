@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
 object ParseWindow {
-  context(CX.Scope, CX.Parsing)
+  context(scope: CX.Scope, parsing: CX.Parsing)
   fun parse(expr: IrExpression): XR.Window =
     on(expr).match(
       case(Ir.Call.FunctionMem1[Is(), Is("partitionBy"), Ir.Vararg[Is()]]).thenThis { head, (partitionExprs) ->
@@ -68,14 +68,14 @@ object ParseExpression {
         }
     }
 
-    context(CX.Scope, CX.Parsing)
+    context(scope: CX.Scope, parsing: CX.Parsing)
     fun constOrFail(): Const =
       when (this) {
         is Const -> this
         is Expr -> parseError("Expected a constant segment, but found an expression segment: Seg.Expr(${expr.dumpKotlinLike()})", this.expr)
       }
 
-    context(CX.Scope, CX.Parsing)
+    context(scope: CX.Scope, parsing: CX.Parsing)
     fun exprOrFail(): Expr =
       when (this) {
         is Const -> parseErrorAtCurrent("Expected an expression segment, but found a constant segment: Seg.Const(${value})")
@@ -83,7 +83,7 @@ object ParseExpression {
       }
   }
 
-  context(CX.Scope, CX.Parsing) fun parseBlockStatement(expr: IrStatement): XR.Variable =
+  context(scope: CX.Scope, parsing: CX.Parsing) fun parseBlockStatement(expr: IrStatement): XR.Variable =
     on(expr).match(
       case(Ir.Variable[Is(), Is()]).thenThis { name, rhs ->
         val irType = TypeParser.of(this)
@@ -92,14 +92,14 @@ object ParseExpression {
       }
     ) ?: parseError("Could not parse Ir Variable statement from:\n${expr.dumpSimple()}", expr)
 
-  context(CX.Scope, CX.Parsing) fun parseBranch(expr: IrBranch): XR.Branch =
+  context(scope: CX.Scope, parsing: CX.Parsing) fun parseBranch(expr: IrBranch): XR.Branch =
     on(expr).match(
       case(Ir.Branch[Is(), Is()]).then { cond, then ->
         XR.Branch(parse(cond), parse(then), expr.loc)
       }
     ) ?: parseError("Could not parse Branch from: ${expr.dumpSimple()}", expr)
 
-  context(CX.Scope, CX.Parsing) fun parseFunctionBlockBody(blockBody: IrBlockBody): XR.Expression =
+  context(scope: CX.Scope, parsing: CX.Parsing) fun parseFunctionBlockBody(blockBody: IrBlockBody): XR.Expression =
     blockBody.match(
       case(Ir.BlockBody.ReturnOnly[Is()]).then { irReturnValue ->
         parse(irReturnValue)
@@ -111,7 +111,7 @@ object ParseExpression {
       }
     ) ?: parseError("Could not parse IrBlockBody:\n${blockBody.dumpKotlinLike()}", blockBody)
 
-  context(CX.Scope, CX.Parsing) fun parse(expr: IrExpression): XR.Expression =
+  context(scope: CX.Scope, parsing: CX.Parsing) fun parse(expr: IrExpression): XR.Expression =
     on(expr).match<XR.Expression>(
 
       case(Ir.Call[Is()]).thenIf { it.ownerHasAnnotation<DslFunctionCall>() || it.ownerHasAnnotation<DslNestingIgnore>() }.then { call ->
@@ -237,13 +237,13 @@ object ParseExpression {
         }
 
         val (paramBind, paramType) =
-          if (batchAlias != null && varsUsed.any { it.isCurrentlyActiveBatchParam() }) {
-            ParamBind.Type.ParamUsingBatchAlias(batchAlias, paramBindTypeRaw) to XR.ParamType.Batch
+          if (parsing.batchAlias != null && varsUsed.any { it.isCurrentlyActiveBatchParam() }) {
+            ParamBind.Type.ParamUsingBatchAlias(parsing.batchAlias, paramBindTypeRaw) to XR.ParamType.Batch
           } else {
             paramBindTypeRaw to XR.ParamType.Single
           }
 
-        binds.addParam(bid, paramValue, paramBind)
+        parsing.binds.addParam(bid, paramValue, paramBind)
         XR.TagForParam(bid, paramType, null, this.type.toClassIdXR(), TypeParser.of(this), paramValue.loc)
       },
 
@@ -337,7 +337,7 @@ object ParseExpression {
         }
 
         val bid = BID.Companion.new()
-        binds.addParam(bid, paramValue, paramBindType)
+        parsing.binds.addParam(bid, paramValue, paramBindType)
         XR.TagForParam(bid, XR.ParamType.Multi, null, this.type.toClassIdXR(), TypeParser.ofFirstArgOfReturnTypeOf(this), paramValue.loc)
       },
 
@@ -385,7 +385,7 @@ object ParseExpression {
         sqlExprIr.match(
           case(SqlExpressionExpr.Uprootable[Is()]).then { uprootable ->
             // Add all binds from the found SqlExpression instance, this will be truned into something like `currLifts + SqlExpression.lifts` late
-            binds.addInheritedParams(sqlExprIr)
+            parsing.binds.addInheritedParams(sqlExprIr)
             // Then unpack and return the XR
             uprootable.unpackOrErrorXR().successOrParseError(sqlExprIr)
           },
@@ -393,7 +393,7 @@ object ParseExpression {
             if (call is IrCall && call.ownerHasAnnotation<SqlDynamic>())
               call.regularArgsOrExtension.forEach { validateDynamicArg(it) }
             val bid = BID.Companion.new()
-            binds.addRuntime(bid, sqlExprIr)
+            parsing.binds.addRuntime(bid, sqlExprIr)
             XR.TagForSqlExpression(bid, TypeParser.of(sqlExprIr), sqlExprIr.loc)
           },
         ) ?: parseError(Messages.CannotCallUseOnAnArbitraryDynamic(), sqlExprIr)
@@ -571,7 +571,7 @@ object ParseExpression {
       parseError("Could not parse the expression" + (if (additionalHelp.isNotEmpty()) "\n${additionalHelp}" else ""), expr)
     }
 
-  context(CX.Scope, CX.Parsing)
+  context(scope: CX.Scope, parsing: CX.Parsing)
   fun processScaffolded(sqlExprArg: IrExpression, irVararg: IrExpression, currentExpr: IrExpression) = run {
     val loc = currentExpr.loc
     //if (this.dumpKotlinLikePretty().contains("Table(Address).join { a -> p.id == a.ownerId }.toExpr")) {
@@ -587,14 +587,14 @@ object ParseExpression {
         },
         case(SqlExpressionExpr.Uprootable[Is()]).then { uprootable ->
           // Add all binds from the found SqlExpression instance, this will be truned into something like `currLifts + SqlExpression.lifts` late
-          binds.addInheritedParams(sqlExprArg)
+          parsing.binds.addInheritedParams(sqlExprArg)
           // Then unpack and return the XR
           uprootable.unpackOrErrorXR().successOrParseError(sqlExprArg)
         },
         // TODO need to explore in which situation this happens
         case(ExtractorsDomain.DynamicExprCall[Is()]).then { call ->
           val bid = BID.Companion.new()
-          binds.addRuntime(bid, sqlExprArg)
+          parsing.binds.addRuntime(bid, sqlExprArg)
           XR.TagForSqlExpression(bid, TypeParser.of(sqlExprArg), sqlExprArg.loc)
         },
       ) ?: parseError(Messages.CannotCallUseOnAnArbitraryDynamic(), sqlExprArg)
@@ -603,7 +603,7 @@ object ParseExpression {
     XR.FunctionApply(wrappedExprCall, parsedArgs, loc)
   }
 
-  context(CX.Scope) fun parseConst(irConst: IrConst): XR.Expression =
+  context(scope: CX.Scope) fun parseConst(irConst: IrConst): XR.Expression =
     if (irConst.value == null) XR.Const.Null(irConst.loc)
     else when (irConst.kind) {
       IrConstKind.Null -> XR.Const.Null(irConst.loc)
@@ -620,7 +620,7 @@ object ParseExpression {
     }
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun validateDynamicArg(arg: IrExpression?) {
   if (arg == null) parseErrorAtCurrent("Argument of a @CapturedDynamic function cannot be null (i.e. no default values allowed)")
   if (arg.isClass<SqlExpression<*>>() || arg.isClass<SqlQuery<*>>()) {
@@ -630,7 +630,7 @@ fun validateDynamicArg(arg: IrExpression?) {
   }
 }
 
-context(CX.Scope, CX.Parsing)
+context(scope: CX.Scope, parsing: CX.Parsing)
 fun validateCanUseInParam(varUsed: IrGetValue) {
   fun throwValidationError(errorReason: String): Nothing =
     parseError(
@@ -658,11 +658,11 @@ fun validateCanUseInParam(varUsed: IrGetValue) {
   }
 }
 
-context(CX.Scope, CX.Parsing)
+context(scope: CX.Scope, parsing: CX.Parsing)
 private fun IrGetValue.isAllowedInParam() =
   this.isCurrentlyActiveBatchParam() || this.symbol.safeName == "<this>"
 
 
-context(CX.Scope, CX.Parsing)
+context(scope: CX.Scope, parsing: CX.Parsing)
 private fun IrGetValue.isCurrentlyActiveBatchParam() =
-  batchAlias != null && this.isBatchParam()
+  parsing.batchAlias != null && this.isBatchParam()

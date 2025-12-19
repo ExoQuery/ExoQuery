@@ -16,7 +16,7 @@ version = extra["controllerProjectVersion"].toString()
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
   compilerOptions {
-    freeCompilerArgs.add("-Xcontext-receivers")
+    freeCompilerArgs.add("-Xcontext-parameters")
     optIn.add("io.exoquery.annotation.ExoInternal")
     java {
       sourceCompatibility = JavaVersion.VERSION_11

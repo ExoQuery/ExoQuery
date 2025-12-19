@@ -27,15 +27,15 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 sealed interface KnownSerializer {
   data class Ref(val serializer: IrClassReference): KnownSerializer {
-    context(CX.Scope, CX.Builder)
+    context(scope: CX.Scope, builder: CX.Builder)
     fun buildExpression(expectedType: IrType, originalElementOrigin: ParseError.Origin) = run {
       // Don't know if it's always safe to make the assumption that an IrClassReference.symbol is an IrClassSymbol so return a specific error
       val symbol: IrClassSymbol = serializer.symbol as? IrClassSymbol ?: parseError("Error getting the class symbol of the class reference ${serializer.dumpKotlinLike()}. The reference was not an IrClassSymbol", originalElementOrigin)
-      builder.irGetObject(symbol)
+      builder.builder.irGetObject(symbol)
     }
   }
   data object Implicit: KnownSerializer {
-    context(CX.Scope, CX.Builder)
+    context(scope: CX.Scope, builder: CX.Builder)
     fun buildExpression(expectedType: IrType) = run {
       // When there is a @Serializeable annotation on the class itself then just invoke `kotlinx.serialization.serializer<OfThatType>`
       callWithParams("kotlinx.serialization", "serializer", listOf(expectedType))()
@@ -53,7 +53,7 @@ object Elaborate {
     override fun toString(): String = path.joinToString(".")
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun invoke(expr: IrExpression, rootType: XRType.Product) = run {
     if (!expr.type.isDataClass())
       parseError("Expected a data class to elaborate, got ${expr.type}", expr)
@@ -69,7 +69,7 @@ object Elaborate {
   // data class Person(name: Name(first, last)?, age), and an identifier p:Person ->
   //  ([name, first], if (p.name == null) null else p.first), ([name, last], if (p.name == null) null else p.last), ([age], p.age)
   // Same pattern for futher nested nullables
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   private fun invokeRecurse(currPath: List<Path.Seg>, parent: IrExpression, type: IrType, currentXrType: XRType, knownFieldSerializer: KnownSerializer): List<Path> = run {
     if (currentXrType.isProduct()) {
       val cls = type.classOrNull ?: parseError("Expected a class to elaborate, got ${type} which is invalid", parent)
@@ -121,7 +121,7 @@ object Elaborate {
         val explicitReceiver = parent
         if (getterSymbol != null) {
           val call =
-            with(builder) {
+            with(builder.builder) {
               irCall(getterSymbol).apply {
                 dispatchReceiver = explicitReceiver
               }
@@ -136,11 +136,11 @@ object Elaborate {
     }
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   private fun callNullSafe(parent: IrExpression, parentType: IrType, targetType: IrType, call: IrExpression) = run {
     //val call = parent.callDispatch(propertyName).invoke()
     if (parentType.isNullable()) {
-      with(builder) {
+      with(builder.builder) {
         irIfNull(targetType, parent, irNull(targetType), call)
       }
     } else {

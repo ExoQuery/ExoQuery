@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
-context(CX.QueryAccum) fun makeVisitorContextWithAccum() = VisitorContext(accum)
+context(accum: CX.QueryAccum) fun makeVisitorContextWithAccum() = VisitorContext(accum.accum)
 
 fun makeVisitorContext() = VisitorContext(FileQueryAccum.empty())
 

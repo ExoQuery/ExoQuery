@@ -85,7 +85,7 @@ val IrFunction.extensionParam get(): IrValueParameter? = run {
 val IrFunction.regularParams get() =
   this.parameters.filter { it.kind == IrParameterKind.Regular }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 val IrCall.argumentsWithParameters get() = run {
   // TODO optimize to return a iterator
   val params = this.symbol.owner.parameters
@@ -216,11 +216,11 @@ fun IrType.findMethodOrFail(methodName: String, valueParamsSize: Int): MethodTyp
 // WARNING assuming (for now) that the extension methods are in the same package as the Class they're being called from.
 // can relax this assumption later by adding an optional package-field to ReplacementMethodToCall and propagating it here
 // TODO Need to filter by reciever type i.e. what if there are multiple extension functions named the same thing
-context(CX.Scope) fun IrType.findExtensionMethodOrFail(methodName: String, valueParamsSize: Int) = run {
+context(scope: CX.Scope) fun IrType.findExtensionMethodOrFail(methodName: String, valueParamsSize: Int) = run {
   (this
     .classOrNull ?: error("Cannot locate the method ${methodName} from the type: ${this.dumpKotlinLike()} type is not a class."))
     .let { classSym ->
-      pluginCtx.referenceFunctions(CallableId(FqName(classSym.owner.packageFqName.toString()), Name.identifier(methodName))).firstOrNull()?.let { MethodType.Method(it) }
+      scope.pluginCtx.referenceFunctions(CallableId(FqName(classSym.owner.packageFqName.toString()), Name.identifier(methodName))).firstOrNull()?.let { MethodType.Method(it) }
         ?: error("Cannot locate the extension method ${classSym.owner.packageFqName.toString()}.${methodName} from the type: ${this.dumpKotlinLike()} because the method does not exist.")
     }
 }
@@ -310,7 +310,7 @@ val IrCall.ownerFunction
   get() =
     this.symbol.owner
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrCall.zipArgsWithParamsOrFail() =
   ownerFunction.regularParams.zipIfSizesAreEqual(regularArgs)
     ?: parseError(
@@ -323,20 +323,20 @@ val IrGetValue.ownerFunName
     (this.symbol.owner as? IrFunction)?.let { it.symbol.safeName }
 
 // TODO change to LocationContainingContext
-context(CX.Scope) fun IrElement.location(): CompilerMessageSourceLocation =
-  this.location(currentFile.fileEntry)
+context(scope: CX.Scope) fun IrElement.location(): CompilerMessageSourceLocation =
+  this.location(scope.currentFile.fileEntry)
 
 fun IrFile.location(): CompilerMessageSourceLocation =
   this.location(this.fileEntry)
 
-context(CX.Scope) fun IrElement.locationXR(): XR.Location =
-  this.location(currentFile.fileEntry).toLocationXR()
+context(scope: CX.Scope) fun IrElement.locationXR(): XR.Location =
+  this.location(scope.currentFile.fileEntry).toLocationXR()
 
-context(CX.Scope) fun IrElement.buildLocation(): CompilerMessageSourceLocation =
-  this.location(currentFile.fileEntry)
+context(scope: CX.Scope) fun IrElement.buildLocation(): CompilerMessageSourceLocation =
+  this.location(scope.currentFile.fileEntry)
 
-context(CX.Scope) fun IrElement.buildLocationXR(): XR.Location =
-  this.location(currentFile.fileEntry).toLocationXR()
+context(scope: CX.Scope) fun IrElement.buildLocationXR(): XR.Location =
+  this.location(scope.currentFile.fileEntry).toLocationXR()
 
 fun CompilerMessageSourceLocation.toLocationXR(): XR.Location =
   XR.Location.File(path, line, column)
@@ -438,9 +438,9 @@ inline fun <reified T> IrType.isClassStrict(): Boolean {
 }
 
 // TODO use builderCtx.pluginCtx.referenceClass(classId) instead of this, this means pluginCtx needs to be passed into here
-context(CX.Scope)
+context(scope: CX.Scope)
 inline fun <reified T> IrType.isClass(): Boolean {
-  val clsOpt = T::class.classId()?.let { pluginCtx.referenceClass(it) }
+  val clsOpt = T::class.classId()?.let { scope.pluginCtx.referenceClass(it) }
   return clsOpt?.let { cls: IrClassSymbol -> this.eraseTypeParameters().isSubtypeOfClass(cls) } ?: false
 }
 
@@ -463,13 +463,13 @@ inline fun <reified T> IrCall.getPropertyAnnotationArgs(): List<IrExpression> {
   return annotation?.regularArgs?.filterNotNull() ?: emptyList()
 }
 
-context(CX.Scope) fun IrExpression.varargValues(): List<IrExpression> =
+context(scope: CX.Scope) fun IrExpression.varargValues(): List<IrExpression> =
   (this as? IrVararg ?: run {
-    logger.warn("[ExoQuery-WARN] Expected the argument to be an IrVararg but it was not: ${this.dumpKotlinLike()}"); null
+    scope.logger.warn("[ExoQuery-WARN] Expected the argument to be an IrVararg but it was not: ${this.dumpKotlinLike()}"); null
     null
   })?.elements?.mapNotNull {
     it as? IrExpression ?: run {
-      logger.warn("[ExoQuery-WARN] Expected the argument to be an IrExpression but it was not: ${it.dumpKotlinLike()}"); null
+      scope.logger.warn("[ExoQuery-WARN] Expected the argument to be an IrExpression but it was not: ${it.dumpKotlinLike()}"); null
     }
   } ?: emptyList()
 
@@ -479,7 +479,7 @@ inline fun <reified T> IrCall.reciverIs() =
 inline fun <reified T> IrCall.reciverIs(methodName: String) =
   (this.extensionArg ?: this.dispatchArg)?.isClass<T>() ?: false && this.symbol.safeName == methodName
 
-context(CX.Scope) val IrElement.loc get() = this.locationXR()
+context(scope: CX.Scope) val IrElement.loc get() = this.locationXR()
 
 data class ReplacementMethodToCall(val methodToCall: String, val callerType: ChangeReciever = ChangeReciever.DoNothing) {
   companion object {
@@ -511,27 +511,27 @@ fun IrCall.caller() =
     Caller.Dispatch(it)
   }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrElement.sourceOrDump() =
   this.source() ?: run {
-    logger.warn("[ExoQuery-WARN] Could not get the source of the element, dumping it instead: ${this.dumpKotlinLike()}")
+    scope.logger.warn("[ExoQuery-WARN] Could not get the source of the element, dumping it instead: ${this.dumpKotlinLike()}")
     this.dumpKotlinLike()
   }
 
 // Best-effort to get the source of the file
-context(CX.Scope) fun IrElement.source(): String? = run {
+context(scope: CX.Scope) fun IrElement.source(): String? = run {
   try {
     val range = TextRangeSimple(this.startOffset, this.endOffset)
 
     fun getFromFirSource() =
-      (currentFile.metadata as? FirMetadataSource.File)
+      (scope.currentFile.metadata as? FirMetadataSource.File)
         ?.fir
         ?.source
         ?.getElementTextInContextForDebug()
         ?.let { range.substring(it) }
 
     fun getFromKtFile() =
-      currentFile.getKtFile()?.let { ktFile ->
+      scope.currentFile.getKtFile()?.let { ktFile ->
         ktFile.textRangeSimple.cutOut(range).let { cutOut ->
           ktFile.text.let { textValue ->
             cutOut.substring(textValue)
@@ -548,15 +548,15 @@ context(CX.Scope) fun IrElement.source(): String? = run {
 private val KtFile.textRangeSimple get() =
   TextRangeSimple(0, this.getTextLength())
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrExpression.isSqlQuery() =
   this.type.isClass<SqlQuery<*>>()
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrExpression.isSqlExpression() =
   this.type.isClass<SqlExpression<*>>()
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrExpression.isSqlAction() =
   this.type.isClass<SqlAction<*, *>>()
 
@@ -601,18 +601,18 @@ fun IrExpression.isSqlAction() =
  * but if they do arise, a similar solution (i.e. creating a run-function with a internal-variable
  * pointing to the original expression) can be applied.
  */
-context(CX.Scope, CX.Builder)
+context(scope: CX.Scope, builder: CX.Builder)
 fun makeRunFunction(statements: List<IrStatement>, returnExpr: IrExpression): IrExpression {
-  val runFunction = pluginCtx.referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("run")))
+  val runFunction = scope.pluginCtx.referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("run")))
     .first { it.owner.regularParams.singleOrNull()?.type is IrSimpleType } // get the generic run<T> function
 
   val lambdaType = runFunction.owner.regularParams[0].type
   val returnType = runFunction.owner.returnType
 
-  val decl = currentDeclarationParent ?: parseError("Cannot get parent of the current declaration", returnExpr)
+  val decl = scope.currentDeclarationParent ?: parseError("Cannot get parent of the current declaration", returnExpr)
   val lambda = createLambda0(returnExpr, decl, statements)
 
-  return builder.irCall(runFunction).apply {
+  return builder.builder.irCall(runFunction).apply {
     typeArguments[0] = returnExpr.type // for example, T = String
     arguments[0] = lambda
   }
@@ -621,8 +621,8 @@ fun makeRunFunction(statements: List<IrStatement>, returnExpr: IrExpression): Ir
 fun IrElement.hasSameOffsetsAs(other: IrElement): Boolean =
   this.startOffset == other.startOffset && this.endOffset == other.endOffset
 
-context(CX.Scope)
+context(scope: CX.Scope)
 inline fun <reified T> typeOfClass(): IrType? = run {
   val classId = typeOf<T>().fullPathOfBasic()
-  pluginCtx.referenceClass(classId)?.owner?.defaultType
+  scope.pluginCtx.referenceClass(classId)?.owner?.defaultType
 }

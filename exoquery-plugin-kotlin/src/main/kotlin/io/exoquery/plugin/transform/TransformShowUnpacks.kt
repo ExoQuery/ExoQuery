@@ -32,17 +32,17 @@ public fun String.prepareForPrintingAdHoc() =
 
 // Note that if you don't do `.deepCopyWithSymbols()` then the actual Transformer will modify the original tree adding the XR.show into the unpackQuery/unpackExpr calls
 // which will obviously fail. It is non-obvious where the DeclarationIrBuilder actually does this.
-context(CX.Scope)
+context(scope: CX.Scope)
 public fun IrElement.prepareForPrinting() = run {
   // Need to do this or in some cases will get: kotlin.UninitializedPropertyAccessException: lateinit property parent has not been initialized
   val owner = (this as? IrCall)?.symbol?.owner
   val parentOrNull = try { owner?.parent } catch (e: Exception) { null }
-  TransformShowUnpacks(this@Scope).visitElement(
+  TransformShowUnpacks(scope).visitElement(
     this.deepCopyWithSymbols(parentOrNull), Unit
   )
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrElement.dumpKotlinLikePretty() = this.dumpKotlinLike() //prepareForPrinting().dumpKotlinLike()
 
 

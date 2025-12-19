@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.ir.util.render
 object Messages {
 
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun InvalidCapturedDynamicArgument(arg: IrExpression) =
 """
 Argument `${arg.sourceOrDump()}` (whose type was: ${arg.type.dumpKotlinLike()}) of a @CapturedDynamic function must be either a direct instance of 
@@ -101,8 +101,8 @@ val UnexpectedCodegenCall: String =
 Unexpected Codegen Call. TODO longer explanation.
 """.trimIndent()
 
-context(CX.Parsing)
-fun batchParamError() = batchParamError(batchAlias?.name?.asString() ?: "<???>")
+context(parsing: CX.Parsing)
+fun batchParamError() = batchParamError(parsing.batchAlias?.name?.asString() ?: "<???>")
 
 fun batchParamError(batchParamName: String) = "Detected an invalid use of the batch-parameter `$batchParamName` in the query.\n" + UsingBatchParam
 
@@ -240,7 +240,7 @@ this is a function that you are sure can be safely spliced (e.g. it is a pure-fu
 on the function to allow it to be used in this context.
 """.trimIndent()
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun ValueLookupComingFromExternalInExpression(variable: IrGetValue) =
   when {
     variable.realOwner() is RealOwner.CapturedDynamicFunctionVariable ->
@@ -250,7 +250,7 @@ fun ValueLookupComingFromExternalInExpression(variable: IrGetValue) =
   }
 
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun ValueMustBeWrappedInParam(variable: IrGetValue) =
 """
 It looks like the variable `${variable.symbol.safeName}` is coming from outside the sql block. 
@@ -280,7 +280,7 @@ fun getName(p: Person): SqlQuery<Person> = sql.expression { p.name }
 (Lineage: ${variable.showLineage()})
 """.trimIndent()
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun VariableComingFromNonCapturedFunction(expr: IrExpression, funName: String) =
 """
 It appears that the expression `${expr.source()}` is an argument coming from a function call which will force
@@ -314,7 +314,7 @@ Alternatively, you can:
    When decoding the `Customer` instance you will need to give it a custom encoder for MyCustomDate.
 """.trimIndent()
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun CapturedFunctionFormWrong(msg: String) =
 """
 $msg
@@ -334,7 +334,7 @@ fun myFunction(): SqlQuery<Int> = select {
 """.trimIndent()
 
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun ParserMessage(ir: IrExpression?, parsedCode: String?) =
 """
 ================ Parsed As: ================
@@ -345,7 +345,7 @@ ${ir?.dumpKotlinLikePretty()}
 ${ir?.dumpSimple()}
 """.trimIndent()
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun PrintingMessage(ir: IrExpression?) =
 """
 ================ Interpreated IR: ================
@@ -355,7 +355,7 @@ ${ir?.dumpSimple()}
 """.trimIndent()
 
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun PrintingMessageMulti(ir: List<IrElement>?, additionalHeading: String = ""): String {
     fun writeOutput(ir: IrElement?): String =
       when(ir) {
@@ -392,7 +392,7 @@ ${ir?.withIndex()?.map { (i, it) -> "($i) " + writeOutput(it) }?.joinToString("\
 """.trimIndent()
 }
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun PrintingMessageSingle(ir: IrElement, additionalHeading: String = ""): String {
     fun writeOutput(ir: IrElement): String =
       when(ir) {

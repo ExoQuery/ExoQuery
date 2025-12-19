@@ -84,7 +84,7 @@ kotlin {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
   compilerOptions {
     freeCompilerArgs = listOf(
-      "-Xcontext-receivers",
+      "-Xcontext-parameters",
       "-P",
       "plugin:io.exoquery.terpal-plugin:traceWrappers=true"
     )

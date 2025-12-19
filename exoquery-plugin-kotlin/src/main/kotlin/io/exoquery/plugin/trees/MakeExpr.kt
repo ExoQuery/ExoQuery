@@ -22,7 +22,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun KType.fullPathOfBasic(): ClassId =
   when (val cls = this.classifier) {
     is KClass<*> -> cls.classId() ?: parseErrorAtCurrent("Could not find the class id for the class: $cls")
@@ -31,36 +31,36 @@ fun KType.fullPathOfBasic(): ClassId =
 
 // TODO this can probably make both objects and types if we check the attributes of the reified type T
 //      should look into that
-context(CX.Scope, CX.Builder) inline fun <reified T> make(vararg args: IrExpression): IrConstructorCall {
+context(scope: CX.Scope, builder: CX.Builder) inline fun <reified T> make(vararg args: IrExpression): IrConstructorCall {
   val fullPath = typeOf<T>().fullPathOfBasic()
   return makeClassFromId(fullPath, args.toList())
 }
 
-context(CX.Scope, CX.Builder) inline fun <reified T> makeWithTypes(types: List<IrType>, args: List<IrExpression>): IrConstructorCall {
+context(scope: CX.Scope, builder: CX.Builder) inline fun <reified T> makeWithTypes(types: List<IrType>, args: List<IrExpression>): IrConstructorCall {
   val fullPath = typeOf<T>().fullPathOfBasic()
   return makeClassFromId(fullPath, args.toList(), types.toList())
 }
 
-context(CX.Scope, CX.Builder) inline fun <reified T> makeObject(): IrGetObjectValue {
+context(scope: CX.Scope, builder: CX.Builder) inline fun <reified T> makeObject(): IrGetObjectValue {
   val fullPath = typeOf<T>().fullPathOfBasic()
   return makeObjectFromId(fullPath)
 }
 
 
-context(CX.Scope, CX.Builder) fun makeClassFromString(fullPath: String, args: List<IrExpression>, types: List<IrType> = listOf(), overrideType: IrType? = null) =
+context(scope: CX.Scope, builder: CX.Builder) fun makeClassFromString(fullPath: String, args: List<IrExpression>, types: List<IrType> = listOf(), overrideType: IrType? = null) =
   makeClassFromId(ClassId.topLevel(FqName(fullPath)), args, types, overrideType)
 
 // Blows up here with a strange error if you put 'run' for the body of the function without specifying a return type
 // Caused by: java.lang.IllegalStateException: Arguments and parameters size mismatch: arguments.size = 1, parameters.size = 2
-context(CX.Scope, CX.Builder) fun makeClassFromId(fullPath: ClassId, args: List<IrExpression>, types: List<IrType> = listOf(), overrideType: IrType? = null): IrConstructorCall {
-  val cls = pluginCtx.referenceClass(fullPath) ?: parseErrorAtCurrent("Could not find the reference for a class in the context: $fullPath")
+context(scope: CX.Scope, builder: CX.Builder) fun makeClassFromId(fullPath: ClassId, args: List<IrExpression>, types: List<IrType> = listOf(), overrideType: IrType? = null): IrConstructorCall {
+  val cls = scope.pluginCtx.referenceClass(fullPath) ?: parseErrorAtCurrent("Could not find the reference for a class in the context: $fullPath")
 
   if (!cls.owner.isClass && !cls.owner.isAnnotationClass)
     parseErrorAtCurrent("Attempting to create an instance of $fullPath which is not a class")
 
   return (cls.constructors.firstOrNull() ?: liftingError("Could not find a constructor for a class in the context: $fullPath"))
     .let { ctor ->
-      overrideType?.let { builder.irCall(ctor, it) } ?: builder.irCall(ctor)
+      overrideType?.let { builder.builder.irCall(ctor, it) } ?: builder.builder.irCall(ctor)
     }
     .also { ctorCall ->
       args.withIndex().map { (i, arg) ->
@@ -73,12 +73,12 @@ context(CX.Scope, CX.Builder) fun makeClassFromId(fullPath: ClassId, args: List<
     }
 }
 
-context(CX.Scope, CX.Builder) fun makeObjectFromId(id: ClassId): IrGetObjectValue {
-  val clsSym = pluginCtx.referenceClass(id) ?: parseErrorAtCurrent("Could not find the reference for a class in the context: $id")
+context(scope: CX.Scope, builder: CX.Builder) fun makeObjectFromId(id: ClassId): IrGetObjectValue {
+  val clsSym = scope.pluginCtx.referenceClass(id) ?: parseErrorAtCurrent("Could not find the reference for a class in the context: $id")
 
   if (!clsSym.owner.isObject)
     parseErrorAtCurrent("Attempting to create an object-instance of $id which is not an object")
 
   val tpe = clsSym.owner.defaultType
-  return builder.irGetObjectValue(tpe, clsSym)
+  return builder.builder.irGetObjectValue(tpe, clsSym)
 }

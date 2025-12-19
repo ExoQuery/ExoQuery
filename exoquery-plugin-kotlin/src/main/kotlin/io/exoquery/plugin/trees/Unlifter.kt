@@ -28,7 +28,7 @@ import io.exoquery.plugin.trees.UnlifterBasics.unliftBoolean
 @OptIn(ExoInternal::class)
 object Unlifter {
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun DatabaseDriver.Companion.unlift(expr: IrExpression): DatabaseDriver =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<DatabaseDriver.Postgres>()[Is()]).then { args ->
@@ -68,7 +68,7 @@ object Unlifter {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun TableGrouping.Companion.unlift(expr: IrExpression): TableGrouping =
     on(expr).match(
       case(Ir.GetObjectValue<TableGrouping.SchemaPerObject>()).then { TableGrouping.SchemaPerObject },
@@ -90,7 +90,7 @@ object Unlifter {
     )
 
   @OptIn(ExoInternal::class)
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun LLM.Companion.unlift(expr: IrExpression): LLM =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<LLM.Ollama>()[Is()]).then { args ->
@@ -117,7 +117,7 @@ object Unlifter {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun NameParser.UsingLLM.Companion.unlift(expr: IrExpression): NameParser.UsingLLM =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<NameParser.UsingLLM>()[Is()]).then { args ->
@@ -136,7 +136,7 @@ object Unlifter {
       }
     ) ?: orFail(expr)
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun NameParser.Target.Companion.unlift(expr: IrExpression): NameParser.Target =
     on(expr).match(
       case(Ir.GetObjectValue<NameParser.Target.Table>()).then { NameParser.Target.Table },
@@ -154,7 +154,7 @@ object Unlifter {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun NameParser.UsingRegex.Companion.unlift(expr: IrExpression): NameParser.UsingRegex =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<NameParser.UsingRegex>()[Is()]).then { args ->
@@ -177,7 +177,7 @@ object Unlifter {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun NameParser.Composite.Companion.unlift(expr: IrExpression): NameParser.Composite =
     on(expr).match(
       case(Ir.Call.FunctionMem2.AllowNulls[Ir.GetObjectValue<NameParser.Composite.Companion>(), Is("invoke"), Is()]).then { _, (nameParser, otherNameParsers) ->
@@ -204,7 +204,7 @@ object Unlifter {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun NameParser.Companion.unlift(expr: IrExpression): NameParser =
     on(expr).match(
       case(Ir.Expr.ClassOf<NameParser.UsingLLM>()).then { _ -> NameParser.UsingLLM.unlift(expr) },
@@ -226,7 +226,7 @@ object Unlifter {
         """.trimIndent()
       )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun CodeVersion.Companion.unlift(expr: IrExpression): CodeVersion =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<CodeVersion.Fixed>()[Is()]).then { args -> CodeVersion.Fixed(unliftString(args[0].lookupIfVar() ?: parseError("Expected a non-null code version", expr))) },
@@ -248,7 +248,7 @@ object Unlifter {
     )
 
   @OptIn(ExoInternal::class)
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun UnrecognizedTypeStrategy.Companion.unlift(expr: IrExpression): UnrecognizedTypeStrategy =
     on(expr).match(
       case(Ir.GetObjectValue<UnrecognizedTypeStrategy.AssumeString>()).then { UnrecognizedTypeStrategy.AssumeString },
@@ -270,7 +270,7 @@ object Unlifter {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun IrExpression?.lookupIfVar() =
     if (this == null) null
     else
@@ -282,7 +282,7 @@ object Unlifter {
         },
       ) ?: this
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun Code.Entities.Companion.unlift(expr: IrExpression): Code.Entities = run {
     fun process(args: Ir.ConstructorCallNullableN.Args) = run {
       val idx = args.withIndexAndLookup()
@@ -349,14 +349,14 @@ object Unlifter {
     )
   }
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftCodeEntities(expr: IrExpression): Code.Entities =
     Code.Entities.unlift(expr)
 
 
   class ArgsWithIndexAndLookup(val args: Ir.ConstructorCallNullableN.Args) {
     private var index = 0
-    context (CX.Scope)
+    context (scope: CX.Scope)
     fun next() = run {
       val argsCurr = args[index]
       index += 1
@@ -366,13 +366,13 @@ object Unlifter {
   fun Ir.ConstructorCallNullableN.Args.withIndexAndLookup() =
     ArgsWithIndexAndLookup(this)
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun ParamSketch.Companion.unlift(expr: IrExpression): ParamSketch =
     on(expr).match(
       case(Ir.ConstructorCall2.of<ParamSketch>()[Is(), Is()]).then { a, b -> ParamSketch(unliftString(a), unliftString(b)) }
     ) ?: orFail(expr, "The expression was not a simple ParamSketch(...) call with zero variables or substitutions.")
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun CapturedFunctionSketch.Companion.unlift(expr: IrExpression): CapturedFunctionSketch =
     on(expr).match(
       case(Ir.ConstructorCall1.of<CapturedFunctionSketch>()[Ir.Vararg[Is()]]).then { (args) ->
@@ -380,7 +380,7 @@ object Unlifter {
       }
     ) ?: orFail(expr, "Invalid CapturedFunctionSketch(...). This is an internal ExoQuery assigned property. Please report a bug.")
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun unliftCapturedFunctionSketch(expr: IrExpression): CapturedFunctionSketch =
     CapturedFunctionSketch.unlift(expr)
 }

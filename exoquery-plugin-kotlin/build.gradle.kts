@@ -24,7 +24,7 @@ kotlin {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
   compilerOptions {
-      freeCompilerArgs.add("-Xcontext-receivers")
+      freeCompilerArgs.add("-Xcontext-parameters")
       optIn.addAll(
           "io.exoquery.annotation.ExoInternal",
           "kotlinx.serialization.ExperimentalSerializationApi",

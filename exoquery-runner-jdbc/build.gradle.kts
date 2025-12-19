@@ -31,7 +31,7 @@ version = extra["controllerProjectVersion"].toString()
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
   compilerOptions {
-    freeCompilerArgs.add("-Xcontext-receivers")
+    freeCompilerArgs.add("-Xcontext-parameters")
     optIn.add("io.exoquery.annotation.ExoInternal")
     // Otherwise will have: Could not resolve io.exoquery:pprint-kotlin:2.0.1.
     // Incompatible because this component declares a component, compatible with Java 11 and the consumer needed a component, compatible with Java 8

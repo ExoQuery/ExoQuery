@@ -18,7 +18,7 @@ class CompileTimeStoredXRsScope(private val buildDirPath: String, private val so
     object Transient: StorageMode
   }
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun tryPrintStore(): String = run {
     try {
       load().use {
@@ -65,7 +65,7 @@ class CompileTimeStoredXRsScope(private val buildDirPath: String, private val so
     return CompileTimeStoredXRs(db, sourceSet, primaryMap, dependentMaps)
   }
 
-  fun <R> scoped(block: context(CX.StoredXRsScope) () -> R): R {
+  fun <R> scoped(block: CX.StoredXRsScope.() -> R): R {
     val output = load().use { storedXRs ->
       block(CX.StoredXRsScope(storedXRs))
     }
@@ -126,7 +126,7 @@ class CompileTimeStoredXRs private constructor(
 
   //private val functionMap = mutableMapOf<String, String>()
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun printStored(): String = run {
     fun printSourceSet(name: String, sourceSetMap: Map<String, String>): String = run {
       "------ SourceSet: ${name} (${sourceSetMap.size} Entries) ------\n" +
@@ -138,7 +138,7 @@ class CompileTimeStoredXRs private constructor(
       functionMap.listMaps().joinToString("\n") { (name, map) -> printSourceSet(name, map) }
   }
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   private fun unpackAndPrintEntry(entry: Map.Entry<String, String>): String? =
     decodeValue(entry.value)?.let { (containerType, xrStr) ->
       val xr = when (containerType) {
@@ -156,14 +156,14 @@ class CompileTimeStoredXRs private constructor(
     OwnerChain.ContainerType.Action -> "Action"
     OwnerChain.ContainerType.ActionBatch -> "ActionBatch"
   }
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun String.Companion.fromKeyString(key: String): OwnerChain.ContainerType? = when(key) {
     "Query" -> OwnerChain.ContainerType.Query
     "Expr" -> OwnerChain.ContainerType.Expr
     "Action" -> OwnerChain.ContainerType.Action
     "ActionBatch" -> OwnerChain.ContainerType.ActionBatch
     else -> {
-      logger.warn("Unknown ContainerType key string: $key")
+      scope.logger.warn("Unknown ContainerType key string: $key")
       null
     }
   }
@@ -173,11 +173,11 @@ class CompileTimeStoredXRs private constructor(
   private fun encodeValue(containerType: OwnerChain.ContainerType, packedXR: String) =
     "${containerType.toKeyString()}-$packedXR"
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   private fun decodeValue(packed: String): Pair<OwnerChain.ContainerType, String>? {
     val split = packed.indexOf('-')
     if (split < 0) {
-      logger.warn("Invalid packed XR value ${packed}, missing container type prefix")
+      scope.logger.warn("Invalid packed XR value ${packed}, missing container type prefix")
       return null
     }
     val (typeStr, xrStr) = packed.substring(0, split) to packed.substring(split + 1)
@@ -191,7 +191,7 @@ class CompileTimeStoredXRs private constructor(
   fun putStored(function: IrFunction, containerType: OwnerChain.ContainerType, packedXR: String) =
     putProper(function.stableIdentifier(),  containerType, packedXR)
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun getStored(function: IrFunction, containerType: OwnerChain.ContainerType): String? = run {
     val stableIdentifier = function.refinedStableIdentifier()
 
@@ -199,7 +199,7 @@ class CompileTimeStoredXRs private constructor(
       val (storedType, xrStr) = decodeValue(packed) ?: return null
       if (storedType != containerType) {
         // Typically this means that the user has change the actual type of the function (e.g. changed it from a SqlQuery to a SqlExpression)
-        logger.warn("Stored XR type $storedType does not match requested type $containerType for function `${function.symbol.safeName}`", function)
+        scope.logger.warn("Stored XR type $storedType does not match requested type $containerType for function `${function.symbol.safeName}`", function)
         null
       }
       xrStr

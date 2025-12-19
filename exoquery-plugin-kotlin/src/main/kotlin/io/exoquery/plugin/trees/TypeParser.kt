@@ -28,37 +28,37 @@ import org.jetbrains.kotlin.ir.types.isBoolean
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 object TypeParser {
-  context(CX.Scope) fun of(expr: IrExpression) =
+  context(scope: CX.Scope) fun of(expr: IrExpression) =
     ofElementWithType(expr, expr.type)
 
-  context(CX.Scope) fun ofTypeArgOf(expr: IrCall) =
+  context(scope: CX.Scope) fun ofTypeArgOf(expr: IrCall) =
     ofElementWithType(expr, expr.typeArguments.firstOrNull() ?: run {
       parseErrorFromType("ERROR Could not parse type from the expression. There were no type-arguments.", expr)
     })
 
   // E.g. for a function-call that returns `Param<String>` get `String`
-  context(CX.Scope) fun ofFirstArgOfReturnTypeOf(expr: IrCall) =
+  context(scope: CX.Scope) fun ofFirstArgOfReturnTypeOf(expr: IrCall) =
     ofElementWithType(expr, expr.type.simpleTypeArgs.firstOrNull() ?: run {
       parseErrorFromType("ERROR Could not parse type from the expression. Could get the first type-argument of: ${expr.type}", expr)
     })
 
-  context(CX.Scope) fun of(expr: IrVariable) =
+  context(scope: CX.Scope) fun of(expr: IrVariable) =
     ofElementWithType(expr, expr.type)
 
-  context(CX.Scope) fun of(expr: IrFunction) =
+  context(scope: CX.Scope) fun of(expr: IrFunction) =
     ofElementWithType(expr, expr.returnType)
 
-  context(CX.Scope) fun of(expr: IrValueParameter) =
+  context(scope: CX.Scope) fun of(expr: IrValueParameter) =
     ofElementWithType(expr, expr.type)
 
-  context(CX.Scope) fun ofTypeAt(type: IrType, originalElement: IrElement): XRType =
+  context(scope: CX.Scope) fun ofTypeAt(type: IrType, originalElement: IrElement): XRType =
     try {
       parse(type)
     } catch (e: Exception) {
       parseErrorFromType("ERROR Could not parse type: ${type.dumpKotlinLike()}", originalElement, e)
     }
 
-  context(CX.Scope) private fun ofElementWithType(expr: IrElement, type: IrType) =
+  context(scope: CX.Scope) private fun ofElementWithType(expr: IrElement, type: IrType) =
     try {
       when {
         // If this is a field from a class that is marked @Contextaul then we know immediately it is a value type
@@ -77,10 +77,10 @@ object TypeParser {
   // Parsing large data-classes can get cumbersome, so we cache the results
   val typeCache = LruCache<IrType, XRType>(50000)
 
-  context(CX.Scope) private fun parse(expr: IrType): XRType =
+  context(scope: CX.Scope) private fun parse(expr: IrType): XRType =
     typeCache.getOrPut(expr) { parseFull(expr) }
 
-  context(CX.Scope) private fun parseFull(expr: IrType): XRType =
+  context(scope: CX.Scope) private fun parseFull(expr: IrType): XRType =
     on(expr).match<XRType>(
       // TODO why for Components1 it's (type) bot for Components2 it's (type, type)
       //     think this is a bug with DecoMat.
@@ -153,6 +153,6 @@ object TypeParser {
         XRType.Generic
       }
     ) ?: run {
-      parseErrorFromType("ERROR Could not parse type from: ${expr.dumpKotlinLike()}", currentFile)
+      parseErrorFromType("ERROR Could not parse type from: ${expr.dumpKotlinLike()}", scope.currentFile)
     }
 }

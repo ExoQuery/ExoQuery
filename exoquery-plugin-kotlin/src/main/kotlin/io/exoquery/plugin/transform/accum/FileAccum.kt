@@ -24,11 +24,11 @@ data class FileAccum<Content>(private val state: AccumState<Content>) {
         fileQueryAccum.items
     }
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   fun addItem(item: Content) {
     when (val fileQueryAccum = this.state) {
       is AccumState.Empty ->
-        logger.error("When compiling the following query, no source-file was opened yet. This usually means some downstream error has occurred:\n${item}")
+        scope.logger.error("When compiling the following query, no source-file was opened yet. This usually means some downstream error has occurred:\n${item}")
       is AccumState.RealFile<Content> ->
         fileQueryAccum.addItem(item)
     }

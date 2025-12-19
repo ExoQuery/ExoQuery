@@ -24,14 +24,14 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 // TODO also want to get TracesEnabled annotation from the build query itself.
 object ComputeEngineTracing {
-  context(CX.Scope)
-  private fun getFileTraceAnnotations() = currentFile.getTraceAnnotationArgs()
+  context(scope: CX.Scope)
+  private fun getFileTraceAnnotations() = scope.currentFile.getTraceAnnotationArgs()
 
-  context(CX.Scope)
+  context(scope: CX.Scope)
   private fun IrAnnotationContainer.getTraceAnnotationArgs() =
     this.getAnnotation<TracesEnabled>()?.regularArgs?.firstOrNull()?.varargValues() ?: emptyList()
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   private fun getTraceAnnotations(dialectType: IrType) = run {
     val traceTypesClsRef = getFileTraceAnnotations() + dialectType.getTraceAnnotationArgs()
     val traceTypesNames =
@@ -46,13 +46,13 @@ object ComputeEngineTracing {
     traceTypesNames
   }
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   operator fun invoke(queryLabel: String?, dialectType: IrType) =
-    if (options != null) {
+    if (scope.options != null) {
     val traceTypesNames = getTraceAnnotations(dialectType)
     val writeSource =
       if (traceTypesNames.isNotEmpty())
-        FilePrintOutputSink.open(options)
+        FilePrintOutputSink.open(scope.options)
       else
         null
     val traceConfig = TraceConfig.empty.copy(traceTypesNames, writeSource ?: Tracer.OutputSink.None, queryLabel)

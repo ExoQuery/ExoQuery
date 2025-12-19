@@ -31,7 +31,7 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 
 class CallMethod(private val callerRaw: Caller, private val replacementFun: ReplacementMethodToCall, private val types: List<IrType>, private val tpe: IrType?) {
-  context(CX.Scope, CX.Builder) operator fun invoke(vararg args: IrExpression?): IrExpression {
+  context(scope: CX.Scope, builder: CX.Builder) operator fun invoke(vararg args: IrExpression?): IrExpression {
     val caller =
       when (replacementFun.callerType) {
         ChangeReciever.ToDispatch -> callerRaw.toDispatch()
@@ -47,7 +47,7 @@ class CallMethod(private val callerRaw: Caller, private val replacementFun: Repl
         is Caller.Extension -> caller.reciver.type.findExtensionMethodOrFail(funName, args.size)
         is Caller.TopLevelMethod ->
           // If there are overloads check that the number of arguments matches what we expect, no other checks for now
-          pluginCtx.referenceFunctions(CallableId(FqName(caller.packageName), Name.identifier(funName))).find { it.owner.regularParams.size == args.size }?.let { MethodType.Method(it) }
+          scope.pluginCtx.referenceFunctions(CallableId(FqName(caller.packageName), Name.identifier(funName))).find { it.owner.regularParams.size == args.size }?.let { MethodType.Method(it) }
             ?: throw IllegalArgumentException("Cannot find method `${funName}` in the package `${caller.packageName}`")
       }
 
@@ -58,7 +58,7 @@ class CallMethod(private val callerRaw: Caller, private val replacementFun: Repl
         if (args.isNotEmpty()) {
           throw IllegalArgumentException("Cannot call a getter with arguments but tried to call `${invokeMethod.sym.safeName}` with arguments: ${args.joinToString(", ") { it?.dumpKotlinLike() ?: "<NULL>" }}")
         }
-        with(builder) {
+        with(builder.builder) {
           when (caller) {
             is Caller.Dispatch -> {
               irCall(invokeMethod.sym, invokeMethod.sym.owner.returnType).apply {
@@ -74,7 +74,7 @@ class CallMethod(private val callerRaw: Caller, private val replacementFun: Repl
       }
       is MethodType.Method -> {
         val invoke = invokeMethod.sym
-        with(builder) {
+        with(builder.builder) {
           val invocation = if (tpe != null) irCall(invoke, tpe) else irCall(invoke)
           invocation.apply {
 
@@ -156,33 +156,33 @@ fun IrExpression.callDispatchWithParamsAndOutput(method: String, typeParams: Lis
   CallMethod(Caller.Dispatch(this), ReplacementMethodToCall(method), typeParams, fullOutputType)
 
 
-context (CX.Scope, CX.Builder) fun createLambda0(functionBody: IrExpression, functionParent: IrDeclarationParent, otherStatements: List<IrStatement> = listOf()): IrFunctionExpression =
-  with(builder) {
+context (scope: CX.Scope, builder: CX.Builder) fun createLambda0(functionBody: IrExpression, functionParent: IrDeclarationParent, otherStatements: List<IrStatement> = listOf()): IrFunctionExpression =
+  with(builder.builder) {
     val functionClosure = createLambda0Closure(functionBody, functionParent, otherStatements)
-    val functionType = pluginCtx.irBuiltIns.functionN(0).typeWith(functionClosure.returnType)
+    val functionType = scope.pluginCtx.irBuiltIns.functionN(0).typeWith(functionClosure.returnType)
     IrFunctionExpressionImpl(startOffset, endOffset, functionType, functionClosure, IrStatementOrigin.LAMBDA)
   }
 
-context (CX.Scope, CX.Builder) fun createLambda1(functionBody: IrExpression, param: IrValueParameter, functionParent: IrDeclarationParent): IrFunctionExpression =
+context (scope: CX.Scope, builder: CX.Builder) fun createLambda1(functionBody: IrExpression, param: IrValueParameter, functionParent: IrDeclarationParent): IrFunctionExpression =
   createLambdaN(functionBody, listOf(param), functionParent)
 
-context (CX.Scope, CX.Builder) fun createLambdaN(functionBody: IrExpression, params: List<IrValueParameter>, functionParent: IrDeclarationParent): IrFunctionExpression =
-  with(builder) {
+context (scope: CX.Scope, builder: CX.Builder) fun createLambdaN(functionBody: IrExpression, params: List<IrValueParameter>, functionParent: IrDeclarationParent): IrFunctionExpression =
+  with(builder.builder) {
     val functionClosure = createLambdaClosure(functionBody, params, functionParent)
 
     params.forEach { it.parent = functionClosure }
 
     val typeWith = params.map { it.type } + functionClosure.returnType
     val functionType =
-        pluginCtx.irBuiltIns.functionN(params.size)
+        scope.pluginCtx.irBuiltIns.functionN(params.size)
         // Remember this is FunctionN<InputA, InputB, ... Output> so these input/output args need to be both specified here
         .typeWith(typeWith)
 
     IrFunctionExpressionImpl(startOffset, endOffset, functionType, functionClosure, IrStatementOrigin.LAMBDA)
   }
 
-context (CX.Scope, CX.Builder) fun createLambda0Closure(functionBody: IrExpression, functionParent: IrDeclarationParent, otherStatements: List<IrStatement> = listOf()): IrSimpleFunction {
-  return with(pluginCtx) {
+context (scope: CX.Scope, builder: CX.Builder) fun createLambda0Closure(functionBody: IrExpression, functionParent: IrDeclarationParent, otherStatements: List<IrStatement> = listOf()): IrSimpleFunction {
+  return with(scope.pluginCtx) {
     irFactory.buildFun {
       origin = IrDeclarationOrigin.LOCAL_FUNCTION
       name = SpecialNames.NO_NAME_PROVIDED
@@ -200,7 +200,7 @@ context (CX.Scope, CX.Builder) fun createLambda0Closure(functionBody: IrExpressi
       and since the return-type is wrong it will fail with a very large error that ultimately says:
       RETURN: Incompatible return type
        */
-      body = pluginCtx.createIrBuilder(symbol).run {
+      body = scope.pluginCtx.createIrBuilder(symbol).run {
         // don't use expr body, coroutine codegen can't generate for it.
         irBlockBody {
           otherStatements.forEach { +it }
@@ -211,8 +211,8 @@ context (CX.Scope, CX.Builder) fun createLambda0Closure(functionBody: IrExpressi
   }
 }
 
-context (CX.Scope, CX.Builder) fun createLambdaClosure(functionBody: IrExpression, params: List<IrValueParameter>, functionParent: IrDeclarationParent): IrSimpleFunction {
-  return with(pluginCtx) {
+context (scope: CX.Scope, builder: CX.Builder) fun createLambdaClosure(functionBody: IrExpression, params: List<IrValueParameter>, functionParent: IrDeclarationParent): IrSimpleFunction {
+  return with(scope.pluginCtx) {
     irFactory.buildFun {
       origin = IrDeclarationOrigin.LOCAL_FUNCTION
       name = SpecialNames.NO_NAME_PROVIDED
@@ -235,7 +235,7 @@ context (CX.Scope, CX.Builder) fun createLambdaClosure(functionBody: IrExpressio
       and since the return-type is wrong it will fail with a very large error that ultimately says:
       RETURN: Incompatible return type
        */
-      body = pluginCtx.createIrBuilder(symbol).run {
+      body = scope.pluginCtx.createIrBuilder(symbol).run {
         // don't use expr body, coroutine codegen can't generate for it.
         irBlockBody {
           +irReturn(functionBody)

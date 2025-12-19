@@ -58,7 +58,7 @@ class VisitTransformExpressions(
     perFileDebugConfig = perFileDebugConfig
   )
 
-  context (CX.QueryAccum)
+  context (accum: CX.QueryAccum)
   fun recurseWithAccum(expression: IrExpression): IrExpression =
     when (expression) {
       is IrCall -> visitCall(expression, makeVisitorContext()) as IrExpression

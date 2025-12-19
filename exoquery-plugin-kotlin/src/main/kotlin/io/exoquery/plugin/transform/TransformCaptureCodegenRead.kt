@@ -18,11 +18,11 @@ import org.jetbrains.kotlin.ir.builders.irUnit
 
 class TransformCaptureCodegenRead(val codegenAccum: FileCodegenAccum) : Transformer<IrCall>() {
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     ExtractorsDomain.Call.CaptureGenerate[Is(), Is()].matchesAny(expression)
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun transform(expression: IrCall): IrExpression {
     val (caseClassCodegen, callType) =
       on(expression).match(
@@ -41,12 +41,12 @@ class TransformCaptureCodegenRead(val codegenAccum: FileCodegenAccum) : Transfor
     return when (callType) {
       CallType.Gen -> {
         // If it's just a generation call we don't return anything (it's generated at compile time so just as a side effect) so just return Unit
-        builder.irUnit()
+        builder.builder.irUnit()
       }
       CallType.GenAndReturn, CallType.JustReturn -> {
         // if it's a generateAndReturn call, we need to return the generated code. Pack it up and prep it for unpacking on the client side
         val packedCodeEntities = caseClassCodegen.encode()
-        call(PT.io_exoquery_unpackCodeEntities)(builder.irString(packedCodeEntities))
+        call(PT.io_exoquery_unpackCodeEntities)(builder.builder.irString(packedCodeEntities))
       }
     }
   }

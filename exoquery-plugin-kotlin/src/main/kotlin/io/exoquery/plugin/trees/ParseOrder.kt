@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 
 object ParseOrder {
   // Can either be `x to Ord` or Pair(x, Ord)
-  context(CX.Scope, CX.Parsing) fun parseOrdTuple(expr: IrExpression): Pair<XR.Expression, XR.Ordering> =
+  context(scope: CX.Scope, parsing: CX.Parsing) fun parseOrdTuple(expr: IrExpression): Pair<XR.Expression, XR.Ordering> =
     expr.match(
       case(ExtractorsDomain.Call.`x to y`[Is.Companion(), Is.Companion()]).thenThis { property, ord ->
         val propertyXR = ParseExpression.parse(property)
@@ -23,7 +23,7 @@ object ParseOrder {
       }
     ) ?: parseError("Could not parse a proper ordering from the expression: ${expr.dumpSimple()}. Orderings must always come in the form `property to Ord` for example `person.name to Desc`.", expr)
 
-  context(CX.Scope, CX.Parsing) fun parseOrd(expr: IrExpression): XR.Ordering =
+  context(scope: CX.Scope, parsing: CX.Parsing) fun parseOrd(expr: IrExpression): XR.Ordering =
     expr.match(
       case(Ir.Expr.ClassOf<Ord.Asc>()).then { XR.Ordering.Asc },
       case(Ir.Expr.ClassOf<Ord.Desc>()).then { XR.Ordering.Desc },

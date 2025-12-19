@@ -26,14 +26,14 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
    */
   sealed interface Origin {
     companion object {
-      context(CX.Scope)
+      context(scope: CX.Scope)
       fun from(element: IrElement): Origin = ErrorOriginElement(element, element.location())
     }
   }
   private data class ErrorOriginElement(val element: IrElement, val location: CompilerMessageSourceLocation) : Origin
 
   companion object {
-    context(CX.Scope)
+    context(scope: CX.Scope)
     fun withFullMsg(msg: String, origin: Origin, file: IrFile, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): ParseError {
       val (element, location) = when (origin) {
         is ErrorOriginElement -> origin.element to origin.location
@@ -69,10 +69,10 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
 
         val rawExpressionTree =
           try {
-            element.dumpSimple(errorDetailsColor)
+            element.dumpSimple(scope.errorDetailsColor)
           } catch (e: Throwable) {
             try {
-              element.dumpSimple(errorDetailsColor)
+              element.dumpSimple(scope.errorDetailsColor)
             } catch (e: Throwable) {
               limitedStackTraceFromScope(e)
             }
@@ -80,7 +80,7 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
 
         val crossFileContent =
           if (showCrossFile) {
-            "\n" + storedXRsScope.scoped { storedXRs.printStored() }
+            "\n" + scope.storedXRsScope.scoped { storedXRs.printStored() }
           } else {
             ""
           }
@@ -102,7 +102,7 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
           }
 
         val originalErrorTrace =
-          if (errorDetailsEnabled) {
+          if (scope.errorDetailsEnabled) {
             originalErrorTrace?.let { "\n----------------- Original Cause: -----------------\n${it.stackTraceToString()}\n" } ?: ""
           } else {
             val originalCauseSummary = traceOriginalCauseSummary(originalErrorTrace)
@@ -114,7 +114,7 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
           }
 
         val errorDetail =
-          if (errorDetailsEnabled) {
+          if (scope.errorDetailsEnabled) {
             "\n" + """------------ Raw Expression Tree ------------
             |${rawExpressionTree}
             |""".trimMargin().trimEnd()
@@ -125,12 +125,12 @@ class ParseError(val fullMessage: String, val location: CompilerMessageSourceLoc
         """[ExoQuery] Could not understand an expression or query due to an error: ${msg}${expressionPart}""" + errorDetail + originalErrorTrace + crossFileContent
       }.trimEnd()
 
-      return ParseError(fullMsg, location, errorDetailsEnabled, stackCount)
+      return ParseError(fullMsg, location, scope.errorDetailsEnabled, scope.stackCount)
     }
 
-    context(CX.Scope)
+    context(scope: CX.Scope)
     private fun limitedStackTraceFromScope(e: Throwable) =
-      e.stackTrace.takeIfPositive(stackCount).map { "at $it" }.joinToString("\n") { it.toString() }
+      e.stackTrace.takeIfPositive(scope.stackCount).map { "at $it" }.joinToString("\n") { it.toString() }
   }
 
   private fun limitedStackTrace(e: Exception) =
@@ -162,20 +162,20 @@ private fun tryDump(dump: () -> String): String = try {
 
 //fun parseError(msg: String, location: CompilerMessageSourceLocation? = null): Nothing = throw ParseError(msg, location)
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun parseErrorFromType(msg: String, expr: IrElement, originalErrorTrace: Throwable? = null): Nothing =
-  throw ParseError.withFullMsg(io.exoquery.plugin.logging.Messages.TypeParseErrorMsg(msg), ParseError.Origin.from(expr), currentFile, originalErrorTrace)
+  throw ParseError.withFullMsg(io.exoquery.plugin.logging.Messages.TypeParseErrorMsg(msg), ParseError.Origin.from(expr), scope.currentFile, originalErrorTrace)
 
-context(CX.Scope) fun parseErrorAtCurrent(msg: String): Nothing =
-  throw ParseError.withFullMsg(msg, ParseError.Origin.from(currentExpr), currentFile)
+context(scope: CX.Scope) fun parseErrorAtCurrent(msg: String): Nothing =
+  throw ParseError.withFullMsg(msg, ParseError.Origin.from(scope.currentExpr), scope.currentFile)
 
-context(CX.Scope) fun parseError(msg: String, expr: IrElement, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): Nothing =
-  throw ParseError.withFullMsg(msg, ParseError.Origin.from(expr), currentFile, originalErrorTrace, showCrossFile)
+context(scope: CX.Scope) fun parseError(msg: String, expr: IrElement, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): Nothing =
+  throw ParseError.withFullMsg(msg, ParseError.Origin.from(expr), scope.currentFile, originalErrorTrace, showCrossFile)
 
-context(CX.Scope) fun parseError(msg: String, origin: ParseError.Origin, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): Nothing =
-  throw ParseError.withFullMsg(msg, origin, currentFile, originalErrorTrace, showCrossFile)
+context(scope: CX.Scope) fun parseError(msg: String, origin: ParseError.Origin, originalErrorTrace: Throwable? = null, showCrossFile: Boolean = false): Nothing =
+  throw ParseError.withFullMsg(msg, origin, scope.currentFile, originalErrorTrace, showCrossFile)
 
-context(CX.Scope) fun parseErrorSimple(msg: String, expr: IrElement): Nothing = throw ParseError(msg, expr.location(), errorDetailsEnabled, stackCount)
+context(scope: CX.Scope) fun parseErrorSimple(msg: String, expr: IrElement): Nothing = throw ParseError(msg, expr.location(), scope.errorDetailsEnabled, scope.stackCount)
 
-context(CX.Scope) fun parseErrorSym(expr: IrCall): Nothing =
-  throw ParseError.withFullMsg("Invalid function name or symbol: ${expr.symName}", ParseError.Origin.from(expr), currentFile)
+context(scope: CX.Scope) fun parseErrorSym(expr: IrCall): Nothing =
+  throw ParseError.withFullMsg("Invalid function name or symbol: ${expr.symName}", ParseError.Origin.from(expr), scope.currentFile)

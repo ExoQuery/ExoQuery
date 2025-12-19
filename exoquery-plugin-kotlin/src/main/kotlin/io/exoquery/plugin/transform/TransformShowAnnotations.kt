@@ -14,12 +14,12 @@ class TransformShowAnnotations(val superTransformer: VisitTransformExpressions) 
 
   private val fqn: String = "io.exoquery.showAnnotations"
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun matches(expression: IrCall): Boolean =
     expression.symbol.owner.kotlinFqName.asString().let { it == fqn }
 
   // parent symbols are collected in the parent context
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun transform(expression: IrCall): IrExpression {
     val newExpression = superTransformer.recurse(expression)
     val sqlExpressionType = newExpression.type
@@ -29,7 +29,7 @@ class TransformShowAnnotations(val superTransformer: VisitTransformExpressions) 
         sqlExpressionType.annotations.map { it.dumpKotlinLike() }.joinToString("\n", "[", "]")
       }"
     )
-    logger.warn("========= Found constructor annot with value: ${capturedAnnot.regularArgs[0]?.dumpKotlinLike()}\nThe full type is:\n${newExpression.type.dumpKotlinLike()}\nOf the expression:\n${newExpression.dumpKotlinLike()}")
+    scope.logger.warn("========= Found constructor annot with value: ${capturedAnnot.regularArgs[0]?.dumpKotlinLike()}\nThe full type is:\n${newExpression.type.dumpKotlinLike()}\nOf the expression:\n${newExpression.dumpKotlinLike()}")
 
     return newExpression
   }

@@ -60,14 +60,14 @@ val IrType.simpleTypeArgs: List<IrType>
 
 object Ir {
   object Expression {
-    context(CX.Scope) operator fun <AP : Pattern<IrExpression>> get(components: AP) =
+    context(scope: CX.Scope) operator fun <AP : Pattern<IrExpression>> get(components: AP) =
       customPattern1("Ir.Expression", components) { it: IrExpression ->
         Components1(it)
       }
   }
 
   object CastingTypeOperator {
-    context(CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<IrType>> get(op: AP, type: BP) =
+    context(scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<IrType>> get(op: AP, type: BP) =
       customPattern2("Ir.TypeOperatorCall", op, type) { it: IrTypeOperatorCall ->
         if (it.operator == IrTypeOperator.CAST || it.operator == IrTypeOperator.IMPLICIT_CAST) {
           Components2(it.argument, it.typeOperand)
@@ -78,7 +78,7 @@ object Ir {
   }
 
   object DenullingTypeOperator {
-    context(CX.Scope) operator fun <AP : Pattern<IrExpression>> get(op: AP) =
+    context(scope: CX.Scope) operator fun <AP : Pattern<IrExpression>> get(op: AP) =
       customPattern1("Ir.TypeOperatorCall", op) { it: IrCall ->
         if (it.symbol.safeName == BuiltInOperatorNames.CHECK_NOT_NULL) {
           Components1(it.arguments.first())
@@ -92,7 +92,7 @@ object Ir {
     // Can't do just get(components: Pattern<List<IrExpression>) need to do:
     // <AP: Pattern<List<IrExpression>>> get(components: AP) or it doesn't work because
     // it needs to have a concrete pattern instance
-    context(CX.Scope) operator fun <AP : Pattern<List<IrExpression>>> get(components: AP) =
+    context(scope: CX.Scope) operator fun <AP : Pattern<List<IrExpression>>> get(components: AP) =
       customPattern1("StringConcatenation", components) { it: IrExpression ->
         if (it is IrStringConcatenation) {
           Components1(it.arguments)
@@ -126,9 +126,9 @@ object Ir {
       //}
 
       companion object {
-        context(CX.Scope)
+        context(scope: CX.Scope)
         inline operator fun <reified T> invoke() =
-          ClassOf<T>(T::class.classId(), pluginCtx)
+          ClassOf<T>(T::class.classId(), scope.pluginCtx)
       }
     }
 
@@ -138,8 +138,8 @@ object Ir {
             r.productClassValue.type.isSubtypeOf(type, typeSystem)
 
       companion object {
-        context(CX.Scope)
-        operator fun invoke(type: IrType) = IsTypeOf(type, typeSystem)
+        context(scope: CX.Scope)
+        operator fun invoke(type: IrType) = IsTypeOf(type, scope.typeSystem)
       }
     }
 
@@ -171,7 +171,7 @@ object Ir {
 //    }
 
     object NullableOf {
-      context(CX.Scope) operator fun <AP : Pattern<IrType>> get(realType: AP) =
+      context(scope: CX.Scope) operator fun <AP : Pattern<IrType>> get(realType: AP) =
         customPattern1("Type.NullableOf", realType) { it: IrType ->
           if (it.isNullable()) {
             Components1(it.makeNotNull())
@@ -180,7 +180,7 @@ object Ir {
     }
 
     object KotlinList {
-      context(CX.Scope) operator fun <AP : Pattern<IrType>> get(realType: AP) =
+      context(scope: CX.Scope) operator fun <AP : Pattern<IrType>> get(realType: AP) =
         customPattern1("Type.KotlinList", realType) { it: IrType ->
           val cls = it.classOrNull
           val simpleTypeArgs = it.simpleTypeArgs
@@ -196,7 +196,7 @@ object Ir {
       //      anyway, we need a coproduct that contains these categories and uses them later for rendering
       data class Prop(val name: String, val type: IrType, val isMarkedValue: Boolean, val isRenamed: Boolean, val originalName: String)
 
-      context(CX.Scope) operator fun <AP : Pattern<Name>, BP : Pattern<List<DataClass.Prop>>> get(name: AP, fields: BP) =
+      context(scope: CX.Scope) operator fun <AP : Pattern<Name>, BP : Pattern<List<DataClass.Prop>>> get(name: AP, fields: BP) =
         customPattern2("Type.DataClass", name, fields) { it: IrType ->
           val cls = it.classOrNull
           if (cls != null && cls.isDataClass()) {
@@ -247,7 +247,7 @@ object Ir {
     }
 
     object Generic {
-      context(CX.Scope) operator fun get(type: Pattern0<IrType>) =
+      context(scope: CX.Scope) operator fun get(type: Pattern0<IrType>) =
         customPattern1("Ir.Call.Generic", type) { it: IrType ->
           if (it.isTypeParameter())
             Components1(it)
@@ -257,7 +257,7 @@ object Ir {
     }
 
     object Value {
-      context(CX.Scope)
+      context(scope: CX.Scope)
       private fun isValueType(it: IrType) =
           it.isValueClassType() ||
             it.isString() ||
@@ -300,7 +300,7 @@ object Ir {
             it.isExoValueColumn() ||
             it.isSqlJsonColumn()
 
-      context(CX.Scope) operator fun get(type: Pattern0<IrType>) =
+      context(scope: CX.Scope) operator fun get(type: Pattern0<IrType>) =
         customPattern1("Ir.Call.Value", type) { it: IrType ->
           if (isValueType(it) || it.hasAnnotation<kotlinx.serialization.Contextual>() || it.hasAnnotation<io.exoquery.annotation.ExoValue>()) {
             // If mistake is made in the Components-returning section, the match will not be successful
@@ -328,14 +328,14 @@ object Ir {
   }
 
   object Variable {
-    context (CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<B>, B : IrExpression> get(name: AP, rhs: BP) =
+    context (scope: CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<B>, B : IrExpression> get(name: AP, rhs: BP) =
       customPattern2("Ir.Variable", name, rhs) { it: IrVariable ->
         it.initializer?.let { init -> Components2(it.name.sanitizedSymbolName(), init) }
       }
   }
 
   object Field {
-    context (CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<IrExpression>> get(name: AP, rhs: BP) =
+    context (scope: CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<IrExpression>> get(name: AP, rhs: BP) =
       customPattern2("Ir.Field", name, rhs) { it: IrField ->
         it.initializer?.let { initExprBody -> Components2(it.name.sanitizedSymbolName(), initExprBody.expression) }
       }
@@ -357,13 +357,13 @@ object Ir {
   }
 
   object GetValue {
-    context (CX.Scope) operator fun get(value: Pattern0<IrGetValue>) =
+    context (scope: CX.Scope) operator fun get(value: Pattern0<IrGetValue>) =
       customPattern1("Ir.GetValue", value) { it: IrGetValue ->
         Components1(it)
       }
 
     object Symbol {
-      context (CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
+      context (scope: CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
         customPattern1("Ir.GetValue.Symbol", value) { it: IrGetValue ->
           Components1(it.symbol)
         }
@@ -371,13 +371,13 @@ object Ir {
   }
 
   object GetField {
-    context (CX.Scope) operator fun get(value: Pattern0<IrGetField>) =
+    context (scope: CX.Scope) operator fun get(value: Pattern0<IrGetField>) =
       customPattern1("Ir.GetField", value) { it: IrGetField ->
         Components1(it)
       }
 
     object Symbol {
-      context (CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
+      context (scope: CX.Scope) operator fun get(value: Pattern0<IrSymbol>) =
         customPattern1("Ir.GetField.Symbol", value) { it: IrGetField ->
           Components1(it.symbol)
         }
@@ -447,7 +447,7 @@ object Ir {
   }
 
   object When {
-    context (CX.Scope) operator fun <AP : Pattern<L>, L : List<A>, A : IrBranch> get(value: AP) =
+    context (scope: CX.Scope) operator fun <AP : Pattern<L>, L : List<A>, A : IrBranch> get(value: AP) =
       customPattern1("Ir.When", value) { it: IrWhen ->
         Components1(it.branches)
       }
@@ -462,7 +462,7 @@ object Ir {
   }
 
   object Vararg {
-    context (CX.Scope) operator fun <AP : Pattern<List<IrExpression>>> get(x: AP): Pattern1<AP, List<IrExpression>, IrVararg> =
+    context (scope: CX.Scope) operator fun <AP : Pattern<List<IrExpression>>> get(x: AP): Pattern1<AP, List<IrExpression>, IrVararg> =
       customPattern1("Ir.Vararg", x) { it: IrVararg ->
         Components1(it.elements.toList())
       }
@@ -473,7 +473,7 @@ object Ir {
       Matcher(T::class.classId())
 
     class Matcher(val classNameRaw: ClassId?) {
-      context (CX.Scope) operator fun <AP: Pattern<A>, A: IrExpression> get(x: AP): Pattern1<AP, A, IrConstructorCall> =
+      context (scope: CX.Scope) operator fun <AP: Pattern<A>, A: IrExpression> get(x: AP): Pattern1<AP, A, IrConstructorCall> =
         customPattern1("Ir.Call.ConstructorCall1", x) { it: IrConstructorCall ->
           if (it.regularArgs.size == 1 && it.regularArgs.all { it != null }) {
             Components1(it.regularArgs.first())
@@ -489,7 +489,7 @@ object Ir {
       Matcher(T::class.classId())
 
     class Matcher(val classNameRaw: ClassId?) {
-      context (CX.Scope) operator fun <AP: Pattern<A>, BP: Pattern<B>, A: IrExpression, B: IrExpression> get(x: AP, y: BP): Pattern2<AP, BP, A, B, IrConstructorCall> =
+      context (scope: CX.Scope) operator fun <AP: Pattern<A>, BP: Pattern<B>, A: IrExpression, B: IrExpression> get(x: AP, y: BP): Pattern2<AP, BP, A, B, IrConstructorCall> =
         customPattern2("Ir.Call.ConstructorCall2", x, y) { it: IrConstructorCall ->
           if (it.regularArgs.size == 2 && it.regularArgs.all { it != null }) {
             Components2(it.regularArgs[0], it.regularArgs[1])
@@ -509,7 +509,7 @@ object Ir {
     }
 
     class Matcher(val classNameRaw: ClassId?) {
-      context (CX.Scope) operator fun <AP: Pattern<Args>> get(x: AP): Pattern1<AP, Args, IrConstructorCall> =
+      context (scope: CX.Scope) operator fun <AP: Pattern<Args>> get(x: AP): Pattern1<AP, Args, IrConstructorCall> =
         customPattern1("Ir.Call.ConstructorCallNullableN", x) { it: IrConstructorCall ->
           // Note: we could do pluginCtx.referenceClass(classNameRaw) and then
           // do a proper subtype check but I think when someone wants a constructor
@@ -527,7 +527,7 @@ object Ir {
 
   object Call {
     object NamedExtensionFunctionZeroArg {
-      context (CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<E>, E : IrExpression> get(name: AP, reciever: BP): Pattern2<AP, BP, String, E, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<E>, E : IrExpression> get(name: AP, reciever: BP): Pattern2<AP, BP, String, E, IrCall> =
         customPattern2("NamedExtensionFunctionZeroArg", name, reciever) { it: IrCall ->
           val reciever = it.extensionArg
           if (reciever != null && it.regularArgs.size == 0) {
@@ -538,14 +538,14 @@ object Ir {
         }
     }
 
-    context (CX.Scope) operator fun <AP : Pattern<IrCall>> get(x: AP): Pattern1<AP, IrCall, IrCall> =
+    context (scope: CX.Scope) operator fun <AP : Pattern<IrCall>> get(x: AP): Pattern1<AP, IrCall, IrCall> =
       customPattern1("Ir.Call", x) { it: IrCall ->
         Components1(it)
       }
 
     // TODO get rid of this in favor of FunctionMem
     object FunctionRec {
-      context (CX.Scope) operator fun <AP : Pattern<List<IrExpression>>> get(x: AP): Pattern1<AP, List<IrExpression>, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<List<IrExpression>>> get(x: AP): Pattern1<AP, List<IrExpression>, IrCall> =
         customPattern1("Ir.Call.FunctionRec", x) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever != null && it.regularArgs.all { it != null }) {
@@ -559,7 +559,7 @@ object Ir {
     // TODO get rid of this in favor of FunctionMem1
     object FunctionRec1 {
       // context (CX.Scope) operator fun <AP: Pattern<A>, BP: Pattern<B>, A: IrExpression, B: IrExpression> get(x: AP, y: BP) =
-      context (CX.Scope) operator fun <AP : Pattern<A>, A : IrExpression, BP : Pattern<B>, B : IrExpression> get(x: AP, y: BP): Pattern2<AP, BP, A, B, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<A>, A : IrExpression, BP : Pattern<B>, B : IrExpression> get(x: AP, y: BP): Pattern2<AP, BP, A, B, IrCall> =
         customPattern2("Ir.Call.FunctionRec1", x, y) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever != null && it.regularArgs.size == 1 && it.regularArgs.all { it != null }) {
@@ -573,7 +573,7 @@ object Ir {
     // TODO get rid of this in favor of FunctionMem1
     object FunctionRec0 {
       // context (CX.Scope) operator fun <AP: Pattern<A>, BP: Pattern<B>, A: IrExpression, B: IrExpression> get(x: AP, y: BP) =
-      context (CX.Scope) operator fun <AP : Pattern<A>, A : IrExpression> get(x: AP): Pattern1<AP, A, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<A>, A : IrExpression> get(x: AP): Pattern1<AP, A, IrCall> =
         customPattern1("Ir.Call.FunctionRec0", x) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever != null && it.regularArgs.size == 0 && it.regularArgs.all { it != null }) {
@@ -588,7 +588,7 @@ object Ir {
     object FunctionMemN {
       object Caller {
         // Interesting here how we can have just AP/BP and not need the additional parameters A and B
-        context (CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, BP : Pattern<List<IrExpression>>> get(x: AP, y: BP): Pattern2<AP, BP, ReceiverCaller, List<IrExpression>, IrCall> =
+        context (scope: CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, BP : Pattern<List<IrExpression>>> get(x: AP, y: BP): Pattern2<AP, BP, ReceiverCaller, List<IrExpression>, IrCall> =
           customPattern2("Ir.Call.FunctionMem", x, y) { it: IrCall ->
             val reciever = it.caller()
             if (reciever != null && it.regularArgs.all { it != null }) {
@@ -600,7 +600,7 @@ object Ir {
       }
 
       object NullableArgs {
-        context (CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<List<IrExpression>>> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, IrExpression, List<IrExpression>, IrCall> =
+        context (scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<List<IrExpression>>> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, IrExpression, List<IrExpression>, IrCall> =
           customPattern2("Ir.Call.FunctionMemN", x, y) { it: IrCall ->
             val reciever = it.extensionArg ?: it.dispatchArg
             if (reciever != null && m.matchesAny(it.symbol.safeName)) {
@@ -612,7 +612,7 @@ object Ir {
       }
 
 
-      context (CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<List<IrExpression>>> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, IrExpression, List<IrExpression>, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<List<IrExpression>>> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, IrExpression, List<IrExpression>, IrCall> =
         customPattern2("Ir.Call.FunctionMemN", x, y) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever != null && it.regularArgs.all { it != null } && m.matchesAny(it.symbol.safeName)) {
@@ -624,7 +624,7 @@ object Ir {
     }
 
     object FunctionMem2 {
-      context (CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<Pair<IrExpression, IrExpression>>> get(
+      context (scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<Pair<IrExpression, IrExpression>>> get(
         x: AP,
         m: MP,
         y: BP
@@ -639,7 +639,7 @@ object Ir {
         }
 
       object AllowNulls {
-        context (CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<Pair<IrExpression?, IrExpression?>>> get(
+        context (scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<Pair<IrExpression?, IrExpression?>>> get(
           x: AP,
           m: MP,
           y: BP
@@ -657,7 +657,7 @@ object Ir {
 
     object FunctionMemAllowNulls {
       // Interesting here how we can have just AP/BP and not need the additional parameters A and B
-      context (CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, BP : Pattern<List<IrExpression>>> get(x: AP, y: BP): Pattern2<AP, BP, ReceiverCaller, List<IrExpression?>, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, BP : Pattern<List<IrExpression>>> get(x: AP, y: BP): Pattern2<AP, BP, ReceiverCaller, List<IrExpression?>, IrCall> =
         customPattern2("Ir.Call.FunctionMemAllowNulls", x, y) { it: IrCall ->
           val reciever = it.caller()
           if (reciever != null) {
@@ -671,7 +671,7 @@ object Ir {
     // Member Function1
     object FunctionMem1 {
 
-      context (CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<B>, B : IrExpression> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, IrExpression, B, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, BP : Pattern<B>, B : IrExpression> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, IrExpression, B, IrCall> =
         customPattern2("Ir.Call.FunctionMem1", x, y) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever != null && it.regularArgs.size == 1 && it.regularArgs.all { it != null } && m.matchesAny(it.symbol.safeName)) {
@@ -689,7 +689,7 @@ object Ir {
          * kind of Pattern2 that decomposes the string into multiple pieces). Therefore we can treat the middle-parameter as a simple Pattern argument
          * that has no effect on other side of the `case` expressions.
          */
-        context (CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, MP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, ReceiverCaller, IrExpression, IrCall> =
+        context (scope: CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, MP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, m: MP, y: BP): Pattern2<AP, BP, ReceiverCaller, IrExpression, IrCall> =
           customPattern2("Ir.Call.FunctionMem1.WithCaller", x, y) { it: IrCall ->
             val reciever = it.caller()
             if (reciever != null && it.regularArgs.size == 1 && it.regularArgs.all { it != null } && m.matchesAny(it.symbol.safeName)) {
@@ -709,7 +709,7 @@ object Ir {
          */
         object Named {
           // context (CX.Scope) operator fun <AP: Pattern<A>, BP: Pattern<B>, A: IrExpression, B: IrExpression> get(x: AP, y: BP) =
-          context (CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, MP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, m: MP, y: BP): Pattern2M<AP, String, BP, ReceiverCaller, IrExpression, IrCall> =
+          context (scope: CX.Scope) operator fun <AP : Pattern<ReceiverCaller>, MP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, m: MP, y: BP): Pattern2M<AP, String, BP, ReceiverCaller, IrExpression, IrCall> =
             customPattern2M("Ir.Call.FunctionMem1.WithCaller.Named", x, y) { it: IrCall ->
               val reciever = it.caller()
               if (reciever != null && it.regularArgs.size == 1 && it.regularArgs.all { it != null } && m.matchesAny(it.symbol.safeName)) {
@@ -725,7 +725,7 @@ object Ir {
     object FunctionMem0 {
       object WithCaller {
         // context (CX.Scope) operator fun <AP: Pattern<A>, BP: Pattern<B>, A: IrExpression, B: IrExpression> get(x: AP, y: BP) =
-        context(CX.Scope) operator fun <AP : Pattern<A>, MP : Pattern<String>, A : ReceiverCaller> get(x: AP, y: MP): Pattern1<AP, A, IrCall> =
+        context(scope: CX.Scope) operator fun <AP : Pattern<A>, MP : Pattern<String>, A : ReceiverCaller> get(x: AP, y: MP): Pattern1<AP, A, IrCall> =
           customPattern1("Ir.Call.FunctionMem0.WithCaller", x) { it: IrCall ->
             val reciever = it.caller()
             if (reciever != null && it.regularArgs.size == 0 && y.matchesAny(it.symbol.safeName)) {
@@ -736,7 +736,7 @@ object Ir {
           }
       }
 
-      context(CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<String>> get(x: AP, y: BP): Pattern2<AP, BP, IrExpression, String, IrCall> =
+      context(scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<String>> get(x: AP, y: BP): Pattern2<AP, BP, IrExpression, String, IrCall> =
         customPattern2("Ir.Call.FunctionMem0", x, y) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever != null && it.regularArgs.size == 0) {
@@ -748,7 +748,7 @@ object Ir {
     }
 
     object FunctionUntethered0 {
-      context (CX.Scope) operator fun <AP : Pattern<String>> get(x: AP) =
+      context (scope: CX.Scope) operator fun <AP : Pattern<String>> get(x: AP) =
         customPattern1("Ir.Call.FunctionUntethered0", x) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever == null && it.regularArgs.size == 0) {
@@ -760,7 +760,7 @@ object Ir {
     }
 
     object FunctionMemVararg {
-      context (CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, TP : Pattern<IrType>, BP : Pattern<List<IrExpression>>> get(
+      context (scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, MP : Pattern<String>, TP : Pattern<IrType>, BP : Pattern<List<IrExpression>>> get(
         x: AP,
         m: MP,
         yTpe: TP,
@@ -795,7 +795,7 @@ object Ir {
             }
           }*/
 
-        context (CX.Scope) operator fun <AP : Pattern<E>, E : IrExpression> get(x: AP): Pattern1<AP, E, IrCall> =
+        context (scope: CX.Scope) operator fun <AP : Pattern<E>, E : IrExpression> get(x: AP): Pattern1<AP, E, IrCall> =
           customPattern1("Ir.Call.FunctionUntethered1.Arg", x) { it: IrCall ->
             val reciever = it.extensionArg ?: it.dispatchArg
             if (reciever == null && it.regularArgs.size == 1 && it.regularArgs.all { it != null }) {
@@ -806,7 +806,7 @@ object Ir {
           }
       }
 
-      context (CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, y: BP): Pattern2<AP, BP, String, IrExpression, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<IrExpression>> get(x: AP, y: BP): Pattern2<AP, BP, String, IrExpression, IrCall> =
         customPattern2("Ir.Call.FunctionUntethered1", x, y) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever == null && it.regularArgs.size == 1 && it.regularArgs.all { it != null }) {
@@ -818,7 +818,7 @@ object Ir {
     }
 
     object FunctionUntetheredN {
-      context (CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<List<IrExpression?>>> get(x: AP, y: BP): Pattern2<AP, BP, String, List<IrExpression?>, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<String>, BP : Pattern<List<IrExpression?>>> get(x: AP, y: BP): Pattern2<AP, BP, String, List<IrExpression?>, IrCall> =
         customPattern2("Ir.Call.FunctionUntetheredN", x, y) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever == null) {
@@ -830,7 +830,7 @@ object Ir {
     }
 
     object FunctionUntethered2 {
-      context (CX.Scope) operator fun <AP : Pattern<A>, MP : Pattern<String>, BP : Pattern<B>, A : IrExpression, B : IrExpression> get(m: MP, x: AP, y: BP): Pattern2<AP, BP, A, B, IrCall> =
+      context (scope: CX.Scope) operator fun <AP : Pattern<A>, MP : Pattern<String>, BP : Pattern<B>, A : IrExpression, B : IrExpression> get(m: MP, x: AP, y: BP): Pattern2<AP, BP, A, B, IrCall> =
         customPattern2("Ir.Call.FunctionUntethered2", x, y) { it: IrCall ->
           val reciever = it.extensionArg ?: it.dispatchArg
           if (reciever == null && it.regularArgs.size == 2 && it.regularArgs.all { it != null } && m.matchesAny(it.symbol.fullName)) {
@@ -848,7 +848,7 @@ object Ir {
         data class JsonDeref(val name: String, val isRenamed: Boolean, val isTailField: Boolean) : PropertyKind
       }
 
-      context (CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<PropertyKind>> get(host: AP, name: BP) =
+      context (scope: CX.Scope) operator fun <AP : Pattern<IrExpression>, BP : Pattern<PropertyKind>> get(host: AP, name: BP) =
         customPattern2("Ir.Call.Property", host, name) { it: IrCall ->
           // if there exists both a dispatch reciever and an extension reciever it's an extension
           // of some class defined inside of some other class, in that case we only care about the extension reciever

@@ -8,11 +8,11 @@ import org.jetbrains.kotlin.ir.expressions.IrConstKind
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
 object UnlifterBasics {
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun orFail(expr: IrExpression, additionalMsg: String? = null): Nothing =
     parseError("Failed to read the compile time construct. ${additionalMsg}", expr) // TODO need a MUCH BETTER error here
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftString(expr: IrExpression): String =
     (expr as? IrConst)
       ?.let {
@@ -24,7 +24,7 @@ object UnlifterBasics {
         "Expected the expression ${expr.source()} to be a constant (i.e. compile-time) string but it was not"
       )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftInt(expr: IrExpression): Int =
     (expr as? IrConst)
       ?.let {
@@ -36,7 +36,7 @@ object UnlifterBasics {
         "Expected the expression ${expr.source()} to be a constant int (e.g. the value 18) but it was not"
       )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftBoolean(expr: IrExpression): Boolean =
     (expr as? IrConst)
       ?.let {
@@ -48,15 +48,15 @@ object UnlifterBasics {
         "Expected the expression ${expr.source()} to be a constant boolean (i.e. the value 'true' or 'false') but it was not"
       )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftStringIfNotNull(expr: IrExpression?) : String? =
     expr?.let { unliftString(it) }
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftIntIfNotNull(expr: IrExpression?) : Int? =
     expr?.let { unliftInt(it) }
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftBooleanIfNotNull(expr: IrExpression?) : Boolean? =
     expr?.let { unliftBoolean(it) }
 }

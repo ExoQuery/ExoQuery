@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
 object UnlifterTypeMap {
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun TypeMap.Companion.unlift(expr: IrExpression): TypeMap =
     on(expr).match(
       case(Ir.Call.FunctionMem1[Ir.GetObjectValue<TypeMap.Companion>(), Is("invoke"), Ir.Vararg[Is()]]).then { _, (args) ->
@@ -45,7 +45,7 @@ object UnlifterTypeMap {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun unliftTypeMapEntry(expr: IrExpression): Pair<From, ClassOf> =
     on(expr).match(
       case(ExtractorsDomain.Call.`x to y`[Is(), Is()]).then { x, y ->
@@ -71,7 +71,7 @@ object UnlifterTypeMap {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun From.Companion.unlift(expr: IrExpression): From =
     on(expr).match(
       case(Ir.ConstructorCallNullableN.of<From>()[Is()]).then { args ->
@@ -98,7 +98,7 @@ object UnlifterTypeMap {
       """.trimIndent()
     )
 
-  context (CX.Scope)
+  context (scope: CX.Scope)
   fun ClassOf.Companion.unlift(expr: IrExpression) =
     on(expr).match(
       // The ClassOf("MyType") constructor

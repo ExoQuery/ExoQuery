@@ -23,9 +23,9 @@ data class SqlCompiledQueryExpr(
   val originalEncodedQueryXR: String,
   val originalEncodedQueryModel: String
 ) {
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun plant(): IrExpression {
-    val lifter = Lifter(this@Builder)
+    val lifter = Lifter(builder)
 
     // Gete the type T of the SqlQuery<T> that .build is called on
     val queryOutputType = sqlQueryExpr.type.simpleTypeArgs[0]
@@ -38,7 +38,7 @@ data class SqlCompiledQueryExpr(
         listOf(queryOutputType),
         listOf(
           queryString.lift(), // value
-          createLambda0(queryTokenized.token.lift(callParamsFromSqlQuery), currentDeclarationParentOrFail()), // token
+          createLambda0(queryTokenized.token.lift(callParamsFromSqlQuery), scope.currentDeclarationParentOrFail()), // token
           // If there are no ParamMulti values then we know that we can use the original query built with the .build function.
           // Now we can't check what the values in ParamSet are but we have this value in the TagForParam.paramType field
           // which shows us if the Param is a ParamSingle or ParamMulti. We need to check that in the AST in order to know that this
@@ -47,8 +47,8 @@ data class SqlCompiledQueryExpr(
           labelExpr,
           make<SqlCompiledQuery.DebugData>(
             Phase.CompileTime.lift(),
-            call(PT.io_exoquery_unpackQueryLazy).invoke(builder.irString(originalEncodedQueryXR)),
-            call(PT.io_exoquery_unpackQueryModelLazy).invoke(builder.irString(originalEncodedQueryModel))
+            call(PT.io_exoquery_unpackQueryLazy).invoke(builder.builder.irString(originalEncodedQueryXR)),
+            call(PT.io_exoquery_unpackQueryModelLazy).invoke(builder.builder.irString(originalEncodedQueryModel))
           )
         )
       )
@@ -67,9 +67,9 @@ data class SqlCompiledActionExpr(
   val phase: Phase,
   val originalEncodedActionXR: String
 ) {
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun plant(): IrExpression {
-    val lifter = Lifter(this@Builder)
+    val lifter = Lifter(builder)
     val callParamsFromSqlAction = sqlActionExpr.callDispatch("params").invoke()
     val inputType = sqlActionExpr.type.simpleTypeArgs[0]
     val outputType = sqlActionExpr.type.simpleTypeArgs[1]
@@ -91,7 +91,7 @@ data class SqlCompiledActionExpr(
           labelExpr,
           make<SqlCompiledAction.DebugData>(
             Phase.CompileTime.lift(),
-            call(PT.io_exoquery_unpackActionLazy).invoke(builder.irString(originalEncodedActionXR))
+            call(PT.io_exoquery_unpackActionLazy).invoke(builder.builder.irString(originalEncodedActionXR))
           )
         )
       )
@@ -109,9 +109,9 @@ data class SqlCompiledBatchActionExpr(
   val phase: Phase,
   val originalEncodedBatchActionXR: String
 ) {
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   fun plant(): IrExpression {
-    val lifter = Lifter(this@Builder)
+    val lifter = Lifter(builder)
     val callParamsFromSqlBatchAction = sqlBatchActionExpr.callDispatch("params").invoke()
     val callBatchParamFromSqlBatchAction = sqlBatchActionExpr.callDispatch("batchParam").invoke()
     val inputType = sqlBatchActionExpr.type.simpleTypeArgs[0]
@@ -135,7 +135,7 @@ data class SqlCompiledBatchActionExpr(
           labelExpr,
           make<SqlCompiledBatchAction.DebugData>(
             Phase.CompileTime.lift(),
-            call(PT.io_exoquery_unpackBatchActionLazy).invoke(builder.irString(originalEncodedBatchActionXR))
+            call(PT.io_exoquery_unpackBatchActionLazy).invoke(builder.builder.irString(originalEncodedBatchActionXR))
           )
         )
       )

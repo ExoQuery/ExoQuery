@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.ir.types.IrTypeSystemContext
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
 import org.jetbrains.kotlin.types.model.TypeConstructorMarker
 
-context(CX.Builder) fun makeLifter() = Lifter(this@Builder)
+context(builder: CX.Builder) fun makeLifter() = Lifter(builder)
 
 object CX {
 

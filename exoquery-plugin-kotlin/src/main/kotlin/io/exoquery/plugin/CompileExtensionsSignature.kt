@@ -38,7 +38,7 @@ import kotlin.toString
 // TODO need to test cases with overloads and captured-functions
 // TODO at some point we also want to add the ParamKinds to the stable identifier so that we can differentiate
 //      between functions that have the same types but different param kinds (e.g. extension-param vs regular-param)
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrFunction.refinedStableIdentifier() = run {
   val function = this
   // TODO at some point we also want to add the ParamKinds to the stable identifier so that we can differentiate
@@ -54,7 +54,7 @@ fun IrFunction.refinedStableIdentifier() = run {
   else function.stableIdentifier()
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrFunction.refinedStableIdentifierOrErrorText() = run {
   try {
     this.refinedStableIdentifier()

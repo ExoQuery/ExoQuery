@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.ir.types.isSubtypeOf
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 object ParseAction {
-  context(CX.Scope, CX.Parsing, CX.Builder)
+  context(scope: CX.Scope, parsing: CX.Parsing, builder: CX.Builder)
   // Parse an action, normally dynamic splicing of actions is not allowed, the only exception to this is from a free(... action ...) call where `action` is dynamic (see the ParseFree in ParserOps)
   fun parse(expr: IrExpression, dynamicCallsAllowed: Boolean = false): XR.Action =
     on(expr).match<XR.Action>(
@@ -42,7 +42,7 @@ object ParseAction {
       case(SqlActionExpr.Uprootable[Is()]).thenThis { uprootable ->
         val sqlActionIr = this
         // Add all binds from the found SqlQuery instance, this will be truned into something like `currLifts + SqlQuery.lifts` late
-        binds.addInheritedParams(sqlActionIr)
+        parsing.binds.addInheritedParams(sqlActionIr)
         // Then unpack and return the XR
         uprootable.unpackOrErrorXR().successOrParseError(sqlActionIr)
       },
@@ -133,7 +133,7 @@ object ParseAction {
       },
       case(ExtractorsDomain.DynamicActionCall[Is()]).thenIf { _ -> dynamicCallsAllowed }.then { call ->
         val bid = BID.Companion.new()
-        binds.addRuntime(bid, expr)
+        parsing.binds.addRuntime(bid, expr)
         XR.TagForSqlAction(bid, TypeParser.of(expr), expr.loc)
       },
       // In some cases the action returns a single value in a return, in that case just go inside of it
@@ -142,7 +142,7 @@ object ParseAction {
       }
     ) ?: parseError("Could not parse the action", expr)
 
-  context(CX.Scope, CX.Parsing, CX.Builder)
+  context(scope: CX.Scope, parsing: CX.Parsing, builder: CX.Builder)
   private fun parseAssignmentList(expr: IrExpression, inputType: IrType) =
     on(expr).match(
       case(Ir.Call.FunctionMem1[Ir.Expr.IsTypeOf(inputType), Is("set"), Ir.Vararg[Is()]]).then { _, (assignments) ->
@@ -154,7 +154,7 @@ object ParseAction {
 
 
   // TODO when going back to the Expression parser the 'this' pointer needs to be on the list of local symbols
-  context(CX.Scope, CX.Parsing, CX.Builder)
+  context(scope: CX.Scope, parsing: CX.Parsing, builder: CX.Builder)
   private fun parseActionComposite(expr: IrExpression, inputType: IrType, actionAlias: XR.Ident, compositeType: CompositeType): XR.Action =
     // the i.e. insert { set(...) } or update { set(...) }
     on(expr).match<XR.Action>(
@@ -190,13 +190,13 @@ object ParseAction {
                 }
 
               // If it's a batch param need an additional layer of wrapping so that the expr-model knows to create a io.exoquery.ParamBatchRefiner instead of a regular io.exoquery.ParamSingle
-              if (batchAlias != null && param.containsBatchParam())
-                ParamBind.Type.ParamUsingBatchAlias(batchAlias, rawParam, "_" + epath.path.joinToString("_")) to XR.ParamType.Batch
+              if (parsing.batchAlias != null && param.containsBatchParam())
+                ParamBind.Type.ParamUsingBatchAlias(parsing.batchAlias, rawParam, "_" + epath.path.joinToString("_")) to XR.ParamType.Batch
               else
                 rawParam to XR.ParamType.Single
             }
             val tag = XR.TagForParam(id, paramType, param.humanSymbolOrNull(), param.type.toClassIdXR(), tpe, epath.invocation.loc)
-            binds.addParam(id, epath.invocation, bind)
+            parsing.binds.addParam(id, epath.invocation, bind)
             XR.Assignment(prop, tag, epath.invocation.loc)
           }
         val ent = ParseQuery.parseEntity(inputType, expr)
@@ -295,12 +295,12 @@ object ParseAction {
       },
     ) ?: parseError("Could not parse the expression inside of the action", expr)
 
-  context(CX.Scope, CX.Parsing)
+  context(scope: CX.Scope, parsing: CX.Parsing)
   fun parseAssignment(expr: IrExpression): XR.Assignment =
     on(expr).match<XR.Assignment>(
       case(ExtractorsDomain.Call.`x to y`[Is.Companion(), Is.Companion()]).thenThis { left, right ->
         val property = ParseExpression.parse(left).let { it as? XR.Property ?: parseError("Could not parse the left side of the assignment: ${it.showRaw()}", left) }
-        if (!right.type.isSubtypeOf(left.type, typeSystem))
+        if (!right.type.isSubtypeOf(left.type, scope.typeSystem))
           parseError("Invalid assignment expression `${expr.source()}`. The left-hand type `${left.type.dumpKotlinLike()}` is different from the right-hand type `${right.type.dumpKotlinLike()}`", expr)
         if (property.type.isProduct())
           parseError("Invalid assignment expression `${expr.source()}`. The left-hand type `${left.type.dumpKotlinLike()}` is a product-type which is not allowed.\n${Messages.ProductTypeInsertInstructions}\n------------ Originally Parsed To ------------\n${property.show()}", expr)

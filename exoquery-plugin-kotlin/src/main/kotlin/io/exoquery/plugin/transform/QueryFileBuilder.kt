@@ -12,13 +12,13 @@ object QueryFileBuilder {
     object GoldenNoOverwrite : OutputMode
   }
 
-  context(CX.Scope) operator fun invoke(queryFile: QueryFile) {
+  context(scope: CX.Scope) operator fun invoke(queryFile: QueryFile) {
     if (!queryFile.codeFileAccum.hasQueries()) return
 
     // check queries for duplicate labels
     val labelDups = queryFile.codeFileAccum.currentQueries().filterNot { it.label == null }.groupBy { it.label }.filter { it.value.size > 1 }
     if (labelDups.isNotEmpty()) {
-      logger.error("Duplicate labels found in queries: ${labelDups.keys.joinToString(", ")}")
+      scope.logger.error("Duplicate labels found in queries: ${labelDups.keys.joinToString(", ")}")
       return
     }
 
@@ -33,7 +33,7 @@ object QueryFileBuilder {
         null
 
     // either way write the queries out to the build directory (if enabled)
-    if (options?.queryFilesEnabled ?: false) {
+    if (scope.options?.queryFilesEnabled ?: false) {
       writeFile(OutputMode.Regular, queryFile)
     }
     // if the resourcesWrite is defined, write the queries out to the resources directory

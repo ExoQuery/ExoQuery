@@ -34,7 +34,7 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.name.ClassId
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrCall.paramCallHumanName() = run {
   val args = this.regularArgs.filterNotNull()
   val paramValue = args.first()
@@ -66,7 +66,7 @@ fun IrExpression.humanSymbolOrNull() =
     else -> null
   }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrDeclarationReference.isCapturedVariable(): Boolean =
   this.realOwner().capturesVariables
 
@@ -102,7 +102,7 @@ sealed interface RealOwner {
 
 
 // To be used with IrGetValue and IrGetField
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrDeclarationReference.realOwner(): RealOwner {
   tailrec fun rec(elem: IrElement, varType: VarType, recurseCount: Int): RealOwner =
     when {
@@ -140,14 +140,14 @@ fun IrDeclarationReference.realOwner(): RealOwner {
   return rec(this.symbol.owner, VarType.Unknown, 100)
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrDeclarationReference.isExternal(): Boolean =
   !realOwner().capturesVariables
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrDeclarationReference.isInternal(): Boolean = !isExternal()
 
-context(CX.Scope, CX.Parsing)
+context(scope: CX.Scope, parsing: CX.Parsing)
 fun parseFieldListOrFail(fieldExprs: List<IrExpression>): List<XR.Property> = run {
   // Keep around the field Ir's for another minute, if one of them isn't parsed right we want the right code position for it in the parseError
   val fieldsListRaw = fieldExprs.map { it to ParseExpression.parse(it) }
@@ -156,7 +156,7 @@ fun parseFieldListOrFail(fieldExprs: List<IrExpression>): List<XR.Property> = ru
   }
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrDeclarationReference.showLineage(): String {
   val collect = mutableListOf<String>()
   fun IrVariable.declSymbol(): String = if (this.isVar) "var" else "val"
@@ -201,7 +201,7 @@ fun IrDeclarationReference.showLineage(): String {
   return collect.map { "[${it}]" }.joinToString("->")
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun IrDeclarationReference.showLineageAdvanced(): List<Pair<String, IrElement>> {
   val collect = mutableListOf<Pair<String, IrElement>>()
   fun IrVariable.declSymbol(): String = if (this.isVar) "var" else "val"
@@ -247,10 +247,10 @@ fun IrDeclarationReference.showLineageAdvanced(): List<Pair<String, IrElement>> 
 }
 
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun getSerializerClassForValueClassType(type: IrType, originalElementOrigin: ParseError.Origin) =
   if (type.classOrNull?.owner?.isValue ?: false) {
-    with (makeBuilderCtx()) {
+    with (scope.makeBuilderCtx()) {
       when (val ser = type.inferSerializerForPropertyType()) {
         is KnownSerializer.Ref -> ser.buildExpression(type, originalElementOrigin)
         is KnownSerializer.Implicit -> ser.buildExpression(type)
@@ -261,7 +261,7 @@ fun getSerializerClassForValueClassType(type: IrType, originalElementOrigin: Par
     null
   }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun getSingleSerializerForLeafType(type: IrType, origin: ParseError.Origin): ParamBind.Type.Single? = run {
   getSerializerClassForPrimitiveType(type)?.let { ParamBind.Type.ParamStatic(it) }
     ?: getSerializerClassForValueClassType(type, origin)?.let { ParamBind.Type.ParamCustom(it, type) }
@@ -273,7 +273,7 @@ fun getSingleSerializerForLeafType(type: IrType, origin: ParseError.Origin): Par
     }
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun getMultiSerializerForLeafType(type: IrType, origin: ParseError.Origin): ParamBind.Type.Multi? = run {
   getSerializerClassForPrimitiveType(type)?.let { ParamBind.Type.ParamListStatic(it) }
     ?: getSerializerClassForValueClassType(type, origin)?.let { ParamBind.Type.ParamListCustom(it, type) }
@@ -285,7 +285,7 @@ fun getMultiSerializerForLeafType(type: IrType, origin: ParseError.Origin): Para
     }
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 private fun isContextualSerializeableType(type: IrType): Boolean =
   type.hasAnnotation<Contextual>() ||
     type.hasAnnotation<ExoValue>() ||
@@ -301,21 +301,21 @@ private fun isContextualSerializeableType(type: IrType): Boolean =
     type.isClass<java.time.OffsetTime>() ||
     type.isClass<java.time.OffsetDateTime>()
 
-context(CX.Scope)
+context(scope: CX.Scope)
 private fun getSingleSerializerClassForContextualType(type: IrType): ParamBind.Type.Single? =
   if (isContextualSerializeableType(type))
     ParamBind.Type.ParamCtx(type)
   else
     null
 
-context(CX.Scope)
+context(scope: CX.Scope)
 private fun getMultiSerializerClassForContextualType(type: IrType): ParamBind.Type.Multi? =
   if (isContextualSerializeableType(type))
     ParamBind.Type.ParamListCtx(type)
   else
     null
 
-context(CX.Scope)
+context(scope: CX.Scope)
 private fun getSerializerClassForPrimitiveType(type: IrType): ClassId? = run {
   val isNullable = type.isNullable()
   type.getPrimitiveType()?.let { primitiveType ->
@@ -354,11 +354,11 @@ private fun getSerializerClassForPrimitiveType(type: IrType): ClassId? = run {
 }
 
 object ParseFree {
-  context(CX.Scope, CX.Parsing)
+  context(scope: CX.Scope, parsing: CX.Parsing)
   fun match() =
     Ir.Call.FunctionMem0[ExtractorsDomain.Call.FreeInvoke[Is()], Is.of("invoke", "asPure", "asConditon", "asPureConditon")]
 
-  context(CX.Scope, CX.Parsing)
+  context(scope: CX.Scope, parsing: CX.Parsing)
   fun parse(expr: IrExpression, components: List<IrExpression>, funName: String) = run {
     val segs = components.map { Seg.parse(it) }
     val (partsRaw, paramsRaw) =
@@ -374,7 +374,7 @@ object ParseFree {
           // Generally we REALLY don't like to create a Builder inside of the parser
           // because we should not be creating any IR inside of the parser but it is needed for the Elaborator
           // which is used inside of the action parsing.
-          with(makeBuilderCtx()) {
+          with(scope.makeBuilderCtx()) {
             ParseAction.parse(paramExpr.expr, true)
           }
         else ->
@@ -392,7 +392,7 @@ object ParseFree {
   }
 }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun XR.U.QueryOrExpression.jsonCastTo(type: IrType) =
   when {
     type.isString() -> "toString"
@@ -408,7 +408,7 @@ fun XR.U.QueryOrExpression.jsonCastTo(type: IrType) =
     XR.MethodCall(this, converterName, emptyList(), XR.CallType.PureFunction, CID.kotlin_String, true, XRType.Value, this.loc)
   }
 
-context(CX.Scope)
+context(scope: CX.Scope)
 fun ensureIsValidOp(expr: IrExpression, xExpr: IrExpression, yExpr: IrExpression, x: XR.Expression, y: XR.Expression, output: XR.Expression) {
   fun IrExpression.isGetTemporaryVar() =
     (this as? IrGetValue)?.symbol?.owner?.origin == IrDeclarationOrigin.IR_TEMPORARY_VARIABLE

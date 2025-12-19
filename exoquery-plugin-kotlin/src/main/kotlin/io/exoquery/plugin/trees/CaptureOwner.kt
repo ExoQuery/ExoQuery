@@ -82,8 +82,8 @@ sealed interface OwnerChain {
 
   fun show(config: PPrinterConfig = PPrinterConfig()) = CaptureOwnerPrint(config).invoke(this)
 
-  context(CX.Scope)
-  fun showWithCtx(config: PPrinterConfig = PPrinterConfig()) = CaptureOwnerPrint(config, this@Scope).invoke(this)
+  context(scope: CX.Scope)
+  fun showWithCtx(config: PPrinterConfig = PPrinterConfig()) = CaptureOwnerPrint(config, scope).invoke(this)
 
   data class SourcedFunction(val call: IrCall, val origin: IrSimpleFunction, val isCaptured: Boolean, val containerType: ContainerType, val parent: OwnerChain): OwnerChain
   data class SourcedField(val call: IrGetField, val origin: IrField, val containerType: ContainerType, val parent: OwnerChain): OwnerChain
@@ -105,7 +105,7 @@ sealed interface OwnerChain {
        * expression of the entire sequence but that parameter might not actually be visible to the code
        * at hand so we need to do a game of propagation.
        */
-      context(CX.Scope, CX.Builder)
+      context(scope: CX.Scope, builder: CX.Builder)
       fun replantUprootableWith(expr: IrExpression): Uprootable =
         when (this) {
           is Root.UprootableQuery -> Root.UprootableQuery(uprootable.replant(expr), uprootable)
@@ -162,11 +162,11 @@ sealed interface OwnerChain {
     data object ActionBatch : ContainerType
 
     companion object {
-      context(CX.Scope)
+      context(scope: CX.Scope)
       fun identify(expr: IrExpression): ContainerType? =
         identify(expr.type)
 
-      context(CX.Scope)
+      context(scope: CX.Scope)
       fun identify(expr: IrType): ContainerType? =
         when {
           expr.isClass<SqlExpression<*>>() -> ContainerType.Expr
@@ -182,15 +182,15 @@ sealed interface OwnerChain {
   // TODO add morking as Seen to know if we need to continue or not
 
   companion object {
-    context(CX.Scope)
+    context(scope: CX.Scope)
     private fun IrExpression.isContainerOfXR(): Boolean =
       this.type.isClass<SqlExpression<*>>() || this.type.isClass<SqlQuery<*>>() || this.type.isClass<SqlAction<*, *>>() || this.type.isClass<SqlBatchAction<*, *, *>>()
 
 
-    context(CX.Scope)
+    context(scope: CX.Scope)
     fun buildFrom(expression: IrExpression): OwnerChain {
       val exprType = ContainerType.identify(expression) ?: return run {
-        logger.warn("------------- Early Exit for -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpKotlinLike() } ?: "<NOT A CALL>"}\n------------- No Match -------------")
+        scope.logger.warn("------------- Early Exit for -------------\n${expression.dumpKotlinLike()}\nOwner Is: ${(expression as? IrCall)?.let { it.symbol.owner.dumpKotlinLike() } ?: "<NOT A CALL>"}\n------------- No Match -------------")
         Root.Unknown(expression)
       }
       return expression.match(
@@ -237,9 +237,9 @@ sealed interface OwnerChain {
             },
             // If a "real" function could not be found (i.e. one in the current set of files being compiled) take a look if there is something in the store
             // that was put there from previous compiles. (This is intentionally last because we could have a new version of a function that is currently being stored
-            caseEarly(options.enableCrossFileStoreOrDefault)(Ir.SimpleFunction.anyKind[Is()]).thenIf { func -> CrossFile.isCrossFile(func) }.then { function ->
+            caseEarly(scope.options.enableCrossFileStoreOrDefault)(Ir.SimpleFunction.anyKind[Is()]).thenIf { func -> CrossFile.isCrossFile(func) }.then { function ->
               val outStored =
-                storedXRsScope.scoped {
+                scope.storedXRsScope.scoped {
                   when (exprType) {
                     is ContainerType.Query -> {
                       CrossFile.getUprootableFromStore(function, exprType)?.let { uprootable ->

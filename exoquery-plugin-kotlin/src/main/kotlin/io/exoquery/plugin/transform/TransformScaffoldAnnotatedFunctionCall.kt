@@ -28,10 +28,10 @@ import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 
-context(CX.Scope, CX.Builder)
+context(scope: CX.Scope, builder: CX.Builder)
 fun IrCall.zeroisedArgs(): IrCall {
   val call = this
-  return with(builder) {
+  return with(builder.builder) {
     val newCall = irCall(call.symbol)
 
     // The dispatch-receiver to a annotated function remains, the extension receiver gets dropped and used like a variable
@@ -43,22 +43,22 @@ fun IrCall.zeroisedArgs(): IrCall {
   }
 }
 
-context(CX.Scope, CX.Builder)
+context(scope: CX.Scope, builder: CX.Builder)
 fun buildScaffolding(zeroisedCall: IrExpression, scaffoldType: IrType, originalArgs: List<IrExpression?>): IrExpression {
-  var argsAsVararg = builder.irVararg(pluginCtx.irBuiltIns.anyType.makeNullable(), originalArgs.map { it ?: builder.irNull() })
+  var argsAsVararg = builder.builder.irVararg(scope.pluginCtx.irBuiltIns.anyType.makeNullable(), originalArgs.map { it ?: builder.builder.irNull() })
   val args = listOf(zeroisedCall) + argsAsVararg
   return callWithParamsAndOutput(io_exoquery_util_scaffoldCapFunctionQuery, listOf(scaffoldType), scaffoldType).invoke(*args.toTypedArray())
 }
 
 
 class TransformScaffoldAnnotatedFunctionCall(val superTransformer: VisitTransformExpressions, val sourceLabel: String) : Transformer<IrCall>() {
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun matches(call: IrCall): Boolean =
     call.symbol.owner.hasAnnotation<SqlFragment>()
 
 
 
-  context(CX.Scope, CX.Builder)
+  context(scope: CX.Scope, builder: CX.Builder)
   override fun transform(call: IrCall): IrExpression {
     val paramSketches =
       // if we can get the param-kinds then return it, otherwise try to parse the parent captured-function
