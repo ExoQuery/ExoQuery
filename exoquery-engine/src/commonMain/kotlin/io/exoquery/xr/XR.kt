@@ -249,7 +249,8 @@ sealed interface XR {
 
       val Empty = FqName(listOf())
       val Cast = FqName(listOf("kotlinCast"))
-      val CountDistinct = FqName("io.exoquery.CapturedBlock.countDistinct")
+      val CountDistinctCap = FqName("io.exoquery.CapturedBlock.countDistinct")
+      val CountDistinctSelect = FqName("io.exoquery.SelectClauseCapturedBlock.countDistinct")
 
       val JsonExtract = FqName(listOf(Globals.JsonExtractFunctionName))
       val JsonExtractAsString = FqName(listOf(Globals.JsonExtractAsStringFunctionName))

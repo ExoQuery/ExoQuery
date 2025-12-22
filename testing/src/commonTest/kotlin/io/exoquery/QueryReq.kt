@@ -120,8 +120,24 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }
+  "select with distinct count" {
+    val people = sql.select {
+      val p = from(Table<Person>())
+      countDistinct(p.name, p.age)
+    }
+    shouldBeGolden(people.xr, "XR")
+    shouldBeGolden(people.build<PostgresDialect>())
+  }
   "map with stddev" {
     val people = sql { Table<Person>().map { p -> stddev(p.age) } }
+    shouldBeGolden(people.xr, "XR")
+    shouldBeGolden(people.build<PostgresDialect>())
+  }
+  "select with stdev and another column" {
+    val people = sql.select {
+      val p = from(Table<Person>())
+      stddev(p.age) to p.name
+    }
     shouldBeGolden(people.xr, "XR")
     shouldBeGolden(people.build<PostgresDialect>())
   }

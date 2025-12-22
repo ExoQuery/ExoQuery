@@ -358,7 +358,7 @@ interface SqlIdiom : HasPhasePrinting {
       when {
         this.name == XR.FqName.Cast && args.size == 1 -> argsToken
         this.name.name == "COUNT_STAR" -> +"count(*)"
-        this.name == XR.FqName.CountDistinct -> +"count(DISTINCT ${argsToken})"
+        this.name == XR.FqName.CountDistinctCap || this.name == XR.FqName.CountDistinctSelect -> +"count(DISTINCT ${argsToken})"
         this.name == XR.FqName.JsonExtractAsString -> jsonExtractAsString(args[0], args[1])
         this.name == XR.FqName.JsonExtract -> jsonExtract(args[0], args[1])
         else -> {

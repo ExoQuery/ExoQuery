@@ -90,11 +90,23 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "map with count distinct" to cr(
       "SELECT count(DISTINCT p.name, p.age) AS value FROM Person p"
     ),
+    "select with distinct count/XR" to kt(
+      "select { val p = from(Table(Person)); countDistinct_GC(p.name, p.age) }"
+    ),
+    "select with distinct count" to cr(
+      "SELECT count(DISTINCT p.name, p.age) AS value FROM Person p"
+    ),
     "map with stddev/XR" to kt(
       "Table(Person).map { p -> stddev_GC(p.age) }"
     ),
     "map with stddev" to cr(
       "SELECT stddev(p.age) AS value FROM Person p"
+    ),
+    "select with stdev and another column/XR" to kt(
+      "select { val p = from(Table(Person)); Tuple(first = stddev_GC(p.age), second = p.name) }"
+    ),
+    "select with stdev and another column" to cr(
+      "SELECT stddev(p.age) AS first, p.name AS second FROM Person p"
     ),
     "query with filter/XR" to kt(
       "Table(Person).filter { p -> p.age > 18 }"
