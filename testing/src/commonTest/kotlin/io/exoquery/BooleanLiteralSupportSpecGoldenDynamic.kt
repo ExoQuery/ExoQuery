@@ -163,13 +163,13 @@ object BooleanLiteralSupportSpecGoldenDynamic: GoldenQueryFile {
       "select { val t1 = from(Table(TestEntity)); val t2 = join(Table(TestEntity)) { true }; Tuple(first = t1, second = t2) }"
     ),
     "joins/for-comprehension with constant/SQL" to cr(
-      "SELECT t1.s, t1.i, t1.l, t1.o, t1.b, t.s, t.i, t.l, t.o, t.b FROM TestEntity t1 INNER JOIN TestEntity t ON 1 = 1"
+      "SELECT t1.s, t1.i, t1.l, t1.o, t1.b, t2.s, t2.i, t2.l, t2.o, t2.b FROM TestEntity t1 INNER JOIN TestEntity t2 ON 1 = 1"
     ),
     "joins/for-comprehension with field/XR" to kt(
       "select { val t1 = from(Table(TestEntity)); val t2 = join(Table(TestEntity)) { t.b }; Tuple(first = t1, second = t2) }"
     ),
     "joins/for-comprehension with field/SQL" to cr(
-      "SELECT t1.s, t1.i, t1.l, t1.o, t1.b, t.s, t.i, t.l, t.o, t.b FROM TestEntity t1 INNER JOIN TestEntity t ON 1 = t.b"
+      "SELECT t1.s, t1.i, t1.l, t1.o, t1.b, t2.s, t2.i, t2.l, t2.o, t2.b FROM TestEntity t1 INNER JOIN TestEntity t2 ON 1 = t2.b"
     ),
     "optionals/exists/XR" to kt(
       "Table(TestEntity).filter { t -> if ({ val tmp0_elvis_lhs = t.o; if (tmp0_elvis_lhs == null) false else tmp0_elvis_lhs }) false else true }.map { t -> Tuple(first = t.b, second = true) }"

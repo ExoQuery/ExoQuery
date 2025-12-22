@@ -58,7 +58,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val u = from(Table(Person).filter { p -> p.name == Joe }.union(Table(Person).filter { p -> p.name == Jack })); val a = join(Table(Address)) { a.ownerId == u.id }; u.name.uppercase_MC() }"
     ),
     "union with pure function - should collapse" to cr(
-      "(SELECT UPPER(p.name) AS value FROM Person p INNER JOIN Address a ON a.ownerId = p.id WHERE p.name = 'Joe') UNION (SELECT UPPER(p1.name) AS value FROM Person p1 INNER JOIN Address a ON a.ownerId = p1.id WHERE p1.name = 'Jack')"
+      "(SELECT UPPER(u.name) AS value FROM Person u INNER JOIN Address a ON a.ownerId = u.id WHERE u.name = 'Joe') UNION (SELECT UPPER(u.name) AS value FROM Person u INNER JOIN Address a ON a.ownerId = u.id WHERE u.name = 'Jack')"
     ),
     "union with aggregation - shuold not collapse/XR" to kt(
       "select { val u = from(Table(Person).filter { p -> p.name == Joe }.union(Table(Person).filter { p -> p.name == Jack })); val a = join(Table(Address)) { a.ownerId == u.id }; avg_GC(u.age) }"
@@ -202,19 +202,19 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val p = from(Table(Person)); val innerRobot = join(select { val r = from(Table(Robot)); where(r.ownerId == p.id); Tuple(first = r.name, second = r.ownerId) }) { r.second == p.id }; Tuple(first = p, second = innerRobot) }"
     ),
     "flat joins inside subquery/where" to cr(
-      "SELECT p.id, p.name, p.age, r.first, r.second FROM Person p INNER JOIN (SELECT r.name AS first, r.ownerId AS second FROM Robot r WHERE r.ownerId = p.id) AS r ON r.second = p.id"
+      "SELECT p.id, p.name, p.age, innerRobot.first, innerRobot.second FROM Person p INNER JOIN (SELECT r.name AS first, r.ownerId AS second FROM Robot r WHERE r.ownerId = p.id) AS innerRobot ON innerRobot.second = p.id"
     ),
     "flat joins inside subquery/groupBy/XR" to kt(
       "select { val p = from(Table(Person)); val innerRobot = join(select { val r = from(Table(Robot)); groupBy(r.ownerId); Tuple(first = r.name, second = r.ownerId) }) { r.second == p.id }; Tuple(first = p, second = innerRobot) }"
     ),
     "flat joins inside subquery/groupBy" to cr(
-      "SELECT p.id, p.name, p.age, r.first, r.second FROM Person p INNER JOIN (SELECT r.name AS first, r.ownerId AS second FROM Robot r GROUP BY r.ownerId) AS r ON r.second = p.id"
+      "SELECT p.id, p.name, p.age, innerRobot.first, innerRobot.second FROM Person p INNER JOIN (SELECT r.name AS first, r.ownerId AS second FROM Robot r GROUP BY r.ownerId) AS innerRobot ON innerRobot.second = p.id"
     ),
     "flat joins inside subquery/sortBy/XR" to kt(
       "select { val p = from(Table(Person)); val innerRobot = join(select { val r = from(Table(Robot)); sortBy(r.name to Desc); Tuple(first = r.name, second = r.ownerId) }) { r.second == p.id }; Tuple(first = p, second = innerRobot) }"
     ),
     "flat joins inside subquery/sortBy" to cr(
-      "SELECT p.id, p.name, p.age, r.first, r.second FROM Person p INNER JOIN (SELECT r.name AS first, r.ownerId AS second FROM Robot r ORDER BY r.name DESC) AS r ON r.second = p.id"
+      "SELECT p.id, p.name, p.age, innerRobot.first, innerRobot.second FROM Person p INNER JOIN (SELECT r.name AS first, r.ownerId AS second FROM Robot r ORDER BY r.name DESC) AS innerRobot ON innerRobot.second = p.id"
     ),
     "transformation of nested select clauses/where clauses are combined/XR" to kt(
       "select { val p = from(Table(Person)); val a = from(select { val a = from(Table(Address)); where(a.city == Someplace); a }); where(p.name == Joe); Tuple(first = p, second = a) }"
@@ -262,7 +262,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val row = from({ base -> base.filter { it -> it.a.age > 18 } }.toQuery.apply({ select { val person = from(Table(Person)); val address = join(Table(Address)) { addr.ownerId == person.id }; Composite(a = person, b = address) } }.toQuery.apply())); row }"
     ),
     "nested fragment filter - wrong alias resolution bug" to cr(
-      "SELECT it.a_id AS id, it.a_name AS name, it.a_age AS age, it.b_ownerId AS ownerId, it.b_street AS street, it.b_city AS city FROM (SELECT person.id AS a_id, person.name AS a_name, person.age AS a_age, addr.ownerId AS b_ownerId, addr.street AS b_street, addr.city AS b_city FROM Person person INNER JOIN Address addr ON addr.ownerId = person.id) AS it WHERE it.a_age > 18"
+      "SELECT it.a_id AS id, it.a_name AS name, it.a_age AS age, it.b_ownerId AS ownerId, it.b_street AS street, it.b_city AS city FROM (SELECT person.id AS a_id, person.name AS a_name, person.age AS a_age, address.ownerId AS b_ownerId, address.street AS b_street, address.city AS b_city FROM Person person INNER JOIN Address address ON address.ownerId = person.id) AS it WHERE it.a_age > 18"
     ),
     "composeFrom join - duplicate subquery alias bug/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> Table(B).filter { it -> it.status == active }.join { b -> b.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.status == active }.join { c -> c.id == this.cId } }.toQuery.apply(a)); Result(aId = a.id, bId = b.id, cId = c.id) }"
@@ -271,34 +271,40 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "SELECT a.id AS aId, b.id AS bId, c.id AS cId FROM A a INNER JOIN (SELECT b.id, b.status FROM B b WHERE b.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT c.id, c.status FROM C c WHERE c.status = 'active') AS c ON c.id = a.cId"
     ),
     "PushAlias tests for composeFrom join/flatJoin with nested select query/XR" to kt(
-      "select { val a = from(Table(A)); val b = from({ this -> select { val b = from(Table(B)); where(b.status == active); b }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
+      "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
     ),
     "PushAlias tests for composeFrom join/flatJoin with nested select query" to cr(
-      "SELECT a.id AS first, selectedB.value AS second FROM A a INNER JOIN (SELECT b.id, b.status, b.value FROM B b WHERE b.status = 'active') AS selectedB ON selectedB.id = a.bId"
+      "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b ON b.id = a.bId"
     ),
     "PushAlias tests for composeFrom join/flatJoin with map and filter chain/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> Table(B).filter { it -> it.status == active }.map { it -> it }.join { filteredB -> filteredB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
     ),
     "PushAlias tests for composeFrom join/flatJoin with map and filter chain" to cr(
-      "SELECT a.id AS first, filteredB.value AS second FROM A a INNER JOIN (SELECT filteredB.id, filteredB.status, filteredB.value FROM B filteredB WHERE filteredB.status = 'active') AS filteredB ON filteredB.id = a.bId"
+      "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN (SELECT b.id, b.status, b.value FROM B b WHERE b.status = 'active') AS b ON b.id = a.bId"
     ),
     "PushAlias tests for composeFrom join/flatJoin with flatMap/XR" to kt(
-      "select { val a = from(Table(A)); val b = from({ this -> Table(B).flatMap { b -> Table(C).filter { c -> c.bId == b.id }.map { c -> b } }.join { mappedB -> mappedB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
+      "select { val a = from(Table(A)); val b = from({ this -> Table(B).flatMap { bb -> Table(C).filter { c -> c.bId == bb.id }.map { c -> bb } }.join { mappedB -> mappedB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
     ),
     "PushAlias tests for composeFrom join/flatJoin with flatMap" to cr(
-      "SELECT a.id AS first, mappedB.value AS second FROM A a INNER JOIN (SELECT b.id, b.status, b.value FROM B b, C mappedB WHERE mappedB.bId = b.id) AS mappedB ON mappedB.id = a.bId"
+      "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb, C c WHERE c.bId = bb.id) AS b ON b.id = a.bId"
     ),
     "PushAlias tests for composeFrom join/multiple flatJoins with different query types/XR" to kt(
-      "select { val a = from(Table(A)); val b = from({ this -> select { val b = from(Table(B)); where(b.status == active); b }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.name == test }.join { filteredC -> filteredC.bId == this.cId } }.toQuery.apply(a)); Triple(first = a.id, second = b.value, third = c.name) }"
+      "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.name == test }.join { filteredC -> filteredC.bId == this.cId } }.toQuery.apply(a)); Triple(first = a.id, second = b.value, third = c.name) }"
     ),
     "PushAlias tests for composeFrom join/multiple flatJoins with different query types" to cr(
-      "SELECT a.id AS first, selectedB.value AS second, filteredC.name AS third FROM A a INNER JOIN (SELECT b.id, b.status, b.value FROM B b WHERE b.status = 'active') AS selectedB ON selectedB.id = a.bId INNER JOIN (SELECT filteredC.id, filteredC.bId, filteredC.name FROM C filteredC WHERE filteredC.name = 'test') AS filteredC ON filteredC.bId = a.cId"
+      "SELECT a.id AS first, b.value AS second, c.name AS third FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT c.id, c.bId, c.name FROM C c WHERE c.name = 'test') AS c ON c.bId = a.cId"
+    ),
+    "PushAlias tests for composeFrom join/multiple flatJoins with different query types - and a duplicate/XR" to kt(
+      "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); val b1 = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.name == test }.join { filteredC -> filteredC.bId == this.cId } }.toQuery.apply(a)); Triple(first = a.id, second = b.value + b1.value, third = c.name) }"
+    ),
+    "PushAlias tests for composeFrom join/multiple flatJoins with different query types - and a duplicate" to cr(
+      "SELECT a.id AS first, b.value + b1.value AS second, c.name AS third FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b1 ON b1.id = a.bId INNER JOIN (SELECT c.id, c.bId, c.name FROM C c WHERE c.name = 'test') AS c ON c.bId = a.cId"
     ),
     "PushAlias tests for composeFrom join/flatJoin with complex nested select/XR" to kt(
-      "select { val a = from(Table(A)); val b = from({ this -> select { val b = from(Table(B)); where(b.status == active); groupBy(b.status); having(avg_GC(b.value) > 10.toDouble_MCS()); sortBy(b.status to Asc); b }.join { complexB -> complexB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
+      "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); groupBy(bb.status); having(avg_GC(bb.value) > 10.toDouble_MCS()); sortBy(bb.status to Asc); bb }.join { complexB -> complexB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
     ),
     "PushAlias tests for composeFrom join/flatJoin with complex nested select" to cr(
-      "SELECT a.id AS first, complexB.value AS second FROM A a INNER JOIN (SELECT b.id, b.status, b.value FROM B b WHERE b.status = 'active' GROUP BY b.status HAVING avg(b.value) > 10 ORDER BY b.status ASC) AS complexB ON complexB.id = a.bId"
+      "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active' GROUP BY bb.status HAVING avg(bb.value) > 10 ORDER BY bb.status ASC) AS b ON b.id = a.bId"
     ),
   )
 }

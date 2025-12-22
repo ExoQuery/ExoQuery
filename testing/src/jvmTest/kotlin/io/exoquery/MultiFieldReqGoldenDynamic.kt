@@ -31,11 +31,11 @@ object MultiFieldReqGoldenDynamic: GoldenQueryFile {
     "multi groupBy should expand correctly/multiple-nested" to cr(
       """
       SELECT
-        a.first_first_id AS id,
-        a.first_first_name AS name,
-        a.first_first_age AS age,
-        a.first_second AS second,
-        count(a.second_street) AS second
+        av.first_first_id AS id,
+        av.first_first_name AS name,
+        av.first_first_age AS age,
+        av.first_second AS second,
+        count(av.second_street) AS second
       FROM
         Person p,
         (
@@ -49,12 +49,12 @@ object MultiFieldReqGoldenDynamic: GoldenQueryFile {
             a.city AS second_city
           FROM
             INNER JOIN Address a ON a.ownerId = p.id
-        ) AS a
+        ) AS av
       GROUP BY
-        a.first_first_id,
-        a.first_first_name,
-        a.first_first_age,
-        a.first_second
+        av.first_first_id,
+        av.first_first_name,
+        av.first_first_age,
+        av.first_second
       """
     ),
     "multi groupBy should expand correctly/multiple-nested - named record/XR" to kt(
@@ -63,11 +63,11 @@ object MultiFieldReqGoldenDynamic: GoldenQueryFile {
     "multi groupBy should expand correctly/multiple-nested - named record" to cr(
       """
       SELECT
-        a.pws_person_id AS id,
-        a.pws_person_name AS name,
-        a.pws_person_age AS age,
-        a.pws_street AS street,
-        count(a.address_street) AS streetCount
+        av.pws_person_id AS id,
+        av.pws_person_name AS name,
+        av.pws_person_age AS age,
+        av.pws_street AS street,
+        count(av.address_street) AS streetCount
       FROM
         Person p,
         (
@@ -81,12 +81,12 @@ object MultiFieldReqGoldenDynamic: GoldenQueryFile {
             a.city AS address_city
           FROM
             INNER JOIN Address a ON a.ownerId = p.id
-        ) AS a
+        ) AS av
       GROUP BY
-        a.pws_person_id,
-        a.pws_person_name,
-        a.pws_person_age,
-        a.pws_street
+        av.pws_person_id,
+        av.pws_person_name,
+        av.pws_person_age,
+        av.pws_street
       """
     ),
   )

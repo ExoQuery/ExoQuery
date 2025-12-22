@@ -11,6 +11,61 @@ import io.exoquery.xr.BetaReduction
 import io.exoquery.xr.copy.*
 import io.exoquery.xrError
 
+/**
+ * Dealias is a stateful transformer that eliminates redundant identifiers (aliases) in queries.
+ *
+ * ## What Dealias Does
+ * When you have nested query operations, each operation introduces an identifier. For example:
+ * ```
+ * Filter(
+ *   Entity(Person),
+ *   Id(p, Person),
+ *   p.age > 18
+ * )
+ * ```
+ * After processing the Entity, Dealias tracks that the last identifier was `p`. In subsequent
+ * operations that reference this query through a new identifier (e.g., `x`), Dealias replaces
+ * all occurrences of `x` with `p` via beta reduction, eliminating the redundant alias.
+ *
+ * ## The FlatMap Problem
+ * FlatMap has a fundamental issue with the standard dealiasing approach. Consider:
+ * ```
+ * FlatMap(
+ *   Entity(Person),
+ *   Id(person, Person),
+ *   Map(
+ *     FlatJoin(Entity(Address), Id(addr, Address), ...),
+ *     Id(address, Address),
+ *     Product(Composite, [("a", person), ("b", address)])
+ *   )
+ * )
+ * ```
+ *
+ * When the FlatMap case processes this query, it:
+ * 1. Calls `dealias(head, id, body)` on the FlatMap's components
+ * 2. Recursively processes the body with `invoke(c)`, which descends into the Map
+ * 3. The Map processes its FlatJoin, which returns state = Id(addr)
+ * 4. This state propagates up through the Map and back to the FlatMap
+ * 5. Previously, the FlatMap would return `cnt` (the state from the body), making Id(addr) the outer state
+ *
+ * This caused catastrophic bugs when the FlatMap produces a composite type:
+ * - The composite is Composite(a: Person, b: Address)
+ * - But the outer state becomes Id(addr) instead of Id(person)
+ * - When filtering on `it.a.age` (where `it` is the composite), Dealias replaces `it` → `addr`
+ * - Result: `addr.a.age` instead of `person.a.age` (wrong table reference!)
+ *
+ * ## Why We Return null State for FlatMap
+ * We return `Dealias(null, traceConfig)` instead of `Dealias(b, traceConfig)` or `cnt` because:
+ * 1. Propagating inner state (`cnt`) breaks composite type field resolution (as shown above)
+ * 2. Using the FlatMap's own identifier (`b`) would be incorrect when the body transforms the type
+ * 3. FlatMap is eliminated during normalization (converted to FlatJoin), so dealiasing provides no benefit
+ * 4. Returning null state prevents downstream operations from incorrectly dealiasing against this FlatMap
+ *
+ * The null state signals: "don't try to dealias the next operation against this identifier because
+ * the identifier scope has changed in a complex way that simple beta reduction cannot handle."
+ *
+ * See: QueryReq.kt "nested fragment filter - wrong alias resolution bug" for reproduction test.
+ */
 data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) : StatefulTransformer<Ident?> {
   val trace: Tracer =
     Tracer(TraceType.Standard, traceConfig, 1)
@@ -20,9 +75,10 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
       when (this) {
 
         is FlatMap -> {
-          val (a, b, c, _) = dealias(head, id, body)
-          val (cn, cnt) = invoke(c) // need to recursively dealias this clause e.g. if it is a map-clause that has another alias inside
-          FlatMap.cs(a, b, cn) to Dealias(null, traceConfig)
+          // DO NOT CHANGE THIS TO RETURN cnt OR Dealias(b, ...) - See class documentation for why
+          val (headn, _) = Dealias(null, traceConfig).invoke(head)
+          val (bodyn, _) = Dealias(null, traceConfig).invoke(body) // need to recursively dealias this clause e.g. if it is a map-clause that has another alias inside
+          FlatMap.cs(headn, id, bodyn) to Dealias(null, traceConfig)
         }
 
         is ConcatMap -> {

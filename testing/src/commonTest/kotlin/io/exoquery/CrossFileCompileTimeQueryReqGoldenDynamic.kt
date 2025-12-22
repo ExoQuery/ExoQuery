@@ -73,7 +73,7 @@ object CrossFileCompileTimeQueryReqGoldenDynamic: GoldenQueryFile {
       "{ q -> select { val p = from({ q -> q.filter { p -> p.name == JohnA } }.toQuery.apply(q)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) } }.toQuery.apply(Table(PersonCrs).filter { p -> p.name == JoeInner }).filter { pair -> pair.first.name == JoeOuter }"
     ),
     "compile-time queries should work for/captured functions/inline captured functions defined in previous-previous compilation units/SQL" to cr(
-      "SELECT p1.id, p1.name, a.ownerId, a.street FROM PersonCrs p1 INNER JOIN AddressCrs a ON a.ownerId = p1.id WHERE p1.name = 'JoeInner' AND p1.name = 'JohnA' AND p1.name = 'JoeOuter'"
+      "SELECT p.id, p.name, a.ownerId, a.street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id WHERE p.name = 'JoeInner' AND p.name = 'JohnA' AND p.name = 'JoeOuter'"
     ),
     "compile-time queries should work for/captured functions/inline captured functions defined in previous-previous compilation units/Phase" to cr(
       "CompileTime"

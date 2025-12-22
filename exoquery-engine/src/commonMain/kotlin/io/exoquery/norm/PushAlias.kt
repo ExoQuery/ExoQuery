@@ -130,10 +130,35 @@ data class PushAlias(override val state: XR.Ident?, val traceConfig: TraceConfig
     with(q) {
       when (this) {
 
-        is FlatMap -> {
+        // If the FlatMap head is a FlatJoin, push the alias into it
+        // For example:
+        // sql.select {
+        //   val x = from(...)
+        //   val a = join(expression /* `shove` alias into here */) { alias -> ... } <- this case
+        //   val b = join(...) { ... }
+        // }
+        is FlatMap if head is FlatJoin -> {
+          val (hn, _) = PushAlias(id, traceConfig).invoke(head)
+          val (bn, _) = PushAlias(null, traceConfig).invoke(body)
+          FlatMap.cs(hn, id, bn) to PushAlias(null, traceConfig)
+        }
+        // I.e. a tail-position map after a FlatJoin
+        // For example:
+        // sql.select {
+        //   val a = from(...)
+        //   val b = join(expression /* `shove` alias into here */) { alias -> ... } <- this case
+        // }
+        is Map if head is FlatJoin -> {
           // Ignore FlatMap - don't push aliases through it
-          val (hn, _) = invoke(head)
-          val (bn, _) = invoke(body)
+          val (hn, _) = PushAlias(id, traceConfig).invoke(head)
+          val (bn, _) = PushAlias(null, traceConfig).invoke(body)
+          Map.cs(hn, id, bn) to PushAlias(null, traceConfig)
+        }
+
+        // In general we do not carry aliases across FlatMap boundaries in the general case
+        is FlatMap -> {
+          val (hn, _) = PushAlias(null, traceConfig).invoke(head)
+          val (bn, _) = PushAlias(null, traceConfig).invoke(body)
           FlatMap.cs(hn, id, bn) to PushAlias(null, traceConfig)
         }
 
@@ -201,10 +226,18 @@ data class PushAlias(override val state: XR.Ident?, val traceConfig: TraceConfig
         }
 
         is FlatJoin -> {
-          // FlatJoin is the source of alias pushing
-          // Push the id into the head query
-          val (headn, _) = PushAlias(id, traceConfig).invoke(head)
-          FlatJoin.cs(headn, id, on) to PushAlias(null, traceConfig)
+          if (state != null) {
+            // If there is an external alias (that came from a FlatMap(FlatJoin, id, ...) then push that inside
+            // This is the case of: select { val a = from(tableA.join(...){ *it* -> ... }); val b = from(tableB.join(...){ *it* -> ... }); ... }
+            // i.e. some kind of generic alias that would clash when dealiased out of the inner joins
+            val (a, b, c, _) = pushAlias(head, id, on)
+            FlatJoin.cs(a, b, c) to PushAlias(null, traceConfig)
+          }
+          else {
+            // Otherwise push the id into the head query, FlatJoin is the source of alias pushing
+            val (headn, _) = PushAlias(id, traceConfig).invoke(head)
+            FlatJoin.cs(headn, id, on) to PushAlias(null, traceConfig)
+          }
         }
 
         is Entity, is Distinct, is Nested, is FlatFilter, is FlatHaving, is FlatSortBy, is FlatGroupBy, is Free, is ExprToQuery, is TagForSqlQuery, is GlobalCall, is MethodCall -> {
