@@ -40,7 +40,7 @@ object QueryDistinctReqGoldenDynamic: GoldenQueryFile {
       "select { val p = from(Table(Person).distinct); val a = join(Table(Address).sortBy { it.city to Asc }) { p.id == a.ownerId }; Tuple(first = p, second = a) }"
     ),
     "distinct simple/from distinct, sort join/SQL" to cr(
-      "SELECT p.id, p.name, p.age, it.ownerId, it.street, it.city FROM (SELECT DISTINCT x.id, x.name, x.age FROM Person x) AS p INNER JOIN (SELECT it.ownerId, it.street, it.city FROM Address it ORDER BY it.city ASC) AS it ON p.id = it.ownerId"
+      "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM (SELECT DISTINCT x.id, x.name, x.age FROM Person x) AS p INNER JOIN (SELECT a.ownerId, a.street, a.city FROM Address a ORDER BY a.city ASC) AS a ON p.id = a.ownerId"
     ),
   )
 }

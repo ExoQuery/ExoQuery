@@ -15,6 +15,7 @@ class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolea
   override val trace: Tracer = Tracer(traceType, traceConf, 1)
 
   val DealiasPhase by lazy { DealiasApply(traceConf) }
+  val PushAliasPhase by lazy { PushAliasApply(traceConf) }
   val AvoidAliasConflictPhase by lazy { AvoidAliasConflictApply(traceConf) }
   val NormalizeNestedStructuresPhase by lazy { NormalizeNestedStructures(this) }
   val SymbolicReductionPhase by lazy { SymbolicReduction(traceConf, queryData.containsFlatUnits) }
@@ -29,7 +30,8 @@ class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolea
   override operator fun invoke(q: Query): Query =
     trace("Avoid Capture and Normalize $q into:") andReturn {
       val reduced = BetaReduction(q).asQuery()
-      norm(DealiasPhase(reduced))
+      //norm(PushAliasPhase(DealiasPhase(reduced)))
+      norm(DealiasPhase(PushAliasPhase(reduced)))
     }
 
   val applyMapInterp = Tracer(TraceType.ApplyMap, traceConf, 1)
