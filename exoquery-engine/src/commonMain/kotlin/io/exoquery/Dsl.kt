@@ -491,13 +491,13 @@ interface CapturedBlock {
   fun <T : Comparable<T>> min(value: T): T = errorCap("The `min` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun <T : Comparable<T>> max(value: T): T = errorCap("The `min` expression of the Query was not inlined")
+  fun <T : Comparable<T>> max(value: T): T = errorCap("The `max` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun avg(value: Comparable<*>): Double = errorCap("The `min` expression of the Query was not inlined")
+  fun avg(value: Comparable<*>): Double = errorCap("The `avg` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun <R> avg(value: Comparable<*>): R = errorCap("The `min` expression of the Query was not inlined")
+  fun <R> avg(value: Comparable<*>): R = errorCap("The `avg` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
   fun stddev(value: Comparable<*>): Double = errorCap("The `stddev` expression of the Query was not inlined")
@@ -506,13 +506,13 @@ interface CapturedBlock {
   fun <R> stddev(value: Comparable<*>): R = errorCap("The `stddev` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun <T : Comparable<T>> sum(value: T): T = errorCap("The `min` expression of the Query was not inlined")
+  fun <T : Comparable<T>> sum(value: T): T = errorCap("The `sum` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun <T> count(value: T): Int = errorCap("The `min` expression of the Query was not inlined")
+  fun <T> count(value: T): Int = errorCap("The `count` expression of the Query was not inlined")
 
   @DslFunctionCall(DslFunctionCallType.Aggregator::class)
-  fun <T> countDistinct(vararg value: T): Int = errorCap("The `min` expression of the Query was not inlined")
+  fun <T> countDistinct(vararg value: T): Int = errorCap("The `countDistinct` expression of the Query was not inlined")
 
 
   /**

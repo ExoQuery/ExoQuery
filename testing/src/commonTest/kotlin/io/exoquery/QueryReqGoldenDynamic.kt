@@ -252,5 +252,17 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "transformation of nested select clauses/combo of all cases will cause nesting" to cr(
       "SELECT p.id, p.name, p.age, a.ownerId, a.street, a.city FROM Person p, (SELECT a.ownerId, a.street, a.city FROM Address a WHERE a.city = 'Someplace' GROUP BY a.city ORDER BY a.street ASC) AS a WHERE p.name = 'Joe' GROUP BY p.name ORDER BY p.age DESC"
     ),
+    "implicit joins/XR" to kt(
+      "Table(Person).flatMap { p -> Table(Address).filter { a -> a.ownerId == p.id }.map { a -> Tuple(first = p.name, second = a.city) } }"
+    ),
+    "implicit joins" to cr(
+      "SELECT p.name AS first, a.city AS second FROM Person p, Address a WHERE a.ownerId = p.id"
+    ),
+    "nested fragment filter - wrong alias resolution bug/XR" to kt(
+      "select { val row = from({ base -> base.filter { it -> it.a.age > 18 } }.toQuery.apply({ select { val person = from(Table(Person)); val address = join(Table(Address)) { addr.ownerId == person.id }; Composite(a = person, b = address) } }.toQuery.apply())); row }"
+    ),
+    "nested fragment filter - wrong alias resolution bug" to cr(
+      "SELECT it.a_id AS id, it.a_name AS name, it.a_age AS age, it.b_ownerId AS ownerId, it.b_street AS street, it.b_city AS city FROM (SELECT person.id AS a_id, person.name AS a_name, person.age AS a_age, addr.ownerId AS b_ownerId, addr.street AS b_street, addr.city AS b_city FROM Person person INNER JOIN Address addr ON addr.ownerId = person.id) AS it WHERE it.a_age > 18"
+    ),
   )
 }

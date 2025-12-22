@@ -403,4 +403,57 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     }
   }
 
+  "implicit joins" {
+    val q = sql {
+      Table<Person>().flatMap { p ->
+        Table<Address>().filter { a -> a.ownerId == p.id }.map { a -> p.name to a.city }
+      }
+    }
+    shouldBeGolden(q.xr, "XR")
+    shouldBeGolden(q.build<PostgresDialect>())
+  }
+
+  /**
+   * BUG REPRODUCTION: Incorrect alias resolution in nested fragment filters
+   *
+   * When filtering a SqlQuery<CompositeType> through a fragment, field paths like
+   * `it.a.fieldName` resolve to the wrong table alias.
+   *
+   * EXPECTED: `it.a.age` → `person.age` (references Person table with alias 'person')
+   * ACTUAL:   `it.a.age` → `address.age` (references Address table with alias 'address')
+   *
+   * The bug appears to use the last-joined table's alias instead of following
+   * the field path through the composite type.
+   */
+  "nested fragment filter - wrong alias resolution bug" {
+    // Composite type holding both Person and Address
+    data class Composite(val a: Person, val b: Address)
+
+    // Fragment 1: Join Person and Address into Composite
+    @SqlFragment
+    fun baseJoin(): SqlQuery<Composite> = sql.select {
+      val person = from(Table<Person>())
+      val address = join(Table<Address>()) { addr -> addr.ownerId == person.id }
+      Composite(person, address)
+    }
+
+    // Fragment 2: Filter on field from 'a' component (Person)
+    @SqlFragment
+    fun filterOnA(base: SqlQuery<Composite>): SqlQuery<Composite> = sql {
+      base.filter { it.a.age > 18 }
+      //           ^^^^^^^^
+      //           Should resolve to: person.age
+      //           BUG: Actually resolves to: address.age (wrong table!)
+    }
+
+    // Composed query demonstrating the bug
+    val query = sql.select {
+      val row = from(filterOnA(baseJoin()))
+      row
+    }
+
+    shouldBeGolden(query.xr, "XR")
+    shouldBeGolden(query.build<PostgresDialect>())
+  }
+
 })

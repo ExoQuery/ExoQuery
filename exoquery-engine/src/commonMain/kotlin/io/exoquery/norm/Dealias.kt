@@ -22,13 +22,13 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
         is FlatMap -> {
           val (a, b, c, _) = dealias(head, id, body)
           val (cn, cnt) = invoke(c) // need to recursively dealias this clause e.g. if it is a map-clause that has another alias inside
-          FlatMap.cs(a, b, cn) to cnt
+          FlatMap.cs(a, b, cn) to Dealias(null, traceConfig)
         }
 
         is ConcatMap -> {
           val (a, b, c, _) = dealias(head, id, body)
           val (cn, cnt) = invoke(c)
-          ConcatMap.cs(a, b, cn) to cnt
+          ConcatMap.cs(a, b, cn) to Dealias(null, traceConfig)
         }
 
         is Map -> {

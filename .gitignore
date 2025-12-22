@@ -30,3 +30,6 @@ kotlin-js-store/
 local.properties
 
 .codegen.properties
+
+# AI
+.ai/
