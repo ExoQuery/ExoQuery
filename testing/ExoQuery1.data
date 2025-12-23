@@ -1,0 +1,921 @@
+========== Beginning-Normalization  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mCustomQueryRef[39m(
+  |    [33mSelectClause[39m(
+  |      [33mList[39m(
+  |        [33mFrom[39m(
+  |          [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |          [33mFilter[39m(
+  |            [33mCustomQueryRef[39m(
+  |              [33mSelectClause[39m(
+  |                [33mList[39m([33mFrom[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32mSynth[39m), [33mJoin[39m([32mInner[39m, [33mId[39m([32mb[39m, [32mB(...)[39m), [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)))),
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))),
+  |                [33mProduct[39m([32m"Composite"[39m, [33mList[39m([33mPair[39m([32m"a"[39m, [33mProduct[39m([32m"A"[39m, [33mList[39m([33mPair[39m([32m"id"[39m, [32mValue[39m)), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m()))), [33mPair[39m([32m"b"[39m, [33mProduct[39m([32m"B"[39m, [33mList[39m([33mPair[39m([32m"id"[39m, [32mValue[39m), [33mPair[39m([32m"aId"[39m, [32mValue[39m)), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m())))), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m())),
+  |                [32mSynth[39m
+  |              )
+  |            ),
+  |            [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |            [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |          ),
+  |          [32mSynth[39m
+  |        )
+  |      ),
+  |      [33mWhere[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+  |      [32mnull[39m,
+  |      [32mnull[39m,
+  |      [32mnull[39m,
+  |      [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m),
+  |      [32mValue[39m,
+  |      [32mSynth[39m
+  |    )
+  |  )
+
+========== Beginning-Normalization (COMPLETED)  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mCustomQueryRef[39m(
+  |    [33mSelectClause[39m(
+  |      [33mList[39m(
+  |        [33mFrom[39m(
+  |          [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |          [33mFilter[39m(
+  |            [33mCustomQueryRef[39m(
+  |              [33mSelectClause[39m(
+  |                [33mList[39m([33mFrom[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32mSynth[39m), [33mJoin[39m([32mInner[39m, [33mId[39m([32mb[39m, [32mB(...)[39m), [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)))),
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))),
+  |                [33mProduct[39m([32m"Composite"[39m, [33mList[39m([33mPair[39m([32m"a"[39m, [33mProduct[39m([32m"A"[39m, [33mList[39m([33mPair[39m([32m"id"[39m, [32mValue[39m)), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m()))), [33mPair[39m([32m"b"[39m, [33mProduct[39m([32m"B"[39m, [33mList[39m([33mPair[39m([32m"id"[39m, [32mValue[39m), [33mPair[39m([32m"aId"[39m, [32mValue[39m)), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m())))), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m())),
+  |                [32mSynth[39m
+  |              )
+  |            ),
+  |            [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |            [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |          ),
+  |          [32mSynth[39m
+  |        )
+  |      ),
+  |      [33mWhere[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+  |      [32mnull[39m,
+  |      [32mnull[39m,
+  |      [32mnull[39m,
+  |      [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m),
+  |      [32mValue[39m,
+  |      [32mSynth[39m
+  |    )
+  |  )
+
+========== NormalizeCustomQueries  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mCustomQueryRef[39m(
+  |    [33mSelectClause[39m(
+  |      [33mList[39m(
+  |        [33mFrom[39m(
+  |          [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |          [33mFilter[39m(
+  |            [33mCustomQueryRef[39m(
+  |              [33mSelectClause[39m(
+  |                [33mList[39m([33mFrom[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32mSynth[39m), [33mJoin[39m([32mInner[39m, [33mId[39m([32mb[39m, [32mB(...)[39m), [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)))),
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [32mnull[39m,
+  |                [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))),
+  |                [33mProduct[39m([32m"Composite"[39m, [33mList[39m([33mPair[39m([32m"a"[39m, [33mProduct[39m([32m"A"[39m, [33mList[39m([33mPair[39m([32m"id"[39m, [32mValue[39m)), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m()))), [33mPair[39m([32m"b"[39m, [33mProduct[39m([32m"B"[39m, [33mList[39m([33mPair[39m([32m"id"[39m, [32mValue[39m), [33mPair[39m([32m"aId"[39m, [32mValue[39m)), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m())))), [33mMeta[39m([32mfalse[39m, [33mLinkedHashSet[39m())),
+  |                [32mSynth[39m
+  |              )
+  |            ),
+  |            [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |            [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |          ),
+  |          [32mSynth[39m
+  |        )
+  |      ),
+  |      [33mWhere[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+  |      [32mnull[39m,
+  |      [32mnull[39m,
+  |      [32mnull[39m,
+  |      [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m),
+  |      [32mValue[39m,
+  |      [32mSynth[39m
+  |    )
+  |  )
+
+========== NormalizeCustomQueries (COMPLETED)  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== AvoidAliasConflictPhase  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== AvoidAliasConflictPhase (COMPLETED)  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== BetaReduce-Initial  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== BetaReduce-Initial (COMPLETED)  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== ExpandProductNullChecks  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== ExpandProductNullChecks (COMPLETED)  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== RepropagateTypes  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mComposite(...)[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== RepropagateTypes (COMPLETED)  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+========== Normalize  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+
+  Avoid Capture and Normalize
+  |  [33mFlatMap[39m(
+  |    [33mFilter[39m(
+  |      [33mFlatMap[39m(
+  |        [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |        [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |        [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |      ),
+  |      [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+  |      [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+  |  )
+  |into:
+  PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+  Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+      Avoid Capture and Normalize
+      |  [33mFilter[39m(
+      |    [33mFlatMap[39m(
+      |      [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+      |      [33mId[39m([32ma[39m, [32mA(...)[39m),
+      |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      |    ),
+      |    [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+      |    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+      |  )
+      |into:
+      PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+      Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Avoid Capture and Normalize
+          |  [33mFlatMap[39m(
+          |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+          |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+          |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+          |  )
+          |into:
+          PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+              Avoid Capture and Normalize [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m) into:
+              > [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m)
+              Avoid Capture and Normalize [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))) into:
+              PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+              Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+                  Avoid Capture and Normalize [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))) into:
+                      Avoid Capture and Normalize [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m) into:
+                      > [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m)
+                  > [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)))
+              > [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+          >
+          |  [33mFlatMap[39m(
+          |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+          |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+          |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+          |  )
+      >
+      |  [33mFilter[39m(
+      |    [33mFlatMap[39m(
+      |      [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+      |      [33mId[39m([32ma[39m, [32mA(...)[39m),
+      |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      |    ),
+      |    [33mId[39m([32mit[39m, [32mComposite(...)[39m),
+      |    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mit[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+      |  )
+      Avoid Capture and Normalize [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)) into:
+          Avoid Capture and Normalize [33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))) into:
+          > [33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))
+      > [33mMap[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))
+========== SymbolicReduction (COMPLETED) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFlatMap[39m(
+  |      [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |      [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m(
+  |      [33mFilter[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+  |      [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+  |      [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+  |    )
+  |  )
+
+      Avoid Capture and Normalize
+      |  [33mFlatMap[39m(
+      |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+      |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+      |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      |  )
+      |into:
+      PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+      Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Avoid Capture and Normalize [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m) into:
+          > [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m)
+          Avoid Capture and Normalize [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))) into:
+          PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+              Avoid Capture and Normalize [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))) into:
+                  Avoid Capture and Normalize [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m) into:
+                  > [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m)
+              > [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)))
+          > [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      >
+      |  [33mFlatMap[39m(
+      |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+      |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+      |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      |  )
+      Avoid Capture and Normalize
+      |  [33mMap[39m(
+      |    [33mFilter[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+      |    [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |    [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |  )
+      |into:
+          Avoid Capture and Normalize [33mFilter[39m([33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))), [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m), [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))) into:
+              Avoid Capture and Normalize [33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))) into:
+              > [33mFlatFilter[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))
+========== SymbolicReduction (COMPLETED) ==========
+ [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))) 
+          > [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))))
+========== NormalizeNestedStructures (COMPLETED) ==========
+
+      |  [33mMap[39m(
+      |    [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+      |    [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |    [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |  )
+
+          Avoid Capture and Normalize [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))) into:
+          > [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))))
+      >
+      |  [33mMap[39m(
+      |    [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+      |    [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |    [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |  )
+========== NormalizeNestedStructures (COMPLETED) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mFlatMap[39m(
+  |      [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |      [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+  |    ),
+  |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |    [33mMap[39m(
+  |      [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+  |      [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+  |      [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+  |    )
+  |  )
+
+      Avoid Capture and Normalize
+      |  [33mFlatMap[39m(
+      |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+      |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+      |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      |  )
+      |into:
+      PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+      Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Avoid Capture and Normalize [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m) into:
+          > [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m)
+          Avoid Capture and Normalize [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))) into:
+          PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+              Avoid Capture and Normalize [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))) into:
+                  Avoid Capture and Normalize [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m) into:
+                  > [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m)
+              > [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)))
+          > [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      >
+      |  [33mFlatMap[39m(
+      |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+      |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+      |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+      |  )
+      Avoid Capture and Normalize
+      |  [33mMap[39m(
+      |    [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+      |    [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |    [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |  )
+      |into:
+          Avoid Capture and Normalize [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))) into:
+          > [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))))
+      >
+      |  [33mMap[39m(
+      |    [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+      |    [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |    [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |  )
+========== SymbolicReduction (COMPLETED) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |    [33mFlatMap[39m(
+  |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))),
+  |      [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |      [33mMap[39m(
+  |        [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+  |        [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+  |        [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+  |      )
+  |    )
+  |  )
+
+      Avoid Capture and Normalize [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m) into:
+      > [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m)
+      Avoid Capture and Normalize
+      |  [33mFlatMap[39m(
+      |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))),
+      |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+      |    [33mMap[39m(
+      |      [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+      |      [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |      [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |    )
+      |  )
+      |into:
+      PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+      Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Avoid Capture and Normalize [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))) into:
+          PushAlias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+          Dealias (Q/Expr) [33mId[39m([32mb[39m, [32mB(...)[39m) into [33mId[39m([32mb[39m, [32mB(...)[39m) 
+              Avoid Capture and Normalize [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))) into:
+                  Avoid Capture and Normalize [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m) into:
+                  > [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m)
+              > [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)))
+          > [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))))
+          Avoid Capture and Normalize
+          |  [33mMap[39m(
+          |    [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+          |    [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+          |    [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+          |  )
+          |into:
+              Avoid Capture and Normalize [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))) into:
+              > [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))))
+          >
+          |  [33mMap[39m(
+          |    [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+          |    [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+          |    [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+          |  )
+      >
+      |  [33mFlatMap[39m(
+      |    [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))),
+      |    [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+      |    [33mMap[39m(
+      |      [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+      |      [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |      [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |    )
+      |  )
+  >
+  |  [33mFlatMap[39m(
+  |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |    [33mFlatMap[39m(
+  |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))),
+  |      [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |      [33mMap[39m(
+  |        [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+  |        [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+  |        [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+  |      )
+  |    )
+  |  )
+========== Normalize (COMPLETED)  (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+
+  |  [33mFlatMap[39m(
+  |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+  |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+  |    [33mFlatMap[39m(
+  |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))),
+  |      [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+  |      [33mMap[39m(
+  |        [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+  |        [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+  |        [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+  |      )
+  |    )
+  |  )
+
+  Construct SqlQuery from: Query
+      Flattening
+      |  [33mFlatMap[39m(
+      |    [33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m),
+      |    [33mId[39m([32ma[39m, [32mA(...)[39m),
+      |    [33mFlatMap[39m(
+      |      [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))),
+      |      [33mId[39m([32mr[39m, [32mComposite(...)[39m),
+      |      [33mMap[39m(
+      |        [33mFlatFilter[39m([33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)))),
+      |        [33mId[39m([32mexo_synth_sxw[39m, [32mBE[39m),
+      |        [33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)
+      |      )
+      |    )
+      |  )
+
+          Flattening Flatmap with Query
+              Flattening Flatmap with Query
+                  Construct SqlQuery from: Query
+                      Flattening [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))) 
+                          Flattening other
+                          > [32m([], Table(B).join { b -> b.aId == a.id }.map { b -> Composite(a = a, b = b) })[39m
+                          Flattening (alias = [33mId[39m([32mx[39m, [32mComposite(...)[39m) ) sources [32m[][39m from [33mMap[39m([33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m))))) 
+                              Computing Base (nestingMaps= [32mfalse[39m ) for Query: [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))) 
+                                  base| Flattening Empty-Sources [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))) 
+                                      Flattening (alias = [33mId[39m([32mb[39m, [32mB(...)[39m) ) sources [32m[][39m from [33mFlatJoin[39m([32mInner[39m, [33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [33mId[39m([32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m))) 
+                                      >
+                                      |  [33mFlattenSqlQuery[39m(
+                                      |    from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+                                      |    [32mnull[39m,
+                                      |    [32mnull[39m,
+                                      |    [32mnull[39m,
+                                      |    orderBy = [33mList[39m(),
+                                      |    [32mnull[39m,
+                                      |    [32mnull[39m,
+                                      |    select = [33mList[39m([33mSelectValue[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [33mList[39m(), [32mfalse[39m)),
+                                      |    distinct = [32mNone[39m,
+                                      |    type = [32mB(...)[39m
+                                      |  )
+                                  >
+                                  |  [33mFlattenSqlQuery[39m(
+                                  |    from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+                                  |    [32mnull[39m,
+                                  |    [32mnull[39m,
+                                  |    [32mnull[39m,
+                                  |    orderBy = [33mList[39m(),
+                                  |    [32mnull[39m,
+                                  |    [32mnull[39m,
+                                  |    select = [33mList[39m([33mSelectValue[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [33mList[39m(), [32mfalse[39m)),
+                                  |    distinct = [32mNone[39m,
+                                  |    type = [32mB(...)[39m
+                                  |  )
+                              >
+                              |  [33mFlattenSqlQuery[39m(
+                              |    from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+                              |    [32mnull[39m,
+                              |    [32mnull[39m,
+                              |    [32mnull[39m,
+                              |    orderBy = [33mList[39m(),
+                              |    [32mnull[39m,
+                              |    [32mnull[39m,
+                              |    select = [33mList[39m([33mSelectValue[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [33mList[39m(), [32mfalse[39m)),
+                              |    distinct = [32mNone[39m,
+                              |    type = [32mB(...)[39m
+                              |  )
+                              Flattening| Map(Ident) [Simple]
+                              >
+                              |  [33mFlattenSqlQuery[39m(
+                              |    from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+                              |    [32mnull[39m,
+                              |    [32mnull[39m,
+                              |    [32mnull[39m,
+                              |    orderBy = [33mList[39m(),
+                              |    [32mnull[39m,
+                              |    [32mnull[39m,
+                              |    select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+                              |    distinct = [32mNone[39m,
+                              |    type = [32mComposite(...)[39m
+                              |  )
+                          >
+                          |  [33mFlattenSqlQuery[39m(
+                          |    from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+                          |    [32mnull[39m,
+                          |    [32mnull[39m,
+                          |    [32mnull[39m,
+                          |    orderBy = [33mList[39m(),
+                          |    [32mnull[39m,
+                          |    [32mnull[39m,
+                          |    select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+                          |    distinct = [32mNone[39m,
+                          |    type = [32mComposite(...)[39m
+                          |  )
+                      >
+                      |  [33mFlattenSqlQuery[39m(
+                      |    from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+                      |    [32mnull[39m,
+                      |    [32mnull[39m,
+                      |    [32mnull[39m,
+                      |    orderBy = [33mList[39m(),
+                      |    [32mnull[39m,
+                      |    [32mnull[39m,
+                      |    select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+                      |    distinct = [32mNone[39m,
+                      |    type = [32mComposite(...)[39m
+                      |  )
+                  >
+                  |  [33mFlattenSqlQuery[39m(
+                  |    from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+                  |    [32mnull[39m,
+                  |    [32mnull[39m,
+                  |    [32mnull[39m,
+                  |    orderBy = [33mList[39m(),
+                  |    [32mnull[39m,
+                  |    [32mnull[39m,
+                  |    select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+                  |    distinct = [32mNone[39m,
+                  |    type = [32mComposite(...)[39m
+                  |  )
+                  Flattening Flatmap with FlatGroupBy
+                  > [32m([Filtering(condition=r.a.id > 0 && r.b.id > 0)], r.a.id.toQuery)[39m
+              > [32m([Context(ctx=QueryContext(query=FlattenSqlQuery(from=[FlatJoinContext(joinType=Inner, from=TableContext(entity=Table(B), alias=b), on=b.aId == a.id)], where=null, having=null, groupBy=null, orderBy=[], limit=null, offset=null, select=[SelectValue(expr=Composite(a = a, b = b), alias=[], concat=false)], distinct=io.exoquery.lang.DistinctKind$None@79517588, type=Product(name=Composite, fields=[(a, Product(name=A, fields=[(id, Value)], meta=Meta(hasRename=false, fieldsWithRename=[]))), (b, Product(name=B, fields=[(id, Value), (aId, Value)], meta=Meta(hasRename=false, fieldsWithRename=[])))], meta=Meta(hasRename=false, fieldsWithRename=[]))), alias=r)), Filtering(condition=r.a.id > 0 && r.b.id > 0)], r.a.id.toQuery)[39m
+          > [32m([Context(ctx=TableContext(entity=Table(A), alias=a)), Context(ctx=QueryContext(query=FlattenSqlQuery(from=[FlatJoinContext(joinType=Inner, from=TableContext(entity=Table(B), alias=b), on=b.aId == a.id)], where=null, having=null, groupBy=null, orderBy=[], limit=null, offset=null, select=[SelectValue(expr=Composite(a = a, b = b), alias=[], concat=false)], distinct=io.exoquery.lang.DistinctKind$None@79517588, type=Product(name=Composite, fields=[(a, Product(name=A, fields=[(id, Value)], meta=Meta(hasRename=false, fieldsWithRename=[]))), (b, Product(name=B, fields=[(id, Value), (aId, Value)], meta=Meta(hasRename=false, fieldsWithRename=[])))], meta=Meta(hasRename=false, fieldsWithRename=[]))), alias=r)), Filtering(condition=r.a.id > 0 && r.b.id > 0)], r.a.id.toQuery)[39m
+          Flattening (alias = [33mId[39m([32mx[39m, [32mV[39m) ) sources [32m[TableContext(entity=Table(A), alias=a), QueryContext(query=FlattenSqlQuery(from=[FlatJoinContext(joinType=Inner, from=TableContext(entity=Table(B), alias=b), on=b.aId == a.id)], where=null, having=null, groupBy=null, orderBy=[], limit=null, offset=null, select=[SelectValue(expr=Composite(a = a, b = b), alias=[], concat=false)], distinct=io.exoquery.lang.DistinctKind$None@79517588, type=Product(name=Composite, fields=[(a, Product(name=A, fields=[(id, Value)], meta=Meta(hasRename=false, fieldsWithRename=[]))), (b, Product(name=B, fields=[(id, Value), (aId, Value)], meta=Meta(hasRename=false, fieldsWithRename=[])))], meta=Meta(hasRename=false, fieldsWithRename=[]))), alias=r)][39m from [33mExprToQuery[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)) 
+          >
+          |  [33mFlattenSqlQuery[39m(
+          |    from = [33mList[39m(
+          |      [33mTableContext[39m([33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32ma[39m, [32mA(...)[39m),
+          |      [33mQueryContext[39m(
+          |        [33mFlattenSqlQuery[39m(
+          |          from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+          |          [32mnull[39m,
+          |          [32mnull[39m,
+          |          [32mnull[39m,
+          |          orderBy = [33mList[39m(),
+          |          [32mnull[39m,
+          |          [32mnull[39m,
+          |          select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+          |          distinct = [32mNone[39m,
+          |          type = [32mComposite(...)[39m
+          |        ),
+          |        [32mr[39m,
+          |        [32mComposite(...)[39m
+          |      )
+          |    ),
+          |    [32mnull[39m,
+          |    [32mnull[39m,
+          |    [32mnull[39m,
+          |    orderBy = [33mList[39m(),
+          |    [32mnull[39m,
+          |    [32mnull[39m,
+          |    select = [33mList[39m([33mSelectValue[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m(), [32mfalse[39m)),
+          |    distinct = [32mNone[39m,
+          |    type = [32mV[39m
+          |  )
+      >
+      |  [33mFlattenSqlQuery[39m(
+      |    from = [33mList[39m(
+      |      [33mTableContext[39m([33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32ma[39m, [32mA(...)[39m),
+      |      [33mQueryContext[39m(
+      |        [33mFlattenSqlQuery[39m(
+      |          from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+      |          [32mnull[39m,
+      |          [32mnull[39m,
+      |          [32mnull[39m,
+      |          orderBy = [33mList[39m(),
+      |          [32mnull[39m,
+      |          [32mnull[39m,
+      |          select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+      |          distinct = [32mNone[39m,
+      |          type = [32mComposite(...)[39m
+      |        ),
+      |        [32mr[39m,
+      |        [32mComposite(...)[39m
+      |      )
+      |    ),
+      |    where = [33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+      |    [32mnull[39m,
+      |    [32mnull[39m,
+      |    orderBy = [33mList[39m(),
+      |    [32mnull[39m,
+      |    [32mnull[39m,
+      |    select = [33mList[39m([33mSelectValue[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m(), [32mfalse[39m)),
+      |    distinct = [32mNone[39m,
+      |    type = [32mV[39m
+      |  )
+  >
+  |  [33mFlattenSqlQuery[39m(
+  |    from = [33mList[39m(
+  |      [33mTableContext[39m([33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32ma[39m, [32mA(...)[39m),
+  |      [33mQueryContext[39m(
+  |        [33mFlattenSqlQuery[39m(
+  |          from = [33mList[39m([33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)),
+  |          [32mnull[39m,
+  |          [32mnull[39m,
+  |          [32mnull[39m,
+  |          orderBy = [33mList[39m(),
+  |          [32mnull[39m,
+  |          [32mnull[39m,
+  |          select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+  |          distinct = [32mNone[39m,
+  |          type = [32mComposite(...)[39m
+  |        ),
+  |        [32mr[39m,
+  |        [32mComposite(...)[39m
+  |      )
+  |    ),
+  |    where = [33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+  |    [32mnull[39m,
+  |    [32mnull[39m,
+  |    orderBy = [33mList[39m(),
+  |    [32mnull[39m,
+  |    [32mnull[39m,
+  |    select = [33mList[39m([33mSelectValue[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m(), [32mfalse[39m)),
+  |    distinct = [32mNone[39m,
+  |    type = [32mV[39m
+  |  )
+========== Phase: SqlQueryApply (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+[33mFlattenSqlQuery[39m(
+  from = [33mList[39m(
+    [33mTableContext[39m([33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32ma[39m, [32mA(...)[39m),
+    [33mQueryContext[39m(
+      [33mFlattenSqlQuery[39m(
+        from = [33mList[39m(
+          [33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)
+        ),
+        [32mnull[39m,
+        [32mnull[39m,
+        [32mnull[39m,
+        orderBy = [33mList[39m(),
+        [32mnull[39m,
+        [32mnull[39m,
+        select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+        distinct = [32mNone[39m,
+        type = [32mComposite(...)[39m
+      ),
+      [32mr[39m,
+      [32mComposite(...)[39m
+    )
+  ),
+  where = [33mBinaryOp[39m(
+    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)),
+    [32m&&[39m,
+    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  ),
+  [32mnull[39m,
+  [32mnull[39m,
+  orderBy = [33mList[39m(),
+  [32mnull[39m,
+  [32mnull[39m,
+  select = [33mList[39m([33mSelectValue[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m(), [32mfalse[39m)),
+  distinct = [32mNone[39m,
+  type = [32mV[39m
+)
+========== Phase: ValueizeSingleSelects (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+[33mFlattenSqlQuery[39m(
+  from = [33mList[39m(
+    [33mTableContext[39m([33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32ma[39m, [32mA(...)[39m),
+    [33mQueryContext[39m(
+      [33mFlattenSqlQuery[39m(
+        from = [33mList[39m(
+          [33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)
+        ),
+        [32mnull[39m,
+        [32mnull[39m,
+        [32mnull[39m,
+        orderBy = [33mList[39m(),
+        [32mnull[39m,
+        [32mnull[39m,
+        select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+        distinct = [32mNone[39m,
+        type = [32mComposite(...)[39m
+      ),
+      [32mr[39m,
+      [32mComposite(...)[39m
+    )
+  ),
+  where = [33mBinaryOp[39m(
+    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)),
+    [32m&&[39m,
+    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  ),
+  [32mnull[39m,
+  [32mnull[39m,
+  orderBy = [33mList[39m(),
+  [32mnull[39m,
+  [32mnull[39m,
+  select = [33mList[39m([33mSelectValue[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m(), [32mfalse[39m)),
+  distinct = [32mNone[39m,
+  type = [32mV[39m
+)
+========== Phase: ExpandNestedQueries (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+[33mFlattenSqlQuery[39m(
+  from = [33mList[39m(
+    [33mTableContext[39m([33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32ma[39m, [32mA(...)[39m),
+    [33mQueryContext[39m(
+      [33mFlattenSqlQuery[39m(
+        from = [33mList[39m(
+          [33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)
+        ),
+        [32mnull[39m,
+        [32mnull[39m,
+        [32mnull[39m,
+        orderBy = [33mList[39m(),
+        [32mnull[39m,
+        [32mnull[39m,
+        select = [33mList[39m([33mSelectValue[39m([33mProduct[39m([32mComposite[39m, [33mList[39m([33mPair[39m([33mString[39m([32ma[39m), [33mId[39m([32ma[39m, [32mA(...)[39m)), [33mPair[39m([33mString[39m([32mb[39m), [33mId[39m([32mb[39m, [32mB(...)[39m)))), [33mList[39m(), [32mfalse[39m)),
+        distinct = [32mNone[39m,
+        type = [32mComposite(...)[39m
+      ),
+      [32mr[39m,
+      [32mComposite(...)[39m
+    )
+  ),
+  where = [33mBinaryOp[39m(
+    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)),
+    [32m&&[39m,
+    [33mBinaryOp[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))
+  ),
+  [32mnull[39m,
+  [32mnull[39m,
+  orderBy = [33mList[39m(),
+  [32mnull[39m,
+  [32mnull[39m,
+  select = [33mList[39m([33mSelectValue[39m([33mProperty[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma[39m, [32mNotHas[39m, [32mVisible[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m([33mString[39m([32mvalue[39m)), [32mfalse[39m)),
+  distinct = [32mNone[39m,
+  type = [32mV[39m
+)
+========== Phase: RemoveExtraAlias (file:/home/alexi/git/ExoQuery/testing/src/jvmMain/kotlin/io/exoquery/WhereBug.kt:31:45) ==========
+[33mFlattenSqlQuery[39m(
+  from = [33mList[39m(
+    [33mTableContext[39m([33mEntity[39m([32mA[39m, [32mA(...)[39m, [32mNotHas[39m), [32ma[39m, [32mA(...)[39m),
+    [33mQueryContext[39m(
+      [33mFlattenSqlQuery[39m(
+        from = [33mList[39m(
+          [33mFlatJoinContext[39m([32mInner[39m, [33mTableContext[39m([33mEntity[39m([32mB[39m, [32mB(...)[39m, [32mNotHas[39m), [32mb[39m, [32mB(...)[39m), [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [32m==[39m, [33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m)), [32mB(...)[39m)
+        ),
+        [32mnull[39m,
+        [32mnull[39m,
+        [32mnull[39m,
+        orderBy = [33mList[39m(),
+        [32mnull[39m,
+        [32mnull[39m,
+        select = [33mList[39m(
+          [33mSelectValue[39m([33mProperty[39m([33mId[39m([32ma[39m, [32mA(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m([33mString[39m([32ma[39m), [33mString[39m([32mid[39m)), [32mfalse[39m),
+          [33mSelectValue[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32mid[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m([33mString[39m([32mb[39m), [33mString[39m([32mid[39m)), [32mfalse[39m),
+          [33mSelectValue[39m([33mProperty[39m([33mId[39m([32mb[39m, [32mB(...)[39m), [32maId[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m([33mString[39m([32mb[39m), [33mString[39m([32maId[39m)), [32mfalse[39m)
+        ),
+        distinct = [32mNone[39m,
+        type = [32mComposite(...)[39m
+      ),
+      [32mr[39m,
+      [32mComposite(...)[39m
+    )
+  ),
+  where = [33mBinaryOp[39m([33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma_id[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m)), [32m&&[39m, [33mBinaryOp[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32mb_id[39m, [32mNotHas[39m, [32mVisible[39m), [32m>[39m, [33mInt[39m([32m0[39m))),
+  [32mnull[39m,
+  [32mnull[39m,
+  orderBy = [33mList[39m(),
+  [32mnull[39m,
+  [32mnull[39m,
+  select = [33mList[39m([33mSelectValue[39m([33mProperty[39m([33mId[39m([32mr[39m, [32mComposite(...)[39m), [32ma_id[39m, [32mNotHas[39m, [32mVisible[39m), [33mList[39m([33mString[39m([32mvalue[39m)), [32mfalse[39m)),
+  distinct = [32mNone[39m,
+  type = [32mV[39m
+)

@@ -650,4 +650,41 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     }
   }
 
+  /**
+   * BUG REPRODUCTION: Incorrect FROM clause generation for filtered joined fragments
+   *
+   * When using a filtered joined fragment in a select query with a where clause,
+   * the FROM clause incorrectly generates both a plain table reference AND a subquery.
+   *
+   * EXPECTED: FROM (SELECT ... FROM A INNER JOIN B ...)
+   * ACTUAL:   FROM A a, (SELECT ... FROM A INNER JOIN B ...)
+   *
+   * The bug causes the base table to appear twice in the FROM clause when applying
+   * a filter to a joined fragment and then using it in a select with additional filters.
+   */
+  "filtered joined fragment - duplicate table in FROM clause bug" {
+    data class A(val id: Int)
+    data class B(val id: Int, val aId: Int)
+    data class Composite(val a: A, val b: B)
+
+    @SqlFragment fun joined(): SqlQuery<Composite> = sql.select {
+      val a = from(Table<A>())
+      val b = join(Table<B>()) { b -> b.aId == a.id }
+      Composite(a, b)
+    }
+
+    @SqlFragment fun SqlQuery<Composite>.filtered(): SqlQuery<Composite> = sql {
+      this@filtered.filter { it.a.id > 0 }
+    }
+
+    val buggy = sql.select {
+      val r = from(joined().filtered())
+      where { r.b.id > 0 }  // triggers: FROM A a, (SELECT ... FROM INNER JOIN B ...)
+      r.a.id
+    }
+
+    shouldBeGolden(buggy.xr, "XR")
+    shouldBeGolden(buggy.build<PostgresDialect>())
+  }
+
 })

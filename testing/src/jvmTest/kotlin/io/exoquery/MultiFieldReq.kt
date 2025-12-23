@@ -26,7 +26,7 @@ class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGolde
         val av = from(a)
         groupBy(av.first)
         av.first to count(av.second.street)
-      }.dynamic() // TODO fix spelling
+      }.dynamic()
 
       shouldBeGolden(b.xr, "XR")
       shouldBeGolden(b.buildPrettyFor.Postgres(), useTokenRendering = false)

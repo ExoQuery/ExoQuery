@@ -34,6 +34,14 @@ class ContainsXR(private val predicate: (XR) -> Boolean) : StatelessChecker {
   companion object {
     operator fun invoke(xr: XR, collect: (XR) -> Boolean): Boolean =
       ContainsXR(collect).invoke(xr)
+
+    inline fun <reified T> byType(xr: XR): Boolean where T : XR =
+      ContainsXR {
+        when {
+          it is T -> true
+          else -> false
+        }
+      }.invoke(xr)
   }
 }
 
