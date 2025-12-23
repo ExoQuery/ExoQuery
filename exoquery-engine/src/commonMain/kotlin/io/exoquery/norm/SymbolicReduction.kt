@@ -39,9 +39,11 @@ class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits
          * of situation the `x` is meaningless because FlatUnit returns a unit-type so it can be ignored.
          * Therefore we can just merge the Filter into a FlatFilter.
          *
+         * Note: We use (head.by _And_ body) to preserve the original filter order, so that:
+         * Filter(FlatFilter(a), _, b) becomes FlatFilter(a AND b), not FlatFilter(b AND a)
          */
         this is XR.Filter && head is XR.U.FlatUnit && head is XR.FlatFilter -> {
-          XR.FlatFilter(body _And_ head.by)
+          XR.FlatFilter(head.by _And_ body)
         }
 
         /*
@@ -66,6 +68,8 @@ class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits
          *
          * case FlatMap(Filter(a, b, c), d, e: Query)
          *
+         * Note: When ApplyMap pushes Filter through Map, it produces Filter(FlatFilter(original), _, new).
+         * We use (head.by _And_ body) to preserve chronological order: FlatFilter(original AND new)
          */
         this is XR.FlatMap && head is XR.Filter && !queryContainsFlatUnits -> {  // TODO for the sake of performance can do containsNonFilterFlatUnit on the entire query first
           val (a, b, c) = Triple(head.head, head.id, head.body)
