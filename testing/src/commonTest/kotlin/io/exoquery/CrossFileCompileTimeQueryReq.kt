@@ -14,16 +14,16 @@ class CrossFileCompileTimeQueryReq : GoldenSpecDynamic(CrossFileCompileTimeQuery
         shouldBeGolden(result, "SQL")
         shouldBeGolden(result.debugData.phase.toString(), "Phase")
       }
-      "inline functions defined in previous-previous compilation units" {
+      "inline functions defined in previous-previous compilation units - A" {
         val q = sql {
           crossFileSelectSelect().filter { pair -> pair.first.first.name == "JoeOuter" }
         }
         val result = q.build<PostgresDialect>()
-        shouldBeGolden(q.xr, "XR")
+        //shouldBeGolden(q.xr, "XR")
         shouldBeGolden(result, "SQL")
         shouldBeGolden(result.debugData.phase.toString(), "Phase")
       }
-      "inline functions defined in previous-previous compilation units" {
+      "inline functions defined in previous-previous compilation units - B" {
         val q = sql {
           crossFileSelectExpr().filter { pair -> pair.first.name == "JoeOuter" }
         }

@@ -87,14 +87,55 @@ data class Dealias(override val state: XR.Ident?, val traceConfig: TraceConfig) 
           ConcatMap.cs(a, b, cn) to Dealias(null, traceConfig)
         }
 
+
         is Map -> {
           val (a, b, c, t) = dealias(head, id, body)
-          Map.cs(a, b, c) to t
+          if (head !is XR.FlatJoin)
+            Map.cs(a, b, c) to t
+          else
+            // Don't propagate alias from inside FlatJoin. The alias of the last joined table gets used
+            // which is usually not at all what we want the outer alias to be.
+            //
+            // EXAMPLE:
+            // Given this query DSL:
+            //   val p = from(Table<PersonCrs>())
+            //   val a = join(Table<AddressCrs>()) { it.ownerId == p.id }
+            //   p to a
+            //
+            // This becomes:
+            //   Map(
+            //     FlatJoin(Inner, Entity(AddressCrs), Id(a), a.ownerId == p.id),
+            //     Id(a, AddressCrs),
+            //     Product(Tuple, [("first", p), ("second", a)])
+            //   )
+            //
+            // If we propagated the FlatJoin's state (which is Id(a, AddressCrs)) as the Map's state,
+            // then when this Map is used in an outer context like:
+            //
+            //   FlatMap(
+            //     Map(FlatJoin(...), Id(a), Product(...)),  // produces Tuple(first: Person, second: Address)
+            //     Id(pair, Tuple),
+            //     Filter(..., Id(x), x.first.name == "Joe")
+            //   )
+            //
+            // The dealias would replace Id(pair) → Id(a), making the filter become:
+            //   a.first.name == "Joe"
+            //
+            // But Id(a) refers to AddressCrs, not the tuple! The correct reference should be:
+            //   pair.first.name == "Joe"
+            //
+            // By returning Dealias(null, traceConfig), we prevent this incorrect alias propagation.
+            // The outer Map produces a Tuple(Person, Address), not just Address, so using the
+            // Address alias (a) would be semantically wrong for the composite type.
+            Map.cs(a, b, c) to Dealias(null, traceConfig)
         }
 
         is Filter -> {
           val (a, b, c, t) = dealias(head, id, body)
-          Filter.cs(a, b, c) to t
+          if (head !is XR.FlatJoin)
+            Filter.cs(a, b, c) to t
+          else
+            Filter.cs(a, b, c) to Dealias(null, traceConfig) // don't propagate alias from inside flatjoin
         }
 
         is SortBy -> {

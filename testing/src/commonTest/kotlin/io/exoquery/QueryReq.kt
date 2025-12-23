@@ -687,4 +687,60 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
     shouldBeGolden(buggy.build<PostgresDialect>())
   }
 
+  "nested select with filter on nested pair - double nested" {
+    val nestedSelect2 = sql.select {
+      val p = from(Table<PersonCrs>())
+      val a = join(Table<AddressCrs>()) { it.ownerId == p.id }
+      p to a
+    }
+
+    val nestedSelect =
+      sql.select {
+        val p = from(nestedSelect2.nested())
+        val a = join(Table<AddressCrs>()) { it.ownerId == p.first.id }
+        p to a
+      }
+
+    val q = sql {
+      nestedSelect.filter { pair -> pair.first.first.name == "JoeOuter" }
+    }.dynamic()
+
+    shouldBeGolden(q.xr, "XR")
+    shouldBeGolden(q.build<PostgresDialect>())
+  }
+
+  "nested select with filter on pair - single nested" {
+    val nestedSelect =
+      sql.select {
+        val p = from(Table<PersonCrs>())
+        val a = join(Table<AddressCrs>()) { it.ownerId == p.id }
+        p to a
+      }
+
+    val q = sql {
+      nestedSelect.filter { pair -> pair.first.name == "JoeOuter" }
+    }.dynamic()
+
+    shouldBeGolden(q.xr, "XR")
+    shouldBeGolden(q.build<PostgresDialect>())
+  }
+
+  "select with where groupBy and left join - filter on grouped field" {
+    val people = sql { Table<Person>() }
+    val addresses = sql { Table<Address>() }
+
+    val c = sql {
+      select {
+        val p = from(people)
+        val a = joinLeft(addresses) { it.ownerId == p.id }
+        where { p.age > 18 }
+        groupBy(p)
+        p
+      }.filter { ccc -> ccc.name == "Main St" }
+    }
+
+    shouldBeGolden(c.xr, "XR")
+    shouldBeGolden(c.build<PostgresDialect>())
+  }
+
 })

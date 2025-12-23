@@ -10,27 +10,24 @@ object CrossFileCompileTimeQueryReqGoldenDynamic: GoldenQueryFile {
       "select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.name == JoeOuter }"
     ),
     "compile-time queries should work for/regular functions/inline functions defined in previous compilation units/SQL" to cr(
-      "SELECT pair.first_id AS id, pair.first_name AS name, pair.second_ownerId AS ownerId, pair.second_street AS street FROM (SELECT p.id AS first_id, p.name AS first_name, a.ownerId AS second_ownerId, a.street AS second_street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id) AS pair WHERE pair.first_name = 'JoeOuter'"
+      "SELECT p.id, p.name, a.ownerId, a.street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id WHERE p.name = 'JoeOuter'"
     ),
     "compile-time queries should work for/regular functions/inline functions defined in previous compilation units/Phase" to cr(
       "CompileTime"
     ),
-    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units/XR" to kt(
-      "select { val p = from(select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.nested); val a = join(Table(AddressCrs)) { a.ownerId == p.first.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.first.name == JoeOuter }"
+    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units - A/SQL" to cr(
+      "SELECT p.first_id AS id, p.first_name AS name, p.second_ownerId AS ownerId, p.second_street AS street, a.ownerId, a.street FROM (SELECT p.id AS first_id, p.name AS first_name, a.ownerId AS second_ownerId, a.street AS second_street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id) AS p INNER JOIN AddressCrs a ON a.ownerId = p.first_id WHERE p.first_name = 'JoeOuter'"
     ),
-    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units/SQL" to cr(
-      "SELECT pair.first_first_id AS id, pair.first_first_name AS name, pair.first_second_ownerId AS ownerId, pair.first_second_street AS street, pair.second_ownerId AS ownerId, pair.second_street AS street FROM (SELECT p.first_id AS first_first_id, p.first_name AS first_first_name, p.second_ownerId AS first_second_ownerId, p.second_street AS first_second_street, a.ownerId AS second_ownerId, a.street AS second_street FROM (SELECT p.id AS first_id, p.name AS first_name, a.ownerId AS second_ownerId, a.street AS second_street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id) AS p INNER JOIN AddressCrs a ON a.ownerId = p.first_id) AS pair WHERE pair.first_first_name = 'JoeOuter'"
-    ),
-    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units/Phase" to cr(
+    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units - A/Phase" to cr(
       "CompileTime"
     ),
-    "compile-time queries should work for/regular functions/(1) inline functions defined in previous-previous compilation units/XR" to kt(
+    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units - B/XR" to kt(
       "select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.id > 1 }.filter { pair -> pair.first.name == JoeOuter }"
     ),
-    "compile-time queries should work for/regular functions/(1) inline functions defined in previous-previous compilation units/SQL" to cr(
-      "SELECT pair.first_id AS id, pair.first_name AS name, pair.second_ownerId AS ownerId, pair.second_street AS street FROM (SELECT p.id AS first_id, p.name AS first_name, a.ownerId AS second_ownerId, a.street AS second_street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id) AS pair WHERE pair.first_id > 1 AND pair.first_name = 'JoeOuter'"
+    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units - B/SQL" to cr(
+      "SELECT p.id, p.name, a.ownerId, a.street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id WHERE p.id > 1 AND p.name = 'JoeOuter'"
     ),
-    "compile-time queries should work for/regular functions/(1) inline functions defined in previous-previous compilation units/Phase" to cr(
+    "compile-time queries should work for/regular functions/inline functions defined in previous-previous compilation units - B/Phase" to cr(
       "CompileTime"
     ),
     "compile-time queries should work for/regular functions/inline functions defined in previous compilation units used directly/XR" to kt(
@@ -55,7 +52,7 @@ object CrossFileCompileTimeQueryReqGoldenDynamic: GoldenQueryFile {
       "select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.id > 1 }"
     ),
     "compile-time queries should work for/regular functions/inline functions defined in previous-previous(expr) compilation units used directly/SQL" to cr(
-      "SELECT pair.first_id AS id, pair.first_name AS name, pair.second_ownerId AS ownerId, pair.second_street AS street FROM (SELECT p.id AS first_id, p.name AS first_name, a.ownerId AS second_ownerId, a.street AS second_street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id) AS pair WHERE pair.first_id > 1"
+      "SELECT p.id, p.name, a.ownerId, a.street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id WHERE p.id > 1"
     ),
     "compile-time queries should work for/regular functions/inline functions defined in previous-previous(expr) compilation units used directly/Phase" to cr(
       "CompileTime"

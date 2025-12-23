@@ -262,7 +262,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val row = from({ base -> base.filter { it -> it.a.age > 18 } }.toQuery.apply({ select { val person = from(Table(Person)); val address = join(Table(Address)) { addr.ownerId == person.id }; Composite(a = person, b = address) } }.toQuery.apply())); row }"
     ),
     "nested fragment filter - wrong alias resolution bug" to cr(
-      "SELECT it.a_id AS id, it.a_name AS name, it.a_age AS age, it.b_ownerId AS ownerId, it.b_street AS street, it.b_city AS city FROM (SELECT person.id AS a_id, person.name AS a_name, person.age AS a_age, address.ownerId AS b_ownerId, address.street AS b_street, address.city AS b_city FROM Person person INNER JOIN Address address ON address.ownerId = person.id) AS it WHERE it.a_age > 18"
+      "SELECT person.id, person.name, person.age, address.ownerId, address.street, address.city FROM Person person INNER JOIN Address address ON address.ownerId = person.id WHERE person.age > 18"
     ),
     "composeFrom join - duplicate subquery alias bug/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> Table(B).filter { it -> it.status == active }.join { b -> b.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.status == active }.join { c -> c.id == this.cId } }.toQuery.apply(a)); Result(aId = a.id, bId = b.id, cId = c.id) }"
@@ -305,6 +305,30 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     ),
     "PushAlias tests for composeFrom join/flatJoin with complex nested select" to cr(
       "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active' GROUP BY bb.status HAVING avg(bb.value) > 10 ORDER BY bb.status ASC) AS b ON b.id = a.bId"
+    ),
+    "filtered joined fragment - duplicate table in FROM clause bug/XR" to kt(
+      "select { val r = from({ this -> this.filter { it -> it.a.id > 0 } }.toQuery.apply({ select { val a = from(Table(A)); val b = join(Table(B)) { b.aId == a.id }; Composite(a = a, b = b) } }.toQuery.apply())); where(r.b.id > 0); r.a.id }"
+    ),
+    "filtered joined fragment - duplicate table in FROM clause bug" to cr(
+      "SELECT a.id AS value FROM A a INNER JOIN B b ON b.aId = a.id WHERE a.id > 0 AND b.id > 0"
+    ),
+    "nested select with filter on nested pair - double nested/XR" to kt(
+      "select { val p = from(select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.nested); val a = join(Table(AddressCrs)) { a.ownerId == p.first.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.first.name == JoeOuter }"
+    ),
+    "nested select with filter on nested pair - double nested" to cr(
+      "SELECT p.first_id AS id, p.first_name AS name, p.second_ownerId AS ownerId, p.second_street AS street, a.ownerId, a.street FROM (SELECT p.id AS first_id, p.name AS first_name, a.ownerId AS second_ownerId, a.street AS second_street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id) AS p INNER JOIN AddressCrs a ON a.ownerId = p.first_id WHERE p.first_name = 'JoeOuter'"
+    ),
+    "nested select with filter on pair - single nested/XR" to kt(
+      "select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.name == JoeOuter }"
+    ),
+    "nested select with filter on pair - single nested" to cr(
+      "SELECT p.id, p.name, a.ownerId, a.street FROM PersonCrs p INNER JOIN AddressCrs a ON a.ownerId = p.id WHERE p.name = 'JoeOuter'"
+    ),
+    "select with where groupBy and left join - filter on grouped field/XR" to kt(
+      "select { val p = from(Table(Person)); val a = leftJoin(Table(Address)) { a.ownerId == p.id }; where(p.age > 18); groupBy(p); p }.filter { ccc -> ccc.name == Main St }"
+    ),
+    "select with where groupBy and left join - filter on grouped field" to cr(
+      "SELECT ccc.id, ccc.name, ccc.age FROM (SELECT p.id, p.name, p.age FROM Person p LEFT JOIN Address a ON a.ownerId = p.id WHERE p.age > 18 GROUP BY p.id, p.name, p.age) AS ccc WHERE ccc.name = 'Main St'"
     ),
   )
 }

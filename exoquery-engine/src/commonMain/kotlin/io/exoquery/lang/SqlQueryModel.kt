@@ -343,9 +343,17 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
           }
 
         this is XR.Map && head is FlatUnit ->
-          trace("Flattening Flatmap with FlatGroupBy") andReturn {
+          trace("Flattening Map with FlatGroupBy") andReturn {
             listOf(Layer.fromFlatUnit(head)) to XR.ExprToQuery(body)
           }
+
+        //this is XR.Map && head is FlatUnit ->
+        //  trace("Flattening Map with FlatJoin") andReturn {
+        //    QueryContext(invoke(head), id.name).let { qc ->
+        //      listOf(Layer.Context(qc)) to XR.ExprToQuery(qc.query)
+        //    }
+        //    TODO()// back here
+        //  }
 
         this is XR.FlatMap &&
             head is XR.U.HasHead && head.head is XR.FlatJoin &&
@@ -455,6 +463,12 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
             this is XR.Filter -> trace("base| Flattening Filter $query") andReturn { flatten(sources, query, alias, nestNextMap) }
             this is XR.Entity -> trace("base| Flattening Entity $query") andReturn { flatten(sources, query, alias, nestNextMap) }
+
+            // If we have a Map(FlatJoin(...)) and there are existing sources, we must nest it
+            // Otherwise we'll try to flatten the FlatJoin into the existing FROM clause which creates invalid SQL
+            // e.g. FROM table1, (SELECT ... FROM INNER JOIN table2 ...) which is missing the left-hand side of the join
+            //this is XR.Map && sources.isNotEmpty() && ContainsXR.byType<XR.FlatJoin>(this.head) ->
+            //  trace("base| Map(FlatJoin) with existing sources - nesting") andReturn { nest(source(this, alias.name)) }
 
             this is XR.Map && nestNextMap ->
               trace("base| Map + nest $query") andReturn { nest(source(this, alias.name)) }
@@ -620,13 +634,17 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             //     this@filtered.nested().filter { it.a.id > 0 }
             //   }
             //
+            // NOTE: The case we are inner-nesting here is only the Filter(FlatMap(FlatJoin)) case.
+            // We rely on the symbolic reduction `The Filter(Map(FlatJoin(...))) case` in SymbolicReduction.kt
+            // to take care of the situation that there could be a map inside.
+            //
             // PHILOSOPHY:
             // SqlQueryModel's job is to construct CORRECT SQL, not OPTIMAL SQL. We err on the side
             // of nesting when there's any ambiguity or potential for incorrect SQL generation.
             // Query optimization (including flattening unnecessary nesting) is the responsibility
             // of SqlNormalize, which runs after SqlQueryModel and can safely flatten subqueries
             // when it's proven to be semantically equivalent.
-            val headContainsJoin = head is XR.FlatMap && ContainsXR.byType<XR.FlatJoin>(head)
+            val headContainsJoin = head.eventuallyIs<XR.FlatMap>() && ContainsXR.byType<XR.FlatJoin>(head)
 
             // If it's a filter with a join in the head, force nesting
             val b = if (headContainsJoin) {

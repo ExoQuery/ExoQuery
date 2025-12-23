@@ -8,7 +8,6 @@ import io.decomat.*
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import io.exoquery.util.Tracer
-import io.exoquery.xr.copy.FlatMap
 
 // NOTE: Leaving Quill commneted-out code equivalents here for now for reference
 class AdHocReduction(val traceConfig: TraceConfig) {
@@ -76,18 +75,24 @@ class AdHocReduction(val traceConfig: TraceConfig) {
    * Example SQL after: SELECT ... FROM p WHERE p.age > 18 AND name = 'Joe'
    *
    * IMPORTANT: Similar to DetachableMap, we cannot apply this reduction if:
-   * 1. The body contains impurities (like rand(), now(), etc.) - pushing filters through
+   * 1. The FlatMap body contains impurities (like rand(), now(), etc.) - pushing filters through
    *    impure operations can change evaluation order and semantics
-   * 2. The body is a DistinctOn - filter pushing would change the distinct semantics
+   * 2. The FlatMap body is a DistinctOn - filter pushing would change the distinct semantics
+   * 3. The filter body contains aggregations (like count(), sum(), etc.) - these must remain
+   *    as HAVING clauses after GROUP BY, not be pushed into WHERE clauses
    */
-  object FilterPushableMap {
+  object FilterPushableFlatMap {
     operator fun <AP : Pattern<XR.Query>, BP : Pattern<XR.Query>> get(x: AP, y: BP) =
       customPattern2M("FilterPushableMap", x, y) { it: XR.FlatMap ->
         with(it) {
           when {
+            body.hasAggregations() -> null
             body.hasImpurities() -> null
             body is XR.DistinctOn -> null
+            ContainsXR.byType<XR.FlatGroupBy>(body) -> null
+            // FlatMap(a, b, Map(FlatJoin(...), c, d))
             body is XR.U.HasHead && body.head is XR.FlatJoin -> Components2M(head, id, body)
+            // FlatMap(a, b, Map(FlatFilter(g), c, d))
             body is XR.U.HasHead && body.head is XR.FlatFilter -> Components2M(head, id, body)
             else -> null
           }
@@ -137,7 +142,7 @@ class AdHocReduction(val traceConfig: TraceConfig) {
       // This handles the case where SqlQueryModel forced nesting due to FlatJoin/FlatFilter,
       // but we can safely push the filter down to merge WHERE clauses.
       // case Filter(FlatMap(a, b, c), d, e) where c has FlatJoin/FlatFilter =>
-      case(Filter[FilterPushableMap[Is(), Is()], Is()]).then { (a, b, c), d, e ->
+      case(Filter[FilterPushableFlatMap[Is(), Is()], Is()]).then { (a, b, c), d, e ->
         trace("AdHoc-Reducing Filter[FilterPushableMap] for:$q") andReturn {
           FlatMap.csf(a, b, Filter.csf(c, d, e)(comp))(compLeft)
         }

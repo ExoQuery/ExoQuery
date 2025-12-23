@@ -33,6 +33,8 @@ class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits
       when {
 
         /**
+         * The Filter(FlatFilter, _, _) case
+         *
          * This is my own transformation as opposed to being from Wadler's paper. It represents
          * a situation where a Filter clause is pushed deeper and deeper in the query (see the next transformation)
          * until eventually it reaches a FlatUnit and you get something like Filter(FlatUnit, x, ...). In this kind
@@ -42,8 +44,79 @@ class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits
          * Note: We use (head.by _And_ body) to preserve the original filter order, so that:
          * Filter(FlatFilter(a), _, b) becomes FlatFilter(a AND b), not FlatFilter(b AND a)
          */
-        this is XR.Filter && head is XR.U.FlatUnit && head is XR.FlatFilter -> {
+        this is XR.Filter && head is XR.U.FlatUnit && head is XR.FlatFilter -> { // TODO && head is XR.U.FlatUnit &&  is redundant because FlatFilter extends FlatUnit
           XR.FlatFilter(head.by _And_ body)
+        }
+
+        /*
+         * The Filter(Map(FlatJoin(...))) case
+         *
+         * This is my own transformation as opposed to being from Wadler's paper. It addresses a specific scenario that arises
+         * in ExoQuery when dealing Filters around Maps that have FlatJoins inside them.
+         *
+         * FULL CONTEXT:
+         *   FlatMap(
+         *     Entity(Person, ...),
+         *     p,
+         *     Filter(                           <-- This nested structure gets transformed
+         *       Map(
+         *         FlatJoin(Entity(Address, ...), a, joinCondition),
+         *         a,
+         *         body
+         *       ),
+         *       pair,
+         *       filterCondition
+         *     )
+         *   )
+         *
+         * WHY THIS MATTERS:
+         * The outer FlatMap over Entity(Person) cannot flatten into a single SQL query when its
+         * body contains a Filter-Map-FlatJoin chain. By restructuring the nested part into
+         * FlatMap-FlatFilter, the entire query can collapse into one SQL statement with proper
+         * JOIN and WHERE clauses instead of nested subqueries.
+         *
+         * TRANSFORMATION:
+         *
+         *   BEFORE (the nested part):
+         *     Filter(
+         *       Map(FlatJoin(Entity(Address, ...), a, joinCondition), a, body),
+         *       pair,
+         *       filterCondition  // e.g., pair.first.name == "Joe"
+         *     )
+         *
+         *   AFTER (the nested part):
+         *     FlatMap(
+         *       FlatJoin(Entity(Address, ...), a, joinCondition),
+         *       a,
+         *       Map(FlatFilter(reducedCondition), a, body)  // e.g., p.name == "Joe"
+         *     )
+         *
+         * The transformation beta-reduces the filter condition, replacing the intermediate tuple
+         * binding (pair) with direct references to the actual entities (p, a).
+         */
+        this is XR.Filter && head is XR.Map && head.head is XR.FlatJoin -> {
+          val flatJoin = head.head        // FlatJoin(Inner, Entity(AddressCrs...), Id(a), onCondition)
+          val mapId = head.id             // Id(a, AddressCrs(...))
+          val mapBody = head.body         // Product(Tuple, List(...))
+          val filterId = id               // Id(pair, Pair(...))
+          val filterBody = body           // BinaryOp(Property(Property(Id(pair...), first), name), ==, String(JoeOuter))
+
+          // Beta-reduce the filter condition: replace filterId with mapBody
+          // This transforms: pair.first.name == "JoeOuter" into: Product(...).first.name == "JoeOuter"
+          // which will further reduce to the actual field reference
+          val reducedFilterBody = BetaReduction(filterBody, filterId to mapBody).asExpr()
+
+          // Create the new structure:
+          // FlatMap(FlatJoin(...), mapId, Map(FlatFilter(reducedFilterBody), mapId, mapBody))
+          XR.FlatMap(
+            flatJoin,
+            mapId,
+            XR.Map(
+              XR.FlatFilter(reducedFilterBody),
+              mapId,
+              mapBody
+            )
+          )
         }
 
         /*

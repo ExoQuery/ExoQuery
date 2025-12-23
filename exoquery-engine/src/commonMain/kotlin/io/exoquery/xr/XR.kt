@@ -47,6 +47,7 @@ import io.decomat.HasProductClass as PC
  */
 @Serializable
 sealed interface XR {
+
   // The primary types of XR are Query, Expression, Function, and Action
   // there are additional union-types like QueryOrExpression that are used in various things like beta-reduction
   object U {
@@ -1676,3 +1677,17 @@ fun XR.U.Terminal.withType(type: XRType): XR.Expression =
 
 fun XR.Action.isCoreAction() =
   this is XR.U.CoreAction
+
+inline fun <reified T> XR.eventuallyIs(): Boolean {
+  var curr: XR = this
+  while (true) {
+    when (curr) {
+      is T -> return true
+      is XR.QueryToExpr -> curr = curr.head
+      is XR.ExprToQuery -> curr = curr.head
+      is XR.Distinct -> curr = curr.head
+      is XR.Nested -> curr = curr.head
+      else -> return false
+    }
+  }
+}

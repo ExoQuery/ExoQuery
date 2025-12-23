@@ -24,3 +24,13 @@ private class ContainsElementType(val checker: (XR) -> Boolean): StatelessChecke
 
 fun XR.containsElementType(checker: (XR) -> Boolean) =
   ContainsElementType(checker)(this)
+
+private object ContainsAggregations: StatelessChecker {
+  override fun check(xr: XR): Boolean = when (xr) {
+    is XR.U.Call -> xr.isAggregation()
+    else -> false
+  }
+}
+
+fun XR.Query.hasAggregations() = ContainsAggregations(this)
+fun Expression.hasAggregations() = ContainsAggregations(this)
