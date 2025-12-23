@@ -928,15 +928,13 @@ val people = listOf(
   Person(id = 0, name = "Jack", age = 55, companyId = 789)
 )
 val q =
-  sql { p ->
-    sql.batch(people) { p ->
-      insert<Person> {
-        set(
-          name to param(p.name),
-          age to param(p.age),
-          companyId to (p.companyId)
-        )
-      }
+  sql.batch(people) { p ->
+    insert<Person> {
+      set(
+        name to param(p.name),
+        age to param(p.age),
+        companyId to (p.companyId)
+      )
     }
   }
 
