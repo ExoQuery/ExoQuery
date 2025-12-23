@@ -3,7 +3,7 @@ package io.exoquery
 import io.exoquery.PostgresDialect
 import io.exoquery.testdata.Person
 
-class FlatUnitBugReq: GoldenSpecDynamic(FlatUnitBugReqGoldenDynamic, Mode.ExoGoldenOverride(), {
+class FlatUnitBugReq: GoldenSpecDynamic(FlatUnitBugReqGoldenDynamic, Mode.ExoGoldenTest(), {
   data class BCustomer(val id: Int, val name: String, val status: String, val region: String)
   data class BCategory(val id: Int, val name: String)
   data class BProduct(val id: Int, val categoryId: Int, val name: String, val price: Double)

@@ -73,7 +73,9 @@ class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits
          * The outer FlatMap over Entity(Person) cannot flatten into a single SQL query when its
          * body contains a Filter-Map-FlatJoin chain. By restructuring the nested part into
          * FlatMap-FlatFilter, the entire query can collapse into one SQL statement with proper
-         * JOIN and WHERE clauses instead of nested subqueries.
+         * JOIN and WHERE clauses instead of nested subqueries and what will result
+         * is a invalid query that will have a `FROM INNER JOIN ...` pattern similar to
+         * what happens in the SqlQueryModel Filter(FLatMap(FlatJoin)) case.
          *
          * TRANSFORMATION:
          *
