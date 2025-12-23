@@ -258,16 +258,16 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "implicit joins" to cr(
       "SELECT p.name AS first, a.city AS second FROM Person p, Address a WHERE a.ownerId = p.id"
     ),
-    "nested fragment filter - wrong alias resolution bug/XR" to kt(
+    "nested fragment filter - wrong alias resolution bug (fixed)/XR" to kt(
       "select { val row = from({ base -> base.filter { it -> it.a.age > 18 } }.toQuery.apply({ select { val person = from(Table(Person)); val address = join(Table(Address)) { addr.ownerId == person.id }; Composite(a = person, b = address) } }.toQuery.apply())); row }"
     ),
-    "nested fragment filter - wrong alias resolution bug" to cr(
+    "nested fragment filter - wrong alias resolution bug (fixed)" to cr(
       "SELECT person.id, person.name, person.age, address.ownerId, address.street, address.city FROM Person person INNER JOIN Address address ON address.ownerId = person.id WHERE person.age > 18"
     ),
-    "composeFrom join - duplicate subquery alias bug/XR" to kt(
+    "composeFrom join - duplicate subquery alias bug (fixed)/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> Table(B).filter { it -> it.status == active }.join { b -> b.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.status == active }.join { c -> c.id == this.cId } }.toQuery.apply(a)); Result(aId = a.id, bId = b.id, cId = c.id) }"
     ),
-    "composeFrom join - duplicate subquery alias bug" to cr(
+    "composeFrom join - duplicate subquery alias bug (fixed)" to cr(
       "SELECT a.id AS aId, b.id AS bId, c.id AS cId FROM A a INNER JOIN (SELECT b.id, b.status FROM B b WHERE b.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT c.id, c.status FROM C c WHERE c.status = 'active') AS c ON c.id = a.cId"
     ),
     "PushAlias tests for composeFrom join/flatJoin with nested select query/XR" to kt(
@@ -306,10 +306,10 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "PushAlias tests for composeFrom join/flatJoin with complex nested select" to cr(
       "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active' GROUP BY bb.status HAVING avg(bb.value) > 10 ORDER BY bb.status ASC) AS b ON b.id = a.bId"
     ),
-    "filtered joined fragment - duplicate table in FROM clause bug/XR" to kt(
+    "filtered joined fragment - duplicate table in FROM clause bug (fixed)/XR" to kt(
       "select { val r = from({ this -> this.filter { it -> it.a.id > 0 } }.toQuery.apply({ select { val a = from(Table(A)); val b = join(Table(B)) { b.aId == a.id }; Composite(a = a, b = b) } }.toQuery.apply())); where(r.b.id > 0); r.a.id }"
     ),
-    "filtered joined fragment - duplicate table in FROM clause bug" to cr(
+    "filtered joined fragment - duplicate table in FROM clause bug (fixed)" to cr(
       "SELECT a.id AS value FROM A a INNER JOIN B b ON b.aId = a.id WHERE a.id > 0 AND b.id > 0"
     ),
     "nested select with filter on nested pair - double nested/XR" to kt(
@@ -329,6 +329,12 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     ),
     "select with where groupBy and left join - filter on grouped field" to cr(
       "SELECT ccc.id, ccc.name, ccc.age FROM (SELECT p.id, p.name, p.age FROM Person p LEFT JOIN Address a ON a.ownerId = p.id WHERE p.age > 18 GROUP BY p.id, p.name, p.age) AS ccc WHERE ccc.name = 'Main St'"
+    ),
+    "destructured composite + extension join - HAVING loses field prefix bug (fixed)/XR" to kt(
+      "select { val destruct = from({ select { val a = from(Table(A)); val b = join(Table(B)) { b.aId == a.id }; where(a.id > 0); Comp(a = a, b = b) } }.toQuery.apply()); val a = /*ASI*/ destruct.a; val b = /*ASI*/ destruct.b; val c = from({ this -> Table(C).join { c -> c.bId == this.id } }.toQuery.apply(b)); groupBy(a.id); having(sum_GC(b.value) > 10); a.id }"
+    ),
+    "destructured composite + extension join - HAVING loses field prefix bug (fixed)" to cr(
+      "SELECT destruct.a_id AS value FROM (SELECT a.id AS a_id, b.id AS b_id, b.aId AS b_aId, b.value AS b_value FROM A a INNER JOIN B b ON b.aId = a.id WHERE a.id > 0) AS destruct INNER JOIN C c ON c.bId = destruct.b_id GROUP BY destruct.a_id HAVING sum(destruct.b_value) > 10"
     ),
   )
 }

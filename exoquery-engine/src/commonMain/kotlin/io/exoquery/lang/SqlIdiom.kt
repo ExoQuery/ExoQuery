@@ -44,8 +44,8 @@ interface SqlIdiom : HasPhasePrinting {
     { qRaw ->
       val q = this(qRaw)
       val label = traceConf.phaseLabel?.let { " (${it})" } ?: ""
-      demarcate("Phase: ${phaseTitle}${label}", q)
       val output = f(q)
+      demarcate("Phase: ${phaseTitle}${label}", output)
       output
     }
 

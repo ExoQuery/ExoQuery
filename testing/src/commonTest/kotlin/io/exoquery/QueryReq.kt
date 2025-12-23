@@ -7,7 +7,7 @@ import io.exoquery.testdata.Robot
 // Also note that it won't actually override the BasicQuerySanitySpecGolden file unless you change this one
 
 // build the file BasicQuerySanitySpecGolden.kt, is that as the constructor arg
-class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
+class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenOverride(), {
   data class Person(val id: Int, val name: String, val age: Int)
   data class Address(val ownerId: Int, val street: String, val city: String)
 
@@ -425,7 +425,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
    * The bug appears to use the last-joined table's alias instead of following
    * the field path through the composite type.
    */
-  "nested fragment filter - wrong alias resolution bug" {
+  "nested fragment filter - wrong alias resolution bug (fixed)" {
     // Composite type holding both Person and Address
     data class Composite(val a: Person, val b: Address)
 
@@ -467,7 +467,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
    *
    * The lambda parameter name only affects the ON clause reference, not the subquery alias.
    */
-  "composeFrom.join - duplicate subquery alias bug" {
+  "composeFrom.join - duplicate subquery alias bug (fixed)" {
     data class A(val id: Long, val bId: Long, val cId: Long)
     data class B(val id: Long, val status: String)
     data class C(val id: Long, val status: String)
@@ -662,7 +662,7 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
    * The bug causes the base table to appear twice in the FROM clause when applying
    * a filter to a joined fragment and then using it in a select with additional filters.
    */
-  "filtered joined fragment - duplicate table in FROM clause bug" {
+  "filtered joined fragment - duplicate table in FROM clause bug (fixed)" {
     data class A(val id: Int)
     data class B(val id: Int, val aId: Int)
     data class Composite(val a: A, val b: B)
@@ -741,6 +741,45 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
     shouldBeGolden(c.xr, "XR")
     shouldBeGolden(c.build<PostgresDialect>())
+  }
+
+  /**
+   * BUG REPRODUCTION: Destructured composite + extension join loses field prefix in HAVING clause
+   *
+   * When destructuring a composite fragment and then adding an extension join, the HAVING clause
+   * loses the composite field prefix in the subquery reference.
+   *
+   * EXPECTED: HAVING sum(destruct.b_value) > 10
+   * ACTUAL:   HAVING sum(destruct.value) > 10
+   *
+   * The subquery correctly aliases b.value AS b_value, but the HAVING clause references
+   * destruct.value instead of destruct.b_value, causing a column not found error.
+   */
+  "destructured composite + extension join - HAVING loses field prefix bug (fixed)" {
+    data class A(val id: Int)
+    data class B(val id: Int, val aId: Int, val value: Int)
+    data class C(val id: Int, val bId: Int)
+    data class Comp(val a: A, val b: B)
+
+    @SqlFragment fun base(): SqlQuery<Comp> = sql.select {
+      val a = from(Table<A>())
+      val b = join(Table<B>()) { b -> b.aId == a.id }
+      where { a.id > 0 }
+      Comp(a, b)
+    }
+
+    @SqlFragment fun B.withC() = sql { composeFrom.join(Table<C>()) { c -> c.bId == this@withC.id } }
+
+    val breaks = sql.select {
+      val (a, b) = from(base())
+      val c = from(b.withC())  // triggers subquery materialization
+      groupBy(a.id)
+      having { sum(b.value) > 10 }  // generates destruct.value instead of destruct.b_value
+      a.id
+    }
+
+    shouldBeGolden(breaks.xr, "XR")
+    shouldBeGolden(breaks.build<PostgresDialect>())
   }
 
 })

@@ -141,6 +141,34 @@ class AdHocReduction(val traceConfig: TraceConfig) {
       //
       // This handles the case where SqlQueryModel forced nesting due to FlatJoin/FlatFilter,
       // but we can safely push the filter down to merge WHERE clauses.
+      //
+      // FULL TRANSFORMATION CHAIN EXAMPLE (for FlatFilter case):
+      //
+      // Input:
+      //   Filter(FlatMap(Person, p, Map(FlatFilter(p.age > 18), t, t)), u, u.name == "Joe")
+      //   SQL: SELECT * FROM (SELECT * FROM Person WHERE age > 18) AS t WHERE t.name = 'Joe'
+      //
+      // Step 1 - FilterPushableFlatMap (this reduction):
+      //   Filter(FlatMap(Person, p, Map(FlatFilter(p.age > 18), t, t)), u, u.name == "Joe")
+      //   => FlatMap(Person, p, Filter(Map(FlatFilter(p.age > 18), t, t), u, u.name == "Joe"))
+      //
+      // Step 2 - ApplyMap (pushes Filter through Map):
+      //   Filter(Map(FlatFilter(p.age > 18), t, t), u, u.name == "Joe")
+      //   => Map(Filter(FlatFilter(p.age > 18), t, u.name == "Joe"[u := t]), t, t)
+      //   => Map(Filter(FlatFilter(p.age > 18), t, t.name == "Joe"), t, t)
+      //   (ApplyMap line 136-139: pushes Filter before Map, beta-reducing the filter body)
+      //
+      // Step 3 - SymbolicReduction (merges Filter with FlatFilter):
+      //   Filter(FlatFilter(p.age > 18), t, t.name == "Joe")
+      //   => FlatFilter(p.age > 18 AND t.name == "Joe")
+      //   (SymbolicReduction line 45-46: merges using head.by _And_ body to preserve order)
+      //
+      // Final Result:
+      //   FlatMap(Person, p, Map(FlatFilter(p.age > 18 AND t.name == "Joe"), t, t))
+      //   SQL: SELECT * FROM Person WHERE age > 18 AND name = 'Joe'
+      //
+      // Note: Steps 2 & 3 happen in subsequent normalization passes (ApplyMap, then SymbolicReduction)
+      //
       // case Filter(FlatMap(a, b, c), d, e) where c has FlatJoin/FlatFilter =>
       case(Filter[FilterPushableFlatMap[Is(), Is()], Is()]).then { (a, b, c), d, e ->
         trace("AdHoc-Reducing Filter[FilterPushableMap] for:$q") andReturn {

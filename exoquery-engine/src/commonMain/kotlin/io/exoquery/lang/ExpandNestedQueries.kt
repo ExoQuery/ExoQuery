@@ -180,6 +180,7 @@ class ExpandNestedQueries(val pathJoinFunction: (List<String>) -> String) : Stat
         select = distinctSelects.map { sv -> sv.copy(expr = flattenNestedProperty.inside(sv.expr)) },
         from = newFroms,
         where = where?.let { flattenNestedProperty.inside(it) },
+        having = having?.let { flattenNestedProperty.inside(it) },
         groupBy = groupBy?.let { flattenNestedProperty.inside(it) },
         orderBy = orderBy.map { ord -> ord.transform { flattenNestedProperty.inside(it) } },
         limit = when (limit) {
