@@ -310,7 +310,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val r = from({ this -> this.filter { it -> it.a.id > 0 } }.toQuery.apply({ select { val a = from(Table(A)); val b = join(Table(B)) { b.aId == a.id }; Composite(a = a, b = b) } }.toQuery.apply())); where(r.b.id > 0); r.a.id }"
     ),
     "filtered joined fragment - duplicate table in FROM clause bug (fixed)" to cr(
-      "SELECT a.id AS value FROM A a INNER JOIN B b ON b.aId = a.id WHERE a.id > 0 AND b.id > 0"
+      "SELECT a.id AS value FROM A a INNER JOIN B b ON b.aId = a.id WHERE b.id > 0 AND a.id > 0"
     ),
     "nested select with filter on nested pair - double nested/XR" to kt(
       "select { val p = from(select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.nested); val a = join(Table(AddressCrs)) { a.ownerId == p.first.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.first.name == JoeOuter }"
@@ -334,7 +334,31 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val destruct = from({ select { val a = from(Table(A)); val b = join(Table(B)) { b.aId == a.id }; where(a.id > 0); Comp(a = a, b = b) } }.toQuery.apply()); val a = /*ASI*/ destruct.a; val b = /*ASI*/ destruct.b; val c = from({ this -> Table(C).join { c -> c.bId == this.id } }.toQuery.apply(b)); groupBy(a.id); having(sum_GC(b.value) > 10); a.id }"
     ),
     "destructured composite + extension join - HAVING loses field prefix bug (fixed)" to cr(
-      "SELECT destruct.a_id AS value FROM (SELECT a.id AS a_id, b.id AS b_id, b.aId AS b_aId, b.value AS b_value FROM A a INNER JOIN B b ON b.aId = a.id WHERE a.id > 0) AS destruct INNER JOIN C c ON c.bId = destruct.b_id GROUP BY destruct.a_id HAVING sum(destruct.b_value) > 10"
+      "SELECT a.id AS value FROM A a INNER JOIN B b ON b.aId = a.id INNER JOIN C c ON c.bId = b.id WHERE a.id > 0 GROUP BY a.id HAVING sum(b.value) > 10"
+    ),
+    "FlatJoin flattening - original repro with nested tail-position FlatJoins/XR" to kt(
+      "select { val row = from({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { ord.customerId == c.id }; where(o.status == active); CustomerOrder(c = c, o = o) } }.toQuery.apply()); val oi = from({ this -> Table(OrderItem).leftJoin { oi -> oi.orderId == this.id } }.toQuery.apply(row.o)); where(row.c.name == Alice); Tuple(first = row.c.name, second = { val tmp0_safe_receiver = oi; if (tmp0_safe_receiver == null) null else tmp0_safe_receiver.quantity }) }"
+    ),
+    "FlatJoin flattening - original repro with nested tail-position FlatJoins" to cr(
+      """SELECT c.name AS first, oi.quantity AS second FROM Customer c INNER JOIN "Order" o ON o.customerId = c.id LEFT JOIN OrderItem oi ON oi.orderId = o.id WHERE o.status = 'active' AND c.name = 'Alice'"""
+    ),
+    "FlatJoin flattening - simplified repro with aggregation/XR" to kt(
+      """select { val row = from({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { ord.customerId == c.id }; where(o.status == pending || o.status == processing || o.status == shipped); CustomerOrder(c = c, o = o) } }.toQuery.apply()); val oi = from({ this -> Table(OrderItem).leftJoin { oi -> oi.orderId == this.id } }.toQuery.apply(row.o)); groupBy(TupleA3(first = row.c.id, second = row.c.name, third = row.o.id)); Result(customerName = row.c.name, orderId = row.o.id, totalItems = free("COALESCE(SUM(, ${'$'}{{ val tmp0_safe_receiver = oi; if (tmp0_safe_receiver == null) null else tmp0_safe_receiver.quantity }}, ), 0)").asPure()) }"""
+    ),
+    "FlatJoin flattening - simplified repro with aggregation" to cr(
+      """SELECT c.name AS customerName, o.id AS orderId, COALESCE(SUM(oi.quantity), 0) AS totalItems FROM Customer c INNER JOIN "Order" o ON o.customerId = c.id LEFT JOIN OrderItem oi ON oi.orderId = o.id WHERE o.status = 'pending' OR o.status = 'processing' OR o.status = 'shipped' GROUP BY c.id, c.name, o.id"""
+    ),
+    "FlatJoin flattening - pathological case with Map(FlatJoin) and impurities/XR" to kt(
+      """select { val row = from({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { ord.customerId == c.id }; where(o.status == active); CustomerOrder(c = c, o = o) } }.toQuery.apply()); val oiWithScore = from({ this -> Table(OrderItem).leftJoin { oi -> oi.orderId == this.id }.map { oi -> Tuple(first = oi, second = free("rand()").invoke()) } }.toQuery.apply(row.o)); where(row.c.name == Alice); Triple(first = row.c.name, second = { val tmp0_safe_receiver = oiWithScore.first; if (tmp0_safe_receiver == null) null else tmp0_safe_receiver.quantity }, third = oiWithScore.second) }"""
+    ),
+    "FlatJoin flattening - pathological case with Map(FlatJoin) and impurities" to cr(
+      """SELECT c.name AS first, oi.quantity AS second, rand() AS third FROM Customer c INNER JOIN "Order" o ON o.customerId = c.id LEFT JOIN OrderItem oi ON oi.orderId = o.id WHERE o.status = 'active' AND c.name = 'Alice'"""
+    ),
+    "FlatJoin flattening - explicit dual-heads pattern with flatMap/XR" to kt(
+      "Table(Person).flatMap { p -> Table(Address).join { a -> a.ownerId == p.id }.map { a -> Tuple(first = p, second = a) } }.flatMap { kv -> Table(Robot).join { r -> r.ownerId == kv.first.id }.map { r -> Triple(first = kv.first.name, second = kv.second.city, third = r.name) } }"
+    ),
+    "FlatJoin flattening - explicit dual-heads pattern with flatMap" to cr(
+      "SELECT p.name AS first, a.city AS second, r.name AS third FROM Person p INNER JOIN Address a ON a.ownerId = p.id INNER JOIN Robot r ON r.ownerId = p.id"
     ),
   )
 }

@@ -47,11 +47,12 @@ class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolea
   }
 
   private fun norm(q: Query): Query {
+    //demarcate("..... Norm .....", q, false)
     return NormalizeNestedStructuresPhase(q)?.let {
       demarcate("NormalizeNestedStructures (COMPLETED)", it)
       norm(it)
     } ?: ApplyMapPhase(q)?.let {
-      demarcate("ApplyMap", it)
+      demarcate("ApplyMap (Completed)", it)
       norm(it)
     } ?: SymbolicReductionPhase(q)?.let {
       demarcate("SymbolicReduction (COMPLETED)", it)
@@ -63,7 +64,10 @@ class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolea
       demarcate("OrderTerms (COMPLETED)", it)
       norm(it)
     }
-    ?: q
+    ?: run {
+      //demarcate("..... Norm Done .....", q, false)
+      q
+    }
   }
 
   // This is the original Quill code that was used to recursively normalize

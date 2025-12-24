@@ -13,7 +13,7 @@ import io.exoquery.xr.copy.*
 class ApplyMap(val traceConfig: TraceConfig) {
 
   val trace: Tracer =
-    Tracer(TraceType.AvoidAliasConflict, traceConfig, 1)
+    Tracer(TraceType.ApplyMap, traceConfig, 1)
 
   object MapWithoutImpurities {
     operator fun <AP : Pattern<XR.Query>, BP : Pattern<XR.Expression>> get(x: AP, y: BP) =
@@ -31,14 +31,10 @@ class ApplyMap(val traceConfig: TraceConfig) {
   object DetachableMap {
     operator fun <AP : Pattern<XR.Query>, BP : Pattern<XR.Expression>> get(x: AP, y: BP) =
       customPattern2M("DetachableMap", x, y) { it: XR.Map ->
-        with(it) {
-          when {
-            body.hasImpurities() -> null
-            head is DistinctOn -> null
-            head is FlatJoin -> null
-            body.hasImpurities() -> null
-            else -> Components2M(head, id, body)
-          }
+        if (it.isDetachableMap()) {
+          Components2M(it.head, it.id, it.body)
+        } else {
+          null
         }
       }
   }
@@ -118,11 +114,78 @@ class ApplyMap(val traceConfig: TraceConfig) {
 //      case Map(a: Query, b, c) if (b == c) =>
 //        trace"ApplyMap on identity-map for $q" andReturn Some(a)
 
-      // a.map(b => c).flatMap(d => e) =>
-      //    a.flatMap(b => e[d := c])
+      /*
+       * FlatMap(Map(query, id, projection), bindId, body) =>
+       *   FlatMap(query, id, BetaReduction(body, bindId -> projection))
+       *
+       * This transformation pushes the Map projection into the FlatMap body via beta reduction.
+       * Example: FlatMap(Map(people, p, p.name), n, n.toUpperCase()) => FlatMap(people, p, p.name.toUpperCase())
+       *
+       * CASE 1: DetachableMap - Handles pure projections
+       * DetachableMap only matches Maps where:
+       * - body.hasImpurities() == false
+       * - head is not FlatJoin (FlatJoin should never be wrapped in Map for normal cases)
+       * - head is not DistinctOn
+       */
       case(XR.FlatMap[DetachableMap[Is(), Is()], Is()]).thenThis { (a, b, c), d, e ->
         val er = BetaReduction.ofQuery(e, d to c)
-        trace("ApplyMap inside flatMap for $q") andReturn { FlatMap.cs(a, b, er) }
+        trace("ApplyMap inside flatMap (DetachableMap) for $q") andReturn { FlatMap.cs(a, b, er) }
+      },
+
+      /*
+       * CASE 2: Map(FlatJoin, projection) - Special handling for impure projections
+       *
+       * This case handles FlatMap(Map(FlatJoin(...), id, projection), bindId, body) where
+       * projection may contain impurities (e.g., free("rand()")). Normally, DetachableMap
+       * would reject this due to hasImpurities(), but we MUST handle it anyway because
+       * Map(FlatJoin, projection) is an invalid intermediate structure that cannot be
+       * processed by SqlQueryModel.
+       *
+       * WHY THIS EXISTS:
+       * SymbolicReduction's FlatMap(FlatMap) transformation can create:
+       *   FlatMap(Table<Person>, p,
+       *     FlatMap(Map(FlatJoin(Table<Address>), a, impureProjection), kv, body)
+       *   )
+       *
+       * Without this case, if impureProjection contains impurities, DetachableMap returns null,
+       * leaving Map(FlatJoin, impureProjection) in place. SqlQueryModel would then try to
+       * process it and generate invalid SQL:
+       *   "SELECT impureProjection FROM INNER JOIN Address ..." (missing left-hand table)
+       *
+       * TRANSFORMATION:
+       * Input:  FlatMap(Map(FlatJoin(table), id, impureProj), bindId, body)
+       * Output: FlatMap(FlatJoin(table), id, BetaReduction(body, bindId -> impureProj))
+       *
+       * This extracts the FlatJoin from the Map wrapper and pushes the impure projection
+       * into the body via beta reduction, just like the DetachableMap case above.
+       *
+       * EXAMPLE:
+       * Input:
+       *   FlatMap(
+       *     Map(FlatJoin(Table<Order>), o, Tuple(o, free("rand()"))),
+       *     pair,
+       *     Map(pair.first.id, _, _)
+       *   )
+       *
+       * Output:
+       *   FlatMap(
+       *     FlatJoin(Table<Order>), o,
+       *     Map(Tuple(o, free("rand()")).first.id, _, _)  // <- beta-reduced
+       *   )
+       *
+       * Which further reduces to:
+       *   FlatMap(FlatJoin(Table<Order>), o, Map(o.id, _, _))
+       *
+       * This allows SqlQueryModel to generate valid SQL:
+       *   "SELECT o.id FROM ... INNER JOIN Order o ON ..."
+       *
+       * Note: We don't check for purity here because Map(FlatJoin, projection) should
+       * NEVER exist in the first place, regardless of whether projection is pure or impure.
+       * Both cases need to be transformed to extract the FlatJoin.
+       */
+      case(XR.FlatMap[XR.Map[Is<XR.FlatJoin>(), Is()], Is()]).thenThis { (a, b, c), d, e ->
+        val er = BetaReduction.ofQuery(e, d to c)
+        trace("ApplyMap inside flatMap (Map(FlatJoin) with impurities) for $q") andReturn { FlatMap.cs(a, b, er) }
       },
 
 //      // a.map(b => c).flatMap(d => e) =>
@@ -130,6 +193,7 @@ class ApplyMap(val traceConfig: TraceConfig) {
 //      case FlatMap(DetachableMap(a, b, c), d, e) =>
 //        val er = BetaReduction(e, d -> c)
 //        trace"ApplyMap inside flatMap for $q" andReturn Some(FlatMap(a, b, er))
+
 
       // a.map(b => c).filter(d => e) =>
       //    a.filter(b => e[d := c]).map(b => c)

@@ -7,6 +7,7 @@ import io.exoquery.printing.PrintXR
 import io.exoquery.lang.MirrorIdiom
 import io.exoquery.lang.Renderer
 import io.exoquery.lang.Token
+import io.exoquery.norm.hasImpurities
 import io.exoquery.util.Globals
 import io.exoquery.util.NumbersToWords
 import io.exoquery.util.ShowTree
@@ -1691,3 +1692,11 @@ inline fun <reified T> XR.eventuallyIs(): Boolean {
     }
   }
 }
+
+fun XR.isDetachableMap(): Boolean =
+  this is XR.Map &&
+      head !is XR.DistinctOn &&
+      !body.hasImpurities()
+
+fun XR.Map.isDetachablePure(): Boolean =
+  head !is XR.DistinctOn && !this.hasImpurities()

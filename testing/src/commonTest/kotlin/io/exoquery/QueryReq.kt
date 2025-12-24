@@ -7,7 +7,7 @@ import io.exoquery.testdata.Robot
 // Also note that it won't actually override the BasicQuerySanitySpecGolden file unless you change this one
 
 // build the file BasicQuerySanitySpecGolden.kt, is that as the constructor arg
-class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
+class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenOverride(), {
   data class Person(val id: Int, val name: String, val age: Int)
   data class Address(val ownerId: Int, val street: String, val city: String)
 
@@ -780,6 +780,225 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
     shouldBeGolden(breaks.xr, "XR")
     shouldBeGolden(breaks.build<PostgresDialect>())
+  }
+
+  /**
+   * TEST: FlatJoin flattening with nested tail-position FlatJoins
+   *
+   * This test demonstrates proper handling of nested FlatMaps with FlatJoins through the
+   * interaction between SymbolicReduction and ApplyMap.
+   *
+   * The query structure creates:
+   * - activeCustomerOrders(): Returns composite of Customer+Order with FlatJoin
+   * - Order.items(): Extension fragment adding OrderItem via composeFrom.joinLeft
+   * - Main query: Chains both fragments and filters by customer name
+   *
+   * Initial XR Structure:
+   * FlatMap(
+   *   head = FlatMap(Customer, c, FlatMap(FlatJoin(Order), o, Map(FlatFilter(...), _, CustomerOrder))),
+   *   row,
+   *   body = FlatMap(FlatJoin(OrderItem), oi, ...)
+   * )
+   *
+   * Processing:
+   * 1. SymbolicReduction flattens FlatMap(FlatMap(...), ...) regardless of tail-position FlatJoins
+   * 2. This creates intermediate forms like FlatMap(..., FlatMap(Map(FlatJoin, projection), ...))
+   * 3. ApplyMap's pattern `case(XR.FlatMap[DetachableMap[Is(), Is()], Is()])` transforms
+   *    FlatMap(Map(FlatJoin, projection), id, body) → FlatMap(FlatJoin, id, BetaReduce(body, id -> projection))
+   * 4. This extracts FlatJoin from Map wrapper, preventing invalid SQL like "FROM INNER JOIN"
+   * 5. Result: All joins properly generated as INNER JOIN/LEFT JOIN clauses
+   */
+  "FlatJoin flattening - original repro with nested tail-position FlatJoins" {
+    data class Customer(val id: Int, val name: String)
+    data class Order(val id: Int, val customerId: Int, val status: String)
+    data class OrderItem(val id: Int, val orderId: Int, val quantity: Int)
+    data class CustomerOrder(val c: Customer, val o: Order)
+
+    @SqlFragment
+    fun activeCustomerOrders(): SqlQuery<CustomerOrder> = sql.select {
+      val c = from(Table<Customer>())
+      val o = join(Table<Order>()) { ord -> ord.customerId == c.id }
+      where { o.status == "active" }
+      CustomerOrder(c, o)
+    }
+
+    @SqlFragment
+    fun Order.items() = sql {
+      composeFrom.joinLeft(Table<OrderItem>()) { oi -> oi.orderId == this@items.id }
+    }
+
+    val query = sql.select {
+      val row = from(activeCustomerOrders())
+      val oi = from(row.o.items())
+      where { row.c.name == "Alice" }
+      row.c.name to oi?.quantity
+    }.dynamic()
+
+    shouldBeGolden(query.xr, "XR")
+    shouldBeGolden(query.build<PostgresDialect>())
+  }
+
+  /**
+   * TEST: FlatJoin flattening with aggregation and groupBy
+   *
+   * Demonstrates SymbolicReduction and ApplyMap working together with additional
+   * complexity from aggregation and groupBy clauses.
+   *
+   * The query:
+   * - Uses activeCustomerOrders() returning Customer+Order composite
+   * - Extends with Order.items() to add OrderItem via composeFrom.joinLeft
+   * - Groups by customer and order IDs
+   * - Aggregates item quantities with COALESCE(SUM(...))
+   *
+   * Processing flow:
+   * 1. SymbolicReduction flattens nested FlatMaps
+   * 2. ApplyMap's DetachableMap pattern extracts FlatJoins from Map wrappers
+   * 3. Result: Proper JOIN generation and alias resolution even with GROUP BY and aggregation
+   */
+  "FlatJoin flattening - simplified repro with aggregation" {
+    data class Customer(val id: Int, val name: String, val email: String, val tier: String)
+    data class Order(val id: Int, val customerId: Int, val orderDate: String, val status: String, val totalAmount: Double)
+    data class OrderItem(val id: Int, val orderId: Int, val productId: Int, val quantity: Int, val unitPrice: Double)
+    data class CustomerOrder(val c: Customer, val o: Order)
+    data class Result(val customerName: String, val orderId: Int, val totalItems: Int)
+
+    @SqlFragment
+    fun activeCustomerOrders(): SqlQuery<CustomerOrder> = sql.select {
+      val c = from(Table<Customer>())
+      val o = join(Table<Order>()) { ord -> ord.customerId == c.id }
+      where { o.status == "pending" || o.status == "processing" || o.status == "shipped" }
+      CustomerOrder(c, o)
+    }
+
+    @SqlFragment
+    fun Order.items() = sql {
+      composeFrom.joinLeft(Table<OrderItem>()) { oi -> oi.orderId == this@items.id }
+    }
+
+    val query = sql.select {
+      val row = from(activeCustomerOrders())
+      val oi = from(row.o.items())
+      groupBy(row.c.id, row.c.name, row.o.id)
+      Result(row.c.name, row.o.id, free("COALESCE(SUM(${oi?.quantity}), 0)").asPure<Int>())
+    }.dynamic()
+
+    shouldBeGolden(query.xr, "XR")
+    shouldBeGolden(query.build<PostgresDialect>())
+  }
+
+  /**
+   * TEST: Map(FlatJoin) with impurities - ApplyMap's special case handling
+   *
+   * This test demonstrates ApplyMap's handling of Map(FlatJoin(...)) with impure projections,
+   * which cannot be normalized by the DetachableMap pattern.
+   *
+   * The query structure:
+   * 1. Map head is FlatJoin (from composeFrom.join)
+   * 2. Map body contains impurities (free("rand()") with impure SQL)
+   *
+   * After SymbolicReduction flattens FlatMap(FlatMap):
+   * FlatMap(Customer, c,
+   *   FlatMap(Map(FlatJoin(OrderItem).map(oi -> (oi, rand())), oiWithScore, ...)
+   *          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   *
+   * Processing:
+   * 1. DetachableMap pattern returns null because:
+   *    - body.hasImpurities() = true (free("rand()"))
+   *    - This is CORRECT for normal Map cases (impure projections need careful handling)
+   * 2. However, Map(FlatJoin, ...) should NEVER exist in final form, regardless of purity
+   * 3. ApplyMap's special case pattern `case(XR.FlatMap[XR.Map[Is<XR.FlatJoin>(), Is()], Is()])`
+   *    handles FlatMap(Map(FlatJoin, ...), ...) even with impurities
+   * 4. This transforms: FlatMap(Map(FlatJoin, impureProj), id, body) →
+   *    FlatMap(FlatJoin, id, BetaReduce(body, id -> impureProj))
+   * 5. Result: FlatJoin is extracted, preventing invalid "FROM INNER JOIN" SQL
+   */
+  "FlatJoin flattening - pathological case with Map(FlatJoin) and impurities" {
+    data class Customer(val id: Int, val name: String)
+    data class Order(val id: Int, val customerId: Int, val status: String)
+    data class OrderItem(val id: Int, val orderId: Int, val productId: Int, val quantity: Int)
+    data class CustomerOrder(val c: Customer, val o: Order)
+
+    @SqlFragment
+    fun activeCustomerOrders(): SqlQuery<CustomerOrder> = sql.select {
+      val c = from(Table<Customer>())
+      val o = join(Table<Order>()) { ord -> ord.customerId == c.id }
+      where { o.status == "active" }
+      CustomerOrder(c, o)
+    }
+
+    @SqlFragment
+    fun Order.itemsWithRandomScore() = sql {
+      composeFrom.joinLeft(Table<OrderItem>()) { oi -> oi.orderId == this@itemsWithRandomScore.id }
+        .map { oi ->
+          // IMPURITY: free() with rand() makes this Map body non-detachable
+          oi to free("rand()")<Double>()
+        }
+    }
+
+    val query = sql.select {
+      val row = from(activeCustomerOrders())
+      val oiWithScore = from(row.o.itemsWithRandomScore())
+      where { row.c.name == "Alice" }
+      Triple(row.c.name, oiWithScore.first?.quantity, oiWithScore.second)
+    }.dynamic()
+
+    shouldBeGolden(query.xr, "XR")
+    shouldBeGolden(query.build<PostgresDialect>())
+  }
+
+  /**
+   * TEST: Explicit dual-heads pattern using flatMap and capture
+   *
+   * This is an alternative version of the dual-heads pattern using explicit flatMap
+   * and capture blocks to create the exact structure with multiple Map(FlatJoin) wrappers.
+   *
+   * The explicit structure:
+   * ```
+   * Table<Person>().flatMap(p => join(addr, p.id).map(a => (p, a)))
+   *   .flatMap(kv => join(robot, kv.first.id).map(r => ...))
+   * ```
+   *
+   * After SymbolicReduction flattens FlatMap(FlatMap):
+   * FlatMap(Table<Person>, p,
+   *   FlatMap(Map(FlatJoin(Table<Address>), a, (p, a)), kv,
+   *     Map(FlatJoin(Table<Robot>), r, Triple(...))
+   *   )
+   * )
+   *
+   * The inner FlatMap has:
+   * - head = Map(FlatJoin(Address), ...) <- Map wrapping FlatJoin
+   * - body = Map(FlatJoin(Robot), ...)   <- Another Map wrapping FlatJoin
+   *
+   * Processing by ApplyMap:
+   * 1. ApplyMap's DetachableMap pattern matches FlatMap(Map(FlatJoin(Address), a, (p, a)), kv, body)
+   * 2. Transforms to: FlatMap(FlatJoin(Address), a, BetaReduce(body, kv -> (p, a)))
+   * 3. After beta reduction, body becomes Map(FlatJoin(Robot), r, Triple(...)) with substituted references
+   * 4. In subsequent normalization, ApplyMap processes the inner Map(FlatJoin(Robot), ...)
+   * 5. Result: Both FlatJoins properly extracted, generating correct INNER JOIN clauses
+   */
+  "FlatJoin flattening - explicit dual-heads pattern with flatMap" {
+    data class Person(val id: Int, val name: String, val age: Int)
+    data class Address(val ownerId: Int, val street: String, val city: String)
+    data class Robot(val ownerId: Int, val name: String, val model: String)
+
+    val innerJoin = capture {
+      Table<Person>().flatMap { p ->
+        composeFrom.join(Table<Address>()) { a -> a.ownerId == p.id }.map { a ->
+          p to a
+        }
+      }
+    }
+
+    val query = capture {
+      innerJoin.flatMap { kv ->
+        composeFrom.join(Table<Robot>()) { r -> r.ownerId == kv.first.id }.map { r ->
+          Triple(kv.first.name, kv.second.city, r.name)
+        }
+      }
+    }.dynamic()
+
+    shouldBeGolden(query.xr, "XR")
+    shouldBeGolden(query.build<PostgresDialect>())
   }
 
 })

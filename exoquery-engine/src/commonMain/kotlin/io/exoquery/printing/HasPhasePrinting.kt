@@ -14,12 +14,12 @@ interface HasPhasePrinting {
   fun title(label: String): String =
     "=".repeat(10) + " $label " + "=".repeat(10)
 
-
-//  def title[T](label: String, traceType: TraceType = TraceType.Standard): T => T =
-//    trace[T](("=".repeat(10)) + s" $label " + ("=".repeat(10)), 0, traceType)
-
-  fun demarcate(heading: String, q: XR.Query) {
-    trace.print(title("$heading"))
+  fun demarcate(heading: String, q: XR.Query, useTitleCase: Boolean = true) {
+    if (useTitleCase) {
+      trace.print(title("$heading"))
+    } else {
+      trace.print(heading)
+    }
     trace.interpolate({ listOf("", "") }, { listOf(q) }).andLog()
   }
 

@@ -7,6 +7,7 @@ import io.exoquery.xr.XR
 import io.exoquery.xr._And_
 import io.exoquery.xr.contains
 import io.exoquery.xr.copy.*
+import io.exoquery.xr.isDetachablePure
 
 /**
  * This stage represents Normalization Stage1: Symbolic Reduction in Philip
@@ -166,54 +167,79 @@ class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits
          * case FlatMap(FlatMap(a, b, c), d, e) =>
          *     Some(FlatMap(a, b, FlatMap(c, d, e)))
          *
-         * Note that in practice there is a caveat here in that if this transformation causes FlatJoins to be both in head and body position
-         * then the SelectQuery transformer will not be able to propertly constuct it (there is a check there in flattenContexts that assures it).
-         * The problem stems from having the construct FlatMap(..., FlatMap(Map(FlatJoin, ...)), Map(FlatJoin, ...)) which is not a valid construct
-         * for the sake a query construction. Now recall that if you have something like FlatMap( FlatMap(ent, Map(FlatJoin)) , Map(FlatJoin))
-         * (P.S. which is something like ent.flatMap(a => a.flatMap(join(b))).map(join(c)) (**) and proceed to flatten it out to
-         * FlatMap(ent, FlatMap(Map(FlatJoin), Map(FlatJoin)) then you will have a problem because the FlatJoin in the
-         * head and body positions of the inner FlatMap. Therefore we need to check that the head and body of the outer FlatMap do not have both have
-         * flatJoins in order to proceed with this transformation.
-         * (**) This is typically produced by using a sql.select clause, see "variable deconstruction should work even when passed to further join" in
-         * VariableReductionReq.kt for an example. Also the MonadicMachinerReq has lots of examples of this.
+         * IMPORTANT CAVEAT - Map(FlatJoin, projection) Problem and Solution:
          *
-         * The only exception to this rule if the head of the inner FlatMap has a XR.Map in the tail position (which is actually the most common case).
-         * In that case we have some special handling in SqlQueryHelper.flattenDualHeadsIfPossible to make it work.
+         * This transformation can create a problematic intermediate structure: FlatMap(head, id, Map(FlatJoin, projection)).
+         * The Map(FlatJoin, projection) construct would generate invalid SQL like:
+         * "SELECT projection FROM INNER JOIN table ..." (missing the left-hand table for the join).
          *
-         * For example, let's say we have:
-         * people.flatMap(p => join(addr, p.id).map(a => (p, a)))
-         *   .flatMap(kv => join(robot, kv._1.id).map(r => ...))
+         * However, we rely on ApplyMap to fix this problem AFTER this transformation runs.
+         * ApplyMap has two cases that handle FlatMap(Map(FlatJoin, projection), ...):
          *
-         * In SQL-DSL land that is:
-         * select {
-         *   kv = from( select { p = from(people); a = join(addr).on(p.id...) } )
-         *   r = join(robot).on(kv._1.id...)
-         * }
+         * 1. case(XR.FlatMap[DetachableMap[Is(), Is()], Is()]) - handles pure projections
+         *    Transforms: FlatMap(Map(FlatJoin(table), id, projection), bindId, body)
+         *    To: FlatMap(FlatJoin(table), id, BetaReduction(body, bindId -> projection))
          *
-         * This transformation will turn it into:
-         * people
-         *   .flatMap(p =>
-         *     join(addr, p.id...).map(a => (p, a))
-         *     .flatMap(kv => join(robot, kv._1.id).map(r => ...))
+         * 2. case(XR.FlatMap[XR.Map[Is<XR.FlatJoin>(), Is()], Is()]) - handles impure projections
+         *    Same transformation but doesn't check for purity, because Map(FlatJoin, projection)
+         *    should NEVER exist regardless of projection purity.
          *
-         * This would be something like:
-         * select {
-         *    p = from(people)
-         *    kv = from(
-         *      select {
-         *        a = join(addr).map(a => (p, a)) // <- Not a valid clause!
-         *        r = join(robot).on(p.id...)
-         *        (a.second to r)
-         *      }
-         *    )
+         * FULL EXAMPLE:
          *
-         * This of course is not valid-sql because a join cannot be the 1st part of a seelct statement. This is actually
-         * a significant difference from the Monadic paradigm to SQL, and because of it `join(table) on(cond)` is not
-         * exactly eqivalent to `table.filter(cond)`. For the specific above case however (i.e. where the `join(addr, p.id...).map(a => (p, a))` expression
-         * exists above, since the head-position is just a XR.Map(XR.Join(...)) clause we can pull out the Join and flatten the whole query.
-         * See SqlQueryHelper for more details on how that is done.
+         * Input (before this transformation):
+         *   FlatMap(
+         *     FlatMap(Table<Person>, p, Map(FlatJoin(Table<Address>), a, Tuple(p, a))),
+         *     kv,
+         *     Map(FlatJoin(Table<Robot>), r, Triple(kv.first.name, kv.second.city, r.name))
+         *   )
+         *
+         * Step 1 - This SymbolicReduction transformation flattens FlatMap(FlatMap):
+         *   FlatMap(Table<Person>, p,
+         *     FlatMap(
+         *       Map(FlatJoin(Table<Address>), a, Tuple(p, a)),  // <- PROBLEMATIC: Map(FlatJoin)!
+         *       kv,
+         *       Map(FlatJoin(Table<Robot>), r, Triple(...))     // <- PROBLEMATIC: Map(FlatJoin)!
+         *     )
+         *   )
+         *
+         *   At this point, if SqlQueryModel tried to process Map(FlatJoin(...)), it would generate:
+         *   "SELECT ... FROM INNER JOIN Address ..." (invalid SQL - no left-hand table)
+         *
+         * Step 2 - ApplyMap's FlatMap(Map(FlatJoin)) case fixes the outer Map(FlatJoin):
+         *   FlatMap(Table<Person>, p,
+         *     FlatMap(
+         *       FlatJoin(Table<Address>), a,                    // <- FlatJoin extracted from Map!
+         *       BetaReduction(
+         *         Map(FlatJoin(Table<Robot>), r, Triple(...)),
+         *         kv -> Tuple(p, a)
+         *       )
+         *     )
+         *   )
+         *
+         *   Beta reduction substitutes kv with Tuple(p, a) in the body, transforming:
+         *   Triple(kv.first.name, kv.second.city, r.name)
+         *   to: Triple(p.name, a.city, r.name)
+         *
+         * Step 3 - ApplyMap runs again on the nested FlatMap and fixes the inner Map(FlatJoin):
+         *   FlatMap(Table<Person>, p,
+         *     FlatMap(
+         *       FlatJoin(Table<Address>), a,
+         *       FlatMap(
+         *         FlatJoin(Table<Robot>), r,                    // <- FlatJoin extracted from Map!
+         *         Map(Triple(p.name, a.city, r.name), _, _)
+         *       )
+         *     )
+         *   )
+         *
+         * Final Result - Valid structure ready for SqlQueryModel:
+         *   All Map(FlatJoin) constructs have been eliminated by ApplyMap.
+         *   SqlQueryModel can now generate valid SQL:
+         *   "SELECT p.name, a.city, r.name FROM Person p INNER JOIN Address a ... INNER JOIN Robot r ..."
+         *
+         * This is why we can safely apply this FlatMap(FlatMap) transformation without restrictions -
+         * we're relying on ApplyMap to clean up any Map(FlatJoin) problems that arise.
          */
-        this is XR.FlatMap && head is XR.FlatMap && !(this.hasTailPositionFlatJoin() && this.head.hasTailPositionFlatJoin() && this.head.body !is XR.Map) -> {
+        this is XR.FlatMap && head is XR.FlatMap -> {
           val (a, b, c) = Triple(head.head, head.id, head.body)
           val (d, e) = Pair(id, body)
           FlatMap.cs(a, b, FlatMap.cs(c, d, e))

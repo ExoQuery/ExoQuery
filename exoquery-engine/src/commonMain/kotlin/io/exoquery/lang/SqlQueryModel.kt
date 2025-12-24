@@ -347,23 +347,22 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
             listOf(Layer.fromFlatUnit(head)) to XR.ExprToQuery(body)
           }
 
-        //this is XR.Map && head is FlatUnit ->
-        //  trace("Flattening Map with FlatJoin") andReturn {
-        //    QueryContext(invoke(head), id.name).let { qc ->
-        //      listOf(Layer.Context(qc)) to XR.ExprToQuery(qc.query)
-        //    }
-        //    TODO()// back here
+        // FlatMap(composite-query-with-joins, id, FlatJoin(...))
+        // This handles the case where a composite fragment (head contains joins) is extended with composeFrom
+        // e.g. val row = from(activeCustomerOrders()); val oi = from(row.o.items())
+        // where items() uses composeFrom.joinLeft creating a FlatJoin
+        // Without this, the head gets wrapped in QueryContext creating a subquery
+        //this is XR.FlatMap && body is FlatJoin && ContainsXR.byType<XR.FlatJoin>(head) ->
+        //  trace("Flattening FlatMap(query-with-joins, FlatJoin)") andReturn {
+        //    // Recursively flatten the head to extract its contexts
+        //    val (headContexts, headBody) = flattenContexts(head)
+        //    // Convert the body FlatJoin to a Map so it can be processed
+        //    val cc: XR.Product = XR.Product.fromProductIdent(body.id)
+        //    val bodyWithMap = Map(body, body.id, cc, loc)
+        //    val (bodyContexts, finalBody) = flattenContexts(bodyWithMap)
+        //    // Merge all contexts together - this flattens the joins from both head and body
+        //    (headContexts + bodyContexts to finalBody)
         //  }
-
-        this is XR.FlatMap &&
-            head is XR.U.HasHead && head.head is XR.FlatJoin &&
-            body is XR.U.HasHead && body.head is XR.FlatJoin ->
-          trace("Flattening Flatmap((FlatJoin), (FlatJoin))") andReturn {
-            this.flattenDualHeadsIfPossible()?.let { newQuery ->
-              flattenContexts(newQuery)
-            }
-              ?: xrError("Cannot have FlatJoin in both head and body positions of a FlatMap.\n${this.show()}")
-          }
 
         this is XR.FlatMap ->
           trace("Flattening Flatmap with Query") andReturn {
@@ -463,12 +462,6 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
             this is XR.Filter -> trace("base| Flattening Filter $query") andReturn { flatten(sources, query, alias, nestNextMap) }
             this is XR.Entity -> trace("base| Flattening Entity $query") andReturn { flatten(sources, query, alias, nestNextMap) }
-
-            // If we have a Map(FlatJoin(...)) and there are existing sources, we must nest it
-            // Otherwise we'll try to flatten the FlatJoin into the existing FROM clause which creates invalid SQL
-            // e.g. FROM table1, (SELECT ... FROM INNER JOIN table2 ...) which is missing the left-hand side of the join
-            //this is XR.Map && sources.isNotEmpty() && ContainsXR.byType<XR.FlatJoin>(this.head) ->
-            //  trace("base| Map(FlatJoin) with existing sources - nesting") andReturn { nest(source(this, alias.name)) }
 
             this is XR.Map && nestNextMap ->
               trace("base| Map + nest $query") andReturn { nest(source(this, alias.name)) }
