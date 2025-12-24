@@ -2,7 +2,18 @@ package io.exoquery.plugin.trees
 
 import io.decomat.*
 import io.exoquery.*
-import io.exoquery.annotation.*
+import io.exoquery.annotation.CapturedFunctionSketch
+import io.exoquery.annotation.ExoBuildDatabaseSpecific
+import io.exoquery.annotation.ExoBuildRoomSpecific
+import io.exoquery.annotation.ExoCapture
+import io.exoquery.annotation.ExoCaptureBatch
+import io.exoquery.annotation.ExoCaptureExpression
+import io.exoquery.annotation.ExoCaptureSelect
+import io.exoquery.annotation.ExoCodegenFunction
+import io.exoquery.annotation.ExoCodegenJustReturnFunction
+import io.exoquery.annotation.ExoCodegenReturnFunction
+import io.exoquery.annotation.ExoUseExpression
+import io.exoquery.annotation.ParamSketch
 import io.exoquery.generation.Code
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.BinaryOperators

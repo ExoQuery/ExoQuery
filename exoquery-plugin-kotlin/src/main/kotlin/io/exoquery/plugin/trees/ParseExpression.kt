@@ -2,7 +2,10 @@ package io.exoquery.plugin.trees
 
 import io.decomat.*
 import io.exoquery.*
-import io.exoquery.annotation.*
+import io.exoquery.annotation.Dsl
+import io.exoquery.annotation.DslFunctionCall
+import io.exoquery.annotation.DslNestingIgnore
+import io.exoquery.annotation.WindowFun
 import io.exoquery.plugin.*
 import io.exoquery.plugin.logging.Messages
 import io.exoquery.plugin.logging.Messages.ValueLookupComingFromExternalInExpression
