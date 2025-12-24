@@ -275,8 +275,8 @@ dependency blocks.
 ```kotlin
 // First add the plugin:
 plugins {
-  id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.1.PL"
-  kotlin("plugin.serialization") version "2.2.20" // exoquery relies on this
+  id("io.exoquery.exoquery-plugin") version "2.3.0-1.7.1.PL"
+  kotlin("plugin.serialization") version "2.3.0" // exoquery relies on this
 }
 
 // Then add a runner...

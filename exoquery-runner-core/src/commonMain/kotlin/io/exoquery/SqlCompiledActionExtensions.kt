@@ -29,7 +29,7 @@ fun <Output> matchUpOutput(queryOutput: Long, serializer: KSerializer<Output>): 
     is PrimitiveKind.INT -> queryOutput.toInt() as Output
     is PrimitiveKind.SHORT -> queryOutput.toShort() as Output
     is PrimitiveKind.BYTE -> queryOutput.toByte() as Output
-    is PrimitiveKind.CHAR -> queryOutput.toChar() as Output
+    is PrimitiveKind.CHAR -> queryOutput.toInt().toChar() as Output
     is PrimitiveKind.FLOAT -> queryOutput.toFloat() as Output
     is PrimitiveKind.DOUBLE -> queryOutput.toDouble() as Output
     is PrimitiveKind.STRING -> queryOutput.toString() as Output

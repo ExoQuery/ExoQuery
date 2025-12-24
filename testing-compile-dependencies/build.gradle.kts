@@ -1,6 +1,6 @@
 plugins {
   id("conventions")
-  kotlin("multiplatform") version "2.2.20"
+  kotlin("multiplatform") version "2.3.0"
 }
 
 version = extra["controllerProjectVersion"].toString()
@@ -47,15 +47,15 @@ kotlin {
         }
 
         // Kotlin serialization compiler plugin (as a dependency artifact)
-        implementation("org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.2.20") {
+        implementation("org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.3.0") {
           isTransitive = false
         }
 
         // ExoQuery plugin and runtime
-        implementation("io.exoquery:exoquery-plugin-kotlin:2.2.20-2.0.0.PL.2") {
+        implementation("io.exoquery:exoquery-plugin-kotlin:2.3.0-2.0.0.PL.2") {
           isTransitive = false
         }
-        implementation("io.exoquery:exoquery-engine:2.2.20-2.0.0.PL.2") {
+        implementation("io.exoquery:exoquery-engine:2.3.0-2.0.0.PL.2") {
           isTransitive = false
         }
 
@@ -63,7 +63,7 @@ kotlin {
         implementation("io.exoquery:decomat-core-jvm:1.0.0") {
           isTransitive = false
         }
-        implementation("io.exoquery:terpal-runtime:2.2.20-2.0.1.PL") {
+        implementation("io.exoquery:terpal-runtime:2.3.0-2.0.1.PL") {
           isTransitive = false
         }
         implementation("com.github.vertical-blank:sql-formatter:2.0.4") {
@@ -90,22 +90,22 @@ kotlin {
         }
 
         // Kotlin reflect and stdlib bundle (explicit artifacts)
-        implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.20") {
+        implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.0") {
           isTransitive = false
         }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.20") {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.0") {
           isTransitive = false
         }
-        //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.20")
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20") {
+        //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.0")
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.0") {
           isTransitive = false
         }
 
         // Kotlin compiler and script runtime
-        //implementation("org.jetbrains.kotlin:kotlin-compiler:2.2.20") {
+        //implementation("org.jetbrains.kotlin:kotlin-compiler:2.3.0") {
         //  isTransitive = false
         //}
-        implementation("org.jetbrains.kotlin:kotlin-script-runtime:2.2.20") {
+        implementation("org.jetbrains.kotlin:kotlin-script-runtime:2.3.0") {
           isTransitive = false
         }
 

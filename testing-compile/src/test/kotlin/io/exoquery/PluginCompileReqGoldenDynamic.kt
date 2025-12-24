@@ -85,9 +85,9 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       ------------ Raw Expression ------------
       externalFunction(name = p.<get-name>())
       ------------ Raw Expression Tree ------------
-      [IrCall] public final fun externalFunction (name: kotlin.String): kotlin.String declared in sample
-        name: [IrCall] public final fun <get-name> (): kotlin.String declared in sample.MyPerson
-          <this>: [IrGetValue] 'p: sample.MyPerson declared in sample.run.<anonymous>.<anonymous>' type=sample.MyPerson origin=null
+      [IrCall] public final fun externalFunction (name: String): String declared in sample
+        name: [IrCall] public final fun <get-name> (): String declared in sample.MyPerson
+          <this>: [IrGetValue] 'p: MyPerson declared in sample.run.<anonymous>.<anonymous>' type=MyPerson origin=null
       
       ----------------- Stack Trace: -----------------
       [Excluding 10 lines]
@@ -120,9 +120,9 @@ object PluginCompileReqGoldenDynamic: MessageSpecFile {
       ------------ Raw Expression ------------
       externalFunction(name = p.<get-name>())
       ------------ Raw Expression Tree ------------
-      [IrCall] public final fun externalFunction (name: kotlin.String): kotlin.String declared in sample
-        name: [IrCall] public final fun <get-name> (): kotlin.String declared in sample.MyPerson
-          <this>: [IrGetValue] 'p: sample.MyPerson declared in sample.run.<anonymous>.<anonymous>' type=sample.MyPerson origin=null
+      [IrCall] public final fun externalFunction (name: String): String declared in sample
+        name: [IrCall] public final fun <get-name> (): String declared in sample.MyPerson
+          <this>: [IrGetValue] 'p: MyPerson declared in sample.run.<anonymous>.<anonymous>' type=MyPerson origin=null
       
       ----------------- Stack Trace: -----------------
       [Excluding 5 lines]

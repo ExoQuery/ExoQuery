@@ -36,15 +36,15 @@ object InvalidCapturedFunctionReqGoldenDynamic: MessageSpecFile {
         return name.plus(other = "_suffix")
       }
       ------------ Raw Expression Tree ------------
-      [IrSimpleFunction] externalFunction ret:kotlin.String
+      [IrSimpleFunction] externalFunction ret:String
         [IrValueParameter] kind:Regular name:name index:0 type:kotlin.String
         annotations:
           SqlFragment
         [IrBlockBody]
-          [IrReturn] type=kotlin.Nothing from='public final fun externalFunction (name: kotlin.String): kotlin.String declared in <root>'
-            [IrCall] public final fun plus (other: kotlin.Any?): kotlin.String [operator] declared in kotlin.String
-              <this>: [IrGetValue] 'name: kotlin.String declared in <root>.externalFunction' type=kotlin.String origin=null
-              other: [IrConst] String type=kotlin.String value="_"
+          [IrReturn] type=Nothing from='public final fun externalFunction (name: String): String declared in <root>'
+            [IrCall] public final fun plus (other: Any?): String [operator] declared in kotlin.String
+              <this>: [IrGetValue] 'name: String declared in <root>.externalFunction' type=String origin=null
+              other: [IrConst] String type=String value="_"
       
       ----------------- Stack Trace: -----------------
       [Excluding 10 lines]
@@ -58,15 +58,15 @@ object InvalidCapturedFunctionReqGoldenDynamic: MessageSpecFile {
         return name.plus(other = "_suffix")
       }
       ------------ Raw Expression Tree ------------
-      [IrSimpleFunction] externalFunction ret:kotlin.String
+      [IrSimpleFunction] externalFunction ret:String
         [IrValueParameter] kind:Regular name:name index:0 type:kotlin.String
         annotations:
           SqlFragment
         [IrBlockBody]
-          [IrReturn] type=kotlin.Nothing from='public final fun externalFunction (name: kotlin.String): kotlin.String declared in <root>'
-            [IrCall] public final fun plus (other: kotlin.Any?): kotlin.String [operator] declared in kotlin.String
-              <this>: [IrGetValue] 'name: kotlin.String declared in <root>.externalFunction' type=kotlin.String origin=null
-              other: [IrConst] String type=kotlin.String value="_"
+          [IrReturn] type=Nothing from='public final fun externalFunction (name: String): String declared in <root>'
+            [IrCall] public final fun plus (other: Any?): String [operator] declared in kotlin.String
+              <this>: [IrGetValue] 'name: String declared in <root>.externalFunction' type=String origin=null
+              other: [IrConst] String type=String value="_"
       
       ----------------- Stack Trace: -----------------
       [Excluding 10 lines]
@@ -77,9 +77,9 @@ object InvalidCapturedFunctionReqGoldenDynamic: MessageSpecFile {
       ------------ Raw Expression ------------
       externalFunction(name = p.<get-name>())
       ------------ Raw Expression Tree ------------
-      [IrCall] public final fun externalFunction (name: kotlin.String): kotlin.String declared in <root>
-        name: [IrCall] public final fun <get-name> (): kotlin.String declared in <root>.MyPerson
-          <this>: [IrGetValue] 'p: <root>.MyPerson declared in <root>.run.<anonymous>.<anonymous>' type=<root>.MyPerson origin=null
+      [IrCall] public final fun externalFunction (name: String): String declared in <root>
+        name: [IrCall] public final fun <get-name> (): String declared in <root>.MyPerson
+          <this>: [IrGetValue] 'p: MyPerson declared in <root>.run.<anonymous>.<anonymous>' type=MyPerson origin=null
       
       ----------------- Stack Trace: -----------------
       [Excluding 10 lines]

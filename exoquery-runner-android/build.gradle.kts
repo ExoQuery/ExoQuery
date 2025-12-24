@@ -9,7 +9,7 @@ plugins {
   id("io.exoquery.exoquery-plugin")
 
   // Already on the classpath
-  //id("org.jetbrains.kotlin.android") version "2.2.20"
+  //id("org.jetbrains.kotlin.android") version "2.3.0"
 
   alias(libs.plugins.ksp)
   alias(libs.plugins.androidx.room)
