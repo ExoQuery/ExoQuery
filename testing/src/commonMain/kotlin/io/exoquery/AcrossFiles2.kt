@@ -1,7 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
-
 
 inline fun crossFileSelectExpr() = sql {
   crossFileSelect().filter { pair ->  pair.first.id > 1 }

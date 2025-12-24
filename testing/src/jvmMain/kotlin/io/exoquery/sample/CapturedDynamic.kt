@@ -1,7 +1,7 @@
 package io.exoquery.sample
 
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.SqlFragment
+import io.exoquery.SqlFragment
 import io.exoquery.sql
 
 fun main() {

@@ -1,7 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
-
 data class PersonCrs(val id: Int, val name: String)
 data class AddressCrs(val ownerId: Int, val street: String)
 

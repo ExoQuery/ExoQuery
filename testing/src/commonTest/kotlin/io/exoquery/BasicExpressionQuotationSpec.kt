@@ -1,6 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlDynamic
 import io.exoquery.serial.ParamSerializer
 import io.exoquery.xr.`+++`
 import io.exoquery.xr.XR

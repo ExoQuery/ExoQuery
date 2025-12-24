@@ -8,8 +8,8 @@ import io.exoquery.SqlAction
 import io.exoquery.SqlBatchAction
 import io.exoquery.SqlExpression
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.SqlDynamic
-import io.exoquery.annotation.SqlFragment
+import io.exoquery.SqlDynamic
+import io.exoquery.SqlFragment
 import io.exoquery.config.enableCrossFileStoreOrDefault
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.isClass

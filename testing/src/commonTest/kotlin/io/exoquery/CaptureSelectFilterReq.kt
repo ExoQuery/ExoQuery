@@ -2,7 +2,6 @@
 
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
 import io.exoquery.annotation.TracesEnabled
 import io.exoquery.util.TraceType
 

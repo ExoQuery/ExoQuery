@@ -1,9 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.ExoEntity
-import io.exoquery.annotation.ExoField
-import io.exoquery.PostgresDialect
-
 class NamingAnnotationActionReq: GoldenSpecDynamic(NamingAnnotationActionReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "action with rename" - {
     @ExoEntity("PERSON") data class Person(@ExoField("ID") val id: Int, @ExoField("NAME") val name: String, val age: Int)

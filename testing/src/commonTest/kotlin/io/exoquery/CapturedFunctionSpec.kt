@@ -1,6 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
 import io.exoquery.testdata.Person
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec

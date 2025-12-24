@@ -16,7 +16,6 @@ import io.exoquery.annotation.ExoDelete
 import io.exoquery.annotation.ExoInsert
 import io.exoquery.annotation.ExoUpdate
 import io.exoquery.annotation.ExoUseExpression
-import io.exoquery.annotation.ExoValue
 import io.exoquery.annotation.FlatJoin
 import io.exoquery.annotation.FlatJoinLeft
 import io.exoquery.annotation.ParamCtx

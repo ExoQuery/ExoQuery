@@ -1,7 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
-
 class QueryFilterFlatteningReq: GoldenSpecDynamic(QueryFilterFlatteningReqGoldenDynamic, Mode.ExoGoldenTest(), {
   data class Person(val id: Int, val name: String, val age: Int)
   data class Address(val id: Int, val personId: Int, val city: String)

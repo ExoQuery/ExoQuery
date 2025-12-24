@@ -1,8 +1,7 @@
 package io.exoqueryCapturedFunctionParamKinds
 
 import io.exoquery.*
-import io.exoquery.annotation.SqlFragment
-import io.exoquery.PostgresDialect
+import io.exoquery.SqlFragment
 
 data class MyPerson(val id: Long, val name: String)
 

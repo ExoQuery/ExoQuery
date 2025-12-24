@@ -1,9 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.ExoEntity
-import io.exoquery.annotation.ExoField
-import io.exoquery.PostgresDialect
-
 class EmbeddedDistinctReq: GoldenSpecDynamic(EmbeddedDistinctReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "queries with embedded entities should" - {
 

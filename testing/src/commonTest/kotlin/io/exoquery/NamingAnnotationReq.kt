@@ -1,7 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.ExoEntity
-import io.exoquery.annotation.ExoField
 import kotlinx.serialization.SerialName
 
 class NamingAnnotationReq: GoldenSpecDynamic(NamingAnnotationReqGoldenDynamic, Mode.ExoGoldenTest(), {

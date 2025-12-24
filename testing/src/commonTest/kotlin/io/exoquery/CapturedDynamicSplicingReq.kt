@@ -1,6 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlDynamic
 import io.exoquery.testdata.Person
 
 class CapturedDynamicSplicingReq : GoldenSpecDynamic(CapturedDynamicSplicingReqGoldenDynamic, Mode.ExoGoldenTest(), {

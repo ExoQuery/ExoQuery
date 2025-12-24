@@ -1,8 +1,8 @@
 package io.exoquery.jdbc.postgres
 
 import io.exoquery.jdbc.TestDatabases
-import io.exoquery.annotation.ExoField
-import io.exoquery.annotation.ExoValue
+import io.exoquery.ExoField
+import io.exoquery.ExoValue
 import io.exoquery.sql
 import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.runOn

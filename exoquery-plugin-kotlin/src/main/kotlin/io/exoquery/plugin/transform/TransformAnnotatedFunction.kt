@@ -5,7 +5,7 @@ import io.decomat.case
 import io.decomat.on
 import io.exoquery.SqlExpression
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.SqlFragment
+import io.exoquery.SqlFragment
 import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.config.ExoCompileOptions
 import io.exoquery.fansi.nullableAsList
@@ -13,7 +13,6 @@ import io.exoquery.parseError
 import io.exoquery.plugin.extensionParam
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.isClass
-import io.exoquery.plugin.location
 import io.exoquery.plugin.locationXR
 import io.exoquery.plugin.logging.Messages
 import io.exoquery.plugin.printing.dumpSimple

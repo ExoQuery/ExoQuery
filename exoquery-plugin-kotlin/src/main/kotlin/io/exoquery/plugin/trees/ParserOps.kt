@@ -5,9 +5,9 @@ import io.exoquery.CapturedBlock
 import io.exoquery.ParseError
 import io.exoquery.SqlAction
 import io.exoquery.SqlQuery
-import io.exoquery.annotation.ExoValue
-import io.exoquery.annotation.SqlDynamic
-import io.exoquery.annotation.SqlFragment
+import io.exoquery.ExoValue
+import io.exoquery.SqlDynamic
+import io.exoquery.SqlFragment
 import io.exoquery.parseError
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX

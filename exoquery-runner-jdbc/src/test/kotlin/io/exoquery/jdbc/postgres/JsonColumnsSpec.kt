@@ -1,14 +1,12 @@
 package io.exoquery.jdbc.postgres
 
 import io.exoquery.*
-import io.exoquery.annotation.ExoValue
+import io.exoquery.ExoValue
 import kotlinx.serialization.Serializable
 import io.exoquery.controller.SqlJsonValue
-import io.exoquery.controller.TerpalSqlInternal
 import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.TestDatabases
-import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 

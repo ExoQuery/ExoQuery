@@ -1,7 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
-
 /**
  * BUG REPRODUCTION: Lambda parameter names ignored in composeFrom.join subquery aliases
  *

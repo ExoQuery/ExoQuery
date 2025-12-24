@@ -4,7 +4,7 @@ import io.exoquery.testdata.Person
 import io.exoquery.PostgresDialect
 import io.exoquery.SqlExpression
 import io.exoquery.jdbc.TestDatabases
-import io.exoquery.annotation.SqlDynamic
+import io.exoquery.SqlDynamic
 import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.sql
 import io.exoquery.controller.runActionsUnsafe

@@ -4,7 +4,7 @@ import io.decomat.Is
 import io.decomat.case
 import io.decomat.match
 import io.exoquery.*
-import io.exoquery.annotation.SqlFragment
+import io.exoquery.SqlFragment
 import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.annotation.ChangeReciever
 import io.exoquery.annotation.ParamKind

@@ -1,6 +1,6 @@
 package io.exoquery.plugin.trees
 
-import io.exoquery.annotation.SqlDynamic
+import io.exoquery.SqlDynamic
 import io.exoquery.parseError
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.safeName
@@ -14,7 +14,6 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
-import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.name.FqName
 

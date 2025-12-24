@@ -1,13 +1,12 @@
 package io.exoquery.plugin
 
-import io.exoquery.annotation.ExoValue
+import io.exoquery.ExoValue
 import io.exoquery.plugin.trees.PT.controller_SqlJsonValue
 import kotlinx.serialization.Contextual
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.interpreter.hasAnnotation
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classOrNull
-import org.jetbrains.kotlin.name.FqName
 
 fun IrType.isContextualColumn() =
   this.hasAnnotation<Contextual>() ||

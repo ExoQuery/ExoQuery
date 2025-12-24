@@ -1,6 +1,5 @@
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
 import io.exoquery.testdata.Robot
 
 // Note that the 1st time you overwrite the golden file it will still fail because the compiler is using the old version

@@ -1,10 +1,9 @@
 package io.exoquery.jdbc.mysql
 
 import io.exoquery.*
-import io.exoquery.annotation.ExoValue
+import io.exoquery.ExoValue
 import kotlinx.serialization.Serializable
 import io.exoquery.controller.SqlJsonValue
-import io.exoquery.controller.TerpalSqlInternal
 import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.jdbc.TestDatabases

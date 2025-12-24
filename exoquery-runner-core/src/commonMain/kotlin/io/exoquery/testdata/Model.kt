@@ -1,6 +1,6 @@
 package io.exoquery.testdata
 
-import io.exoquery.annotation.ExoEntity
+import io.exoquery.ExoEntity
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline

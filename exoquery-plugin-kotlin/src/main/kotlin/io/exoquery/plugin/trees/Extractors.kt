@@ -4,9 +4,9 @@ package io.exoquery.plugin.trees
 
 import io.decomat.*
 import io.exoquery.ValueWithSerializer
-import io.exoquery.annotation.ExoEntity
-import io.exoquery.annotation.ExoField
-import io.exoquery.annotation.ExoValue
+import io.exoquery.ExoEntity
+import io.exoquery.ExoField
+import io.exoquery.ExoValue
 import io.exoquery.plugin.*
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.ReceiverCaller
@@ -302,7 +302,7 @@ object Ir {
 
       context(scope: CX.Scope) operator fun get(type: Pattern0<IrType>) =
         customPattern1("Ir.Call.Value", type) { it: IrType ->
-          if (isValueType(it) || it.hasAnnotation<kotlinx.serialization.Contextual>() || it.hasAnnotation<io.exoquery.annotation.ExoValue>()) {
+          if (isValueType(it) || it.hasAnnotation<kotlinx.serialization.Contextual>() || it.hasAnnotation<ExoValue>()) {
             // If mistake is made in the Components-returning section, the match will not be successful
             // but the compiler will not tell us we are returing something incorrect
             Components1(it)

@@ -1,7 +1,6 @@
 @file:TracesEnabled(TraceType.SqlNormalizations::class, TraceType.Normalizations::class, TraceType.SqlQueryConstruct::class, TraceType.Standard::class)
 package io.exoquery
 
-import io.exoquery.annotation.SqlFragment
 import io.exoquery.annotation.TracesEnabled
 import io.exoquery.util.TraceType
 

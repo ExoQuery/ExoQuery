@@ -1,6 +1,6 @@
 package io.exoquery.plugin.transform
 
-import io.exoquery.annotation.SqlFragment
+import io.exoquery.SqlFragment
 import io.exoquery.annotation.CapturedFunctionSketch
 import io.exoquery.annotation.paramKindParsed
 import io.exoquery.fansi.nullableAsList
@@ -9,7 +9,6 @@ import io.exoquery.plugin.findExtensionArgBasedOnParamKinds
 import io.exoquery.plugin.hasAnnotation
 import io.exoquery.plugin.logging.Messages
 import io.exoquery.plugin.ownerFunction
-import io.exoquery.plugin.refinedStableIdentifier
 import io.exoquery.plugin.refinedStableIdentifierOrErrorText
 import io.exoquery.plugin.regularArgsWithParamKinds
 import io.exoquery.plugin.safeName

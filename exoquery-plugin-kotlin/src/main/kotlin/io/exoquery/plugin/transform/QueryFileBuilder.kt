@@ -1,5 +1,6 @@
 package io.exoquery.plugin.transform
 
+import io.exoquery.ExoRoomInterface
 import io.exoquery.annotation.ExoGoldenOverride
 import io.exoquery.annotation.ExoGoldenTest
 import io.exoquery.plugin.hasAnnotation
@@ -23,7 +24,7 @@ object QueryFileBuilder {
     }
 
     val specialFileWriteType =
-      if (queryFile.codeFile.hasAnnotation<io.exoquery.annotation.ExoRoomInterface>())
+      if (queryFile.codeFile.hasAnnotation<ExoRoomInterface>())
         OutputMode.RoomQueryFile
       else if (queryFile.codeFile.hasAnnotation<ExoGoldenOverride>())
         OutputMode.GoldenOverwrite

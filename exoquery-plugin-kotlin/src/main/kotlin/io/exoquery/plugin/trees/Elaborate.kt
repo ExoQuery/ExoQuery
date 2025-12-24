@@ -1,7 +1,7 @@
 package io.exoquery.plugin.trees
 
 import io.exoquery.ParseError
-import io.exoquery.annotation.ExoField
+import io.exoquery.ExoField
 import io.exoquery.parseError
 import io.exoquery.plugin.dataClassProperties
 import io.exoquery.plugin.firstConstStringOrNull
@@ -11,7 +11,6 @@ import io.exoquery.plugin.isDataClass
 import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.callWithParams
 import io.exoquery.xr.XRType
-import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irIfNull
