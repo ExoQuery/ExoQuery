@@ -5,7 +5,6 @@ class InvalidCapturedFunctionReq : MessageSpecDynamic(InvalidCapturedFunctionReq
     shouldBeGoldenError(
       """
       import io.exoquery.*
-      import io.exoquery.annotation.SqlFragment
       data class MyPerson(val name: String, val age: Int)
       @SqlFragment
       fun externalFunction(name: String) = name + "_suffix"
@@ -71,7 +70,6 @@ class InvalidCapturedFunctionReq : MessageSpecDynamic(InvalidCapturedFunctionReq
       """
       @file:io.exoquery.annotation.ErrorDetailsEnabled(false)
       import io.exoquery.*
-      import io.exoquery.annotation.SqlFragment
       data class MyPerson(val name: String, val age: Int)
       @SqlFragment
       fun externalFunction(name: String) = name + "_suffix"

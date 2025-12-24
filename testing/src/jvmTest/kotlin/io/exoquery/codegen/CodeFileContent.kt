@@ -12,7 +12,6 @@ data class CodeFileContent(val path: String, val packageDef: String, val codeDef
      * ```
      * package foo.bar.schema
      *
-     * import io.exoquery.annotation.ExoValue
      * import kotlinx.serialization.SerialName
      *
      * @SerialName("test_table")

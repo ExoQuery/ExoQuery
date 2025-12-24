@@ -3,7 +3,7 @@ package io.exoquery.android
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import io.exoquery.annotation.ExoRoomInterface
+import io.exoquery.ExoRoomInterface
 import io.exoquery.sql
 
 @Entity(tableName = "Person")

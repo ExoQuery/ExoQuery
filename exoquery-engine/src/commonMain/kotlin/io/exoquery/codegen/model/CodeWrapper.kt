@@ -27,7 +27,6 @@ sealed interface CodeWrapper {
     companion object {
       val importBlock =
         """
-        import io.exoquery.annotation.ExoValue
         import kotlinx.serialization.SerialName
         import kotlinx.serialization.Serializable
         """.trimIndent()
@@ -51,7 +50,6 @@ object $objectName {
     override fun surround(innerCode: String): String = run {
 heading + packageDef +
 """
-import io.exoquery.annotation.ExoValue
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
