@@ -1,6 +1,6 @@
 package io.exoquery
 
-class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGoldenOverride(), {
+class MultiFieldReq: GoldenSpecDynamic(MultiFieldReqGoldenDynamic, Mode.ExoGoldenTest(), {
   "multi groupBy should expand correctly" - {
     data class Person(val id: Int, val name: String, val age: Int)
     data class Address(val ownerId: Int, val street: String, val city: String)
