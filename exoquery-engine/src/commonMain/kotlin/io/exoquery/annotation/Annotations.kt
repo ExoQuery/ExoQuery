@@ -34,6 +34,10 @@ annotation class ErrorDetailsEnabled(
   val stackCount: Int = ExoCompileOptions.DefaultErrorDetailsStackCount
 )
 
+@Target(AnnotationTarget.FILE, AnnotationTarget.TYPE)
+@Retention(AnnotationRetention.BINARY)
+annotation class EnableExperimentalOperations
+
 /**
  * Use it to trace query compilation like this:
  * ```

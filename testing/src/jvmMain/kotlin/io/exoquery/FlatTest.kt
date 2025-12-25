@@ -1,4 +1,7 @@
+@file:EnableExperimentalOperations
 package io.exoquery
+
+import io.exoquery.annotation.EnableExperimentalOperations
 
 fun main() {
   data class Person(val id: Int, val name: String, val age: Int)

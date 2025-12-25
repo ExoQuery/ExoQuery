@@ -268,7 +268,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val a = from(Table(A)); val b = from({ this -> Table(B).filter { it -> it.status == active }.join { b -> b.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.status == active }.join { c -> c.id == this.cId } }.toQuery.apply(a)); Result(aId = a.id, bId = b.id, cId = c.id) }"
     ),
     "composeFrom join - duplicate subquery alias bug (fixed)" to cr(
-      "SELECT a.id AS aId, b.id AS bId, c.id AS cId FROM A a INNER JOIN (SELECT b.id, b.status FROM B b WHERE b.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT c.id, c.status FROM C c WHERE c.status = 'active') AS c ON c.id = a.cId"
+      "SELECT a.id AS aId, b.id AS bId, c.id AS cId FROM A a INNER JOIN B b ON b.id = a.bId AND b.status = 'active' INNER JOIN C c ON c.id = a.cId AND c.status = 'active'"
     ),
     "PushAlias tests for composeFrom join/flatJoin with nested select query/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
@@ -280,7 +280,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val a = from(Table(A)); val b = from({ this -> Table(B).filter { it -> it.status == active }.map { it -> it }.join { filteredB -> filteredB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
     ),
     "PushAlias tests for composeFrom join/flatJoin with map and filter chain" to cr(
-      "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN (SELECT b.id, b.status, b.value FROM B b WHERE b.status = 'active') AS b ON b.id = a.bId"
+      "SELECT a.id AS first, b.value AS second FROM A a INNER JOIN B b ON b.id = a.bId AND b.status = 'active'"
     ),
     "PushAlias tests for composeFrom join/flatJoin with flatMap/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> Table(B).flatMap { bb -> Table(C).filter { c -> c.bId == bb.id }.map { c -> bb } }.join { mappedB -> mappedB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"
@@ -292,13 +292,13 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.name == test }.join { filteredC -> filteredC.bId == this.cId } }.toQuery.apply(a)); Triple(first = a.id, second = b.value, third = c.name) }"
     ),
     "PushAlias tests for composeFrom join/multiple flatJoins with different query types" to cr(
-      "SELECT a.id AS first, b.value AS second, c.name AS third FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT c.id, c.bId, c.name FROM C c WHERE c.name = 'test') AS c ON c.bId = a.cId"
+      "SELECT a.id AS first, b.value AS second, c.name AS third FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b ON b.id = a.bId INNER JOIN C c ON c.bId = a.cId AND c.name = 'test'"
     ),
     "PushAlias tests for composeFrom join/multiple flatJoins with different query types - and a duplicate/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); val b1 = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); bb }.join { selectedB -> selectedB.id == this.bId } }.toQuery.apply(a)); val c = from({ this -> Table(C).filter { it -> it.name == test }.join { filteredC -> filteredC.bId == this.cId } }.toQuery.apply(a)); Triple(first = a.id, second = b.value + b1.value, third = c.name) }"
     ),
     "PushAlias tests for composeFrom join/multiple flatJoins with different query types - and a duplicate" to cr(
-      "SELECT a.id AS first, b.value + b1.value AS second, c.name AS third FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b1 ON b1.id = a.bId INNER JOIN (SELECT c.id, c.bId, c.name FROM C c WHERE c.name = 'test') AS c ON c.bId = a.cId"
+      "SELECT a.id AS first, b.value + b1.value AS second, c.name AS third FROM A a INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b ON b.id = a.bId INNER JOIN (SELECT bb.id, bb.status, bb.value FROM B bb WHERE bb.status = 'active') AS b1 ON b1.id = a.bId INNER JOIN C c ON c.bId = a.cId AND c.name = 'test'"
     ),
     "PushAlias tests for composeFrom join/flatJoin with complex nested select/XR" to kt(
       "select { val a = from(Table(A)); val b = from({ this -> select { val bb = from(Table(B)); where(bb.status == active); groupBy(bb.status); having(avg_GC(bb.value) > 10.toDouble_MCS()); sortBy(bb.status to Asc); bb }.join { complexB -> complexB.id == this.bId } }.toQuery.apply(a)); Tuple(first = a.id, second = b.value) }"

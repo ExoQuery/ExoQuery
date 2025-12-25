@@ -116,9 +116,12 @@ class CrunchFlatJoins(val traceConfig: TraceConfig) {
        */
       case(XR.Filter[XR.FlatFilter[Is()], Is()]).then { (flatFilterBy), id, filter ->
         XR.FlatFilter(flatFilterBy _And_ filter)
+      },
+
+
+      case(XR.FlatJoin[XR.Filter[Is(), Is()], Is()]).then { (source, fid, filter), jid, on ->
+        XR.FlatJoin.csf(source, jid, on _And_ BetaReduction(filter, fid to jid).asExpr())(comp)
       }
-
-
     )
 
 }

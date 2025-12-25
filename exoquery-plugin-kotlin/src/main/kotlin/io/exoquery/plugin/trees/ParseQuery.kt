@@ -181,6 +181,21 @@ object ParseQuery {
   context(scope: CX.Scope, parsing: CX.Parsing) private fun parseDslCall(expr: IrExpression): XR.Query? =
     // Note, every single instance being parsed here shuold be of SqlQuery<*>, should check for that as an entry sanity-check
     on(expr).match<XR.Query>(
+
+      case(Ir.Call.FunctionMemN[Ir.Call.FunctionMemN[Ir.Expr.ClassOf<CapturedBlockCompose>(), Is(), Is()], Is(), Is()]).thenIf { _, _ -> !scope.currentFile.hasAnnotation<EnableExperimentalOperations>() }.then { _, args ->
+        parseError(
+          """You are calling the `${comp.funName}` function on the result of a composeWith.join/joinLeft call.
+            |This is generally unsafe and not supported because we expect the output to immediately be insertable into a `from(...)` call. 
+            |Instead, try to call the `${comp.funName}` on whatever is being joined beforehand.
+            |
+            |For example, instead of doing this:
+            |  composeFrom.join(Table<Address>()) { a -> a.ownerId == p.id }.filter { a -> a.city == "Someplace" }
+            |  
+            |Do this:
+            |  composeFrom.join(Table<Address>().filter { a -> a.city == "Someplace" }) { a -> a.ownerId == p.id }
+          """.trimMargin(), expr)
+      },
+
       case(Ir.Call.FunctionMem1[Ir.Expr.ClassOf<SqlQuery<*>>(), Is.of("map", "concatMap", "filter"), Is()]).thenThis { head, lambda ->
         val (head, id, body) = processQueryLambda(head, lambda) ?: parseError("Could not parse XR.Map/ConcatMap/Filter", expr)
         when (symName) {

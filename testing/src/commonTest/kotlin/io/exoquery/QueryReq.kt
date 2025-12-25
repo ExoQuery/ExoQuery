@@ -1,5 +1,7 @@
+@file:EnableExperimentalOperations
 package io.exoquery
 
+import io.exoquery.annotation.EnableExperimentalOperations
 import io.exoquery.testdata.Robot
 import kotlinx.serialization.SerialName
 
