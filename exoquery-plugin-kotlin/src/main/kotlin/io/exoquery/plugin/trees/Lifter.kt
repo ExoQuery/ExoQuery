@@ -13,6 +13,8 @@ import io.exoquery.plugin.transform.CX
 import io.exoquery.plugin.transform.call
 import io.exoquery.plugin.transform.callDispatch
 import io.exoquery.lang.*
+import io.exoquery.util.DisableablePhase
+import io.exoquery.util.PhaseConfig
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import org.jetbrains.kotlin.ir.builders.*
@@ -122,6 +124,12 @@ class Lifter(val builderCtx: CX.Builder) {
     return listOfCall
   }
 
+  fun DisableablePhase.lift(): IrExpression =
+    when (this) {
+      DisableablePhase.ApplyMap -> makeObject<DisableablePhase.ApplyMap>()
+      DisableablePhase.CrunchFlatJoins -> makeObject<DisableablePhase.CrunchFlatJoins>()
+    }
+
   fun TraceType.lift(): IrExpression =
     when (this) {
       TraceType.Warning -> makeObject<TraceType.Warning>()
@@ -146,6 +154,7 @@ class Lifter(val builderCtx: CX.Builder) {
       TraceType.SqlNormalizations -> makeObject<TraceType.SqlNormalizations>()
       TraceType.SqlQueryConstruct -> makeObject<TraceType.SqlQueryConstruct>()
       TraceType.Standard -> makeObject<TraceType.Standard>()
+      TraceType.CrunchFlatJoins -> makeObject<TraceType.CrunchFlatJoins>()
     }
 
   fun TraceConfig.lift(fileSinkOutputPath: String?): IrExpression {
@@ -159,6 +168,9 @@ class Lifter(val builderCtx: CX.Builder) {
       }
     return make<TraceConfig>(this.enabledTraces.lift { it.lift() }, liftOutputSink, if (this.phaseLabel != null) this.phaseLabel!!.lift() else irBuilder.irNull())
   }
+
+  fun PhaseConfig.lift(): IrExpression =
+    make<PhaseConfig>(this.disabledPhases.lift { it.lift() })
 
   fun <A, B> Pair<A, B>.lift(aLifter: (A) -> IrExpression, bLifter: (B) -> IrExpression): IrExpression =
     make<Pair<A, B>>(aLifter(this.first), bLifter(this.second))

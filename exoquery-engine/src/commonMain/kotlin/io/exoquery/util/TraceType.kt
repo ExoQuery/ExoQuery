@@ -98,6 +98,10 @@ sealed interface TraceType {
     override val value = "parti"
   }
 
+  object CrunchFlatJoins : TraceType {
+    override val value = "crunch"
+  }
+
   companion object {
     fun fromClassStr(classStr: String) =
       values.find { it::class.simpleName == classStr ?: false }
@@ -124,7 +128,8 @@ sealed interface TraceType {
       Elaboration,
       SqlQueryConstruct,
       FlattenOptionOperation,
-      Particularization
+      Particularization,
+      CrunchFlatJoins
     )
   }
 }

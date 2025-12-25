@@ -5,6 +5,7 @@ import io.exoquery.norm.Normalize
 import io.exoquery.norm.NormalizeCustomQueries
 import io.exoquery.norm.RepropagateTypes
 import io.exoquery.printing.HasPhasePrinting
+import io.exoquery.util.PhaseConfig
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import io.exoquery.util.Tracer
@@ -25,7 +26,7 @@ class SqlNormalize(
   val concatBehavior: ConcatBehavior = ConcatBehavior.AnsiConcat,
   val equalityBehavior: EqualityBehavior = EqualityBehavior.AnsiEquality,
   override val traceConf: TraceConfig = TraceConfig.empty,
-  val disableApplyMap: Boolean = false
+  val phaseConf: PhaseConfig = PhaseConfig.empty
 ) : HasPhasePrinting {
   override val traceType = TraceType.Normalizations
   override val trace by lazy { Tracer(traceType, traceConf, 1) }
@@ -61,7 +62,7 @@ class SqlNormalize(
       }
       .andThen("Normalize") {
         // Need to create normalize here since need to have QueryData from latest state of the tree
-        Normalize(traceConf, disableApplyMap, QueryData.analyze(it))(it)
+        Normalize(traceConf, phaseConf, QueryData.analyze(it))(it)
       }
   // TODO ExpandDistinct
 

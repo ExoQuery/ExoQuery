@@ -2,6 +2,7 @@
 
 package io.exoquery.lang
 
+import io.decomat.*
 import io.exoquery.printing.PrintXR
 import io.exoquery.lang.SqlQueryHelper.flattenDualHeadsIfPossible
 import io.exoquery.util.Globals
@@ -324,7 +325,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
     with(query) {
       when {
         // A flat-join query with no maps e.g: `qr1.flatMap(e1 => qr1.join(e2 => e1.i == e2.i))`
-        this is XR.FlatMap && body is FlatJoin ->
+        this is XR.FlatMap && body is FlatJoin -> // TODO should have a isFilteredFlatJoin case i.e. a last-resort case here too
           trace("Flattening FlatMap with FlatJoin") andReturn {
             val cc: XR.Product = XR.Product.fromProductIdent(body.id)
             flattenContexts(FlatMap.csf(head, id, Map(body, body.id, cc, loc))(this))
@@ -364,9 +365,16 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
         //    (headContexts + bodyContexts to finalBody)
         //  }
 
+        // Filter(FLatJoin(inner, jid, onExpr), id, filterExpr) ->
+        //   FlatJoin(Filter(inner, id, filterExpr), jid, onExpr)
+
         this is XR.FlatMap ->
           trace("Flattening Flatmap with Query") andReturn {
-            val source = sourceSpecific(head, id.name) ?: QueryContext(invoke(head), id.name)
+            // TODO extract this into a FlatJoinLastResort phase, should add a case for Map as well
+            val headProcessed =
+              if (head.isSomeKindOfFlatJoin()) head.processSomeKindOfFlatJoin() else head
+
+            val source = sourceSpecific(headProcessed, id.name) ?: QueryContext(invoke(headProcessed), id.name)
             val (nestedContexts, finalFlatMapBody) = flattenContexts(body)
             (listOf(Layer.Context(source)) + nestedContexts to finalFlatMapBody)
           }

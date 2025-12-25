@@ -2,6 +2,7 @@ package io.exoquery
 
 import io.exoquery.lang.*
 import io.exoquery.ActionKind
+import io.exoquery.util.PhaseConfig
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
 import io.exoquery.xr.XR
@@ -11,7 +12,10 @@ import io.exoquery.xr.BinaryOperator
 import io.exoquery.xr.OP
 import io.exoquery.xr.toActionKind
 
-open class SqlServerDialect(override val traceConf: TraceConfig = TraceConfig.empty) : SqlIdiom, BooleanLiteralSupport {
+open class SqlServerDialect(
+  override val traceConf: TraceConfig = TraceConfig.empty,
+  override val phaseConf: PhaseConfig = PhaseConfig.empty
+) : SqlIdiom, BooleanLiteralSupport {
   override val concatFunction: String = "+"
   override val useActionTableAliasAs = SqlIdiom.ActionTableAliasBehavior.UseAs
   override val trace: Tracer by lazy { Tracer(traceType, traceConf, 1) }

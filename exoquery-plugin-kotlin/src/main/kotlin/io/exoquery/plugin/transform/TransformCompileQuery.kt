@@ -15,6 +15,7 @@ import io.exoquery.PostgresDialect
 import io.exoquery.lang.Renderer
 import io.exoquery.lang.SqlIdiom
 import io.exoquery.lang.Token
+import io.exoquery.util.PhaseConfig
 import io.exoquery.util.TraceConfig
 import io.exoquery.xr.XR
 import io.exoquery.xr.encode
@@ -78,7 +79,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
     fun extractDialectConstructor(dialectType: IrType) = run {
       // get the empty-args constructor from the dialect-type, if it doesn''t we need to know about it. If it does exist we'll use it if we need to use a runtime query
       val dialectCls = (dialectType.classOrNull ?: parseError("The dialect type must be a class but instead it was: ${dialectType.dumpKotlinLike()}", expr))
-      val construct = dialectCls.constructors.find { it.owner.regularParams.size == 1 } ?: parseError("The dialect type must have 1-arg constructor that takes a trace-types argument but it did not", expr)
+      val construct = dialectCls.constructors.find { it.owner.regularParams.size == 2 } ?: parseError("The dialect type must have 2-arg constructor that takes a trace-types argument and phase-config argument but it did not", expr)
 
       // see if we can get the dialect instance at compile-time if we can't then create an error
       // TODO if the user has marked the file with a special annotation then allow the runtime `construct` to create the dialect if the class.forName fails otherwise immediately throw an error here
@@ -94,7 +95,8 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
         val compileLocation = expr.location(scope.currentFile.fileEntry)
         val fileLabel = (parsedArgs.queryLabel?.let { it + " - " } ?: "") + "file:${compileLocation.show()}"
 
-        val (traceConfig, writeSource) = ComputeEngineTracing.invoke(fileLabel, dialectType)
+        val (traceConfig, phaseConfig, writeSource) = ComputeEngineConfigs.invoke(fileLabel, dialectType)
+
         val (construct, clsPackageName) = extractDialectConstructor(dialectType)
 
         // If sqlQueryExprRaw is an Uprootable then we need to do superTransformer.visitCall on that which typically will happen if you call .build on a sql directly
@@ -106,7 +108,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
         // In both of these cases superTransformer.recurse delegates-out to the correct transformer based on the type-match of the expression.
         val sqlExpr = superTransformer.recurse(sqlQueryExprRaw)
         val containerType = sqlQueryExprRaw.type ?: parseError("Invalid container type ${expr.dispatchReceiver?.type?.dumpKotlinLike()}. (Reciver ${expr.dispatchReceiver?.dumpKotlinLike()})", expr)
-        val dialect = ConstructCompiletimeDialect.of(clsPackageName, traceConfig)
+        val dialect = ConstructCompiletimeDialect.of(clsPackageName, traceConfig, phaseConfig)
 
         fun Token.renderQueryString(pretty: Boolean, xr: XR) = run {
           val queryStringRaw =
@@ -163,7 +165,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
                   }
                   is ProcessResult.Failure -> {
                     scope.logger.warn("The query could not be transformed at compile-time but encountered an error. Falling back to runtime transformation.\n------------------- Error -------------------\n${queryAndToken.error.stackTraceToString()}", expr.location())
-                    callBuildRuntime(construct, traceConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
+                    callBuildRuntime(construct, traceConfig, phaseConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
                   }
                 }
               }
@@ -171,7 +173,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
               // TODO when is not static android query need to fail build and explain
 
               scope.logger.warn("The query could not be transformed at compile-time", expr.location())
-              callBuildRuntime(construct, traceConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
+              callBuildRuntime(construct, traceConfig, phaseConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
             }
           }
           is ContainerType.Action -> {
@@ -206,7 +208,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
             ) ?: run {
               //logger.warn("The action could not be transformed at compile-time", expr.location())
               scope.logger.warn("The action could not be transformed at compile-time", expr)
-              callBuildRuntime(construct, traceConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
+              callBuildRuntime(construct, traceConfig, phaseConfig, parsedArgs.queryLabel, isPretty, sqlExpr)
             }
           }
           is ContainerType.BatchAction -> {
@@ -242,7 +244,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
               with(Lifter(builder)) {
                 val labelExpr = if (parsedArgs.queryLabel != null) parsedArgs.queryLabel.lift() else irBuilder.irNull()
                 // we still know it's x.build or x.buildPretty so just use that (for now ignore formatting if it is at runtime)
-                val dialect = buildRuntimeDialect(construct, traceConfig)
+                val dialect = buildRuntimeDialect(construct, traceConfig, phaseConfig)
                 sqlExpr.callDispatch("buildRuntime")(dialect, labelExpr, isPretty.lift())
               }
             }
@@ -273,35 +275,38 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
   }
 
   context(scope: CX.Scope, builder: CX.Builder)
-  fun callBuildRuntime(construct: IrConstructorSymbol, traceConfig: TraceConfig, queryLabel: String?, isPretty: Boolean, sqlQueryExpr: IrExpression): IrExpression = run {
+  fun callBuildRuntime(construct: IrConstructorSymbol, traceConfig: TraceConfig, phaseConfig: PhaseConfig, queryLabel: String?, isPretty: Boolean, sqlQueryExpr: IrExpression): IrExpression = run {
     with(Lifter(builder)) {
       val labelExpr = if (queryLabel != null) queryLabel.lift() else irBuilder.irNull()
       // we still know it's x.build or x.buildPretty so just use that (for now ignore formatting if it is at runtime)
-      val dialect = buildRuntimeDialect(construct, traceConfig)
+      val dialect = buildRuntimeDialect(construct, traceConfig, phaseConfig)
       sqlQueryExpr.callDispatch("buildRuntime")(dialect, labelExpr, isPretty.lift())
     }
   }
 
   context(scope: CX.Scope, builder: CX.Builder)
-  fun buildRuntimeDialect(construct: IrConstructorSymbol, traceConfig: TraceConfig) =
+  fun buildRuntimeDialect(construct: IrConstructorSymbol, traceConfig: TraceConfig, phaseConfig: PhaseConfig) =
     builder.builder.irCall(construct).apply {
       with(makeLifter()) {
         // build the dialect e.g. call `PostgresDialect(traceConfig)` at runtime. We assume there are no receivers or context params
         arguments[0] = traceConfig.lift(scope.options?.projectDir)
+        arguments[1] = phaseConfig.lift()
       }
     }
 }
 
 object ConstructCompiletimeDialect {
   context(scope: CX.Scope, builder: CX.Builder)
-  fun of(fullPath: String, traceConfig: TraceConfig) =
+  fun of(fullPath: String, traceConfig: TraceConfig, phaseConfig: io.exoquery.util.PhaseConfig) =
     when {
-      "io.exoquery.PostgresDialect" in fullPath -> PostgresDialect(traceConfig)
+      "io.exoquery.PostgresDialect" in fullPath -> PostgresDialect(traceConfig, phaseConfig)
       else ->
         (Class.forName(fullPath) ?: parseErrorAtCurrent("Could not find the dialect class: ${fullPath}"))
           .constructors.find {
-            it.parameters.size == 1 && it.parameters.first().type.kotlin.isSuperclassOf(TraceConfig::class)
-          }?.let { it.newInstance(traceConfig) } as SqlIdiom
-          ?: parseErrorAtCurrent("The dialect class ${fullPath} must have a 1-arg constructor that takes a trace-config but it did not")
+            it.parameters.size == 2 &&
+            it.parameters[0].type.kotlin.isSuperclassOf(TraceConfig::class) &&
+            it.parameters[1].type.kotlin.isSuperclassOf(io.exoquery.util.PhaseConfig::class)
+          }?.let { it.newInstance(traceConfig, phaseConfig) } as SqlIdiom
+          ?: parseErrorAtCurrent("The dialect class ${fullPath} must have a 2-arg constructor that takes (TraceConfig, PhaseConfig) but it did not")
     }
 }

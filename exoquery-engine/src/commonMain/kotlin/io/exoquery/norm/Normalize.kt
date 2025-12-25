@@ -2,6 +2,8 @@ package io.exoquery.norm
 
 import io.exoquery.lang.QueryData
 import io.exoquery.printing.HasPhasePrinting
+import io.exoquery.util.DisableablePhase
+import io.exoquery.util.PhaseConfig
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.TraceType
 import io.exoquery.util.Tracer
@@ -9,7 +11,7 @@ import io.exoquery.xr.*
 import io.exoquery.xr.XR.*
 import io.exoquery.xr.XR
 
-class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolean, queryData: QueryData) : StatelessTransformer, HasPhasePrinting {
+class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig, queryData: QueryData) : StatelessTransformer, HasPhasePrinting {
 
   override val traceType: TraceType = TraceType.Normalizations
   override val trace: Tracer = Tracer(traceType, traceConf, 1)
@@ -21,6 +23,7 @@ class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolea
   val SymbolicReductionPhase by lazy { SymbolicReduction(traceConf, queryData.containsFlatUnits) }
   val AdHocReductionPhase by lazy { AdHocReduction(traceConf) }
   val OrderTermsPhase by lazy { OrderTerms(traceConf) }
+
 
   // Quill originally did this at the root-level. I think it is fine
   // to just do it for expressions because normalizations will propagate down to them anyway but I'm not 100% sure
@@ -34,25 +37,39 @@ class Normalize(override val traceConf: TraceConfig, val disableApplyMap: Boolea
       norm(DealiasPhase(PushAliasPhase(reduced)))
     }
 
-  val applyMapInterp = Tracer(TraceType.ApplyMap, traceConf, 1)
+  // val CrunchFlatJoinsPhase by lazy { CrunchFlatJoins(traceConf) }
+
+  val crunchFlatJoinsInstance = CrunchFlatJoins(traceConf)
+  fun CrunchFlatJoinsPhase(q: Query): Query? =
+    if (phaseConf.isDisabled(DisableablePhase.CrunchFlatJoins)) {
+      crunchFlatJoinsInstance.trace("CrunchFlatJoins phase disabled. Not executing on: $q").andLog()
+      null
+    } else {
+      crunchFlatJoinsInstance(q)
+    }
+
+
   val applyMapInstance = ApplyMap(traceConf)
-  fun ApplyMapPhase(q: Query): Query? {
+  fun ApplyMapPhase(q: Query): Query? =
     // For logging that ApplyMap has been disabled
-    return if (disableApplyMap) {
+    if (phaseConf.isDisabled(DisableablePhase.ApplyMap)) {
       applyMapInstance.trace("ApplyMap phase disabled. Not executing on: $q").andLog()
       null
     } else {
       applyMapInstance(q)
     }
-  }
+
 
   private fun norm(q: Query): Query {
     //demarcate("..... Norm .....", q, false)
     return NormalizeNestedStructuresPhase(q)?.let {
       demarcate("NormalizeNestedStructures (COMPLETED)", it)
       norm(it)
+    } ?: CrunchFlatJoinsPhase(q)?.let {
+      demarcate("CrunchFlatJoins (COMPLETED)", it)
+      norm(it)
     } ?: ApplyMapPhase(q)?.let {
-      demarcate("ApplyMap (Completed)", it)
+      demarcate("ApplyMap (COMPLETED)", it)
       norm(it)
     } ?: SymbolicReductionPhase(q)?.let {
       demarcate("SymbolicReduction (COMPLETED)", it)
