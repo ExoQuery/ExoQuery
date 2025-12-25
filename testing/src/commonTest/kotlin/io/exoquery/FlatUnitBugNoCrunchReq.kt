@@ -10,7 +10,7 @@ import io.exoquery.util.DisableablePhase
  * Getting rid of just DisableablePhase.SymbolicReduction will cause this test to fail
  * Getting rid of both however will make it succeed. This should be a subject for future investigation
  */
-class FlatUnitBugNoCrunchReq: GoldenSpecDynamic(GoldenQueryFile.Empty, Mode.ExoGoldenTest(), {
+class FlatUnitBugNoCrunchReq: GoldenSpecDynamic(FlatUnitBugNoCrunchReqGoldenDynamic, Mode.ExoGoldenTest(), {
   data class BCustomer(val id: Int, val name: String, val status: String, val region: String)
   data class BCategory(val id: Int, val name: String)
   data class BProduct(val id: Int, val categoryId: Int, val name: String, val price: Double)
