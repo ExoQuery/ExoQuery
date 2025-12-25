@@ -8,6 +8,7 @@ import io.exoquery.xr.XR
 import io.exoquery.xr.XR.*
 import io.exoquery.xr.*
 import io.exoquery.xr.copy.*
+import kotlin.invoke
 
 class CrunchFlatJoins(val traceConfig: TraceConfig) {
 
@@ -84,7 +85,40 @@ class CrunchFlatJoins(val traceConfig: TraceConfig) {
         val flatJoinWithAdditionalFilter =
           FlatJoin.csf(a.head, a.id, a.on _And_ additionalFilter)(a)
         trace("CrunchFlatJoins: FlatMap(Filter(FlatJoin)) for $q") andReturn { FlatMap.cs(flatJoinWithAdditionalFilter, d, e) }
+      },
+
+
+
+      /**
+       * The Filter(FlatFilter, _, _) case
+       *
+       * This is my own transformation as opposed to being from Wadler's paper. It represents
+       * a situation where a Filter clause is pushed deeper and deeper in the query (see the next transformation)
+       * until eventually it reaches a FlatUnit and you get something like Filter(FlatUnit, x, ...). In this kind
+       * of situation the `x` is meaningless because FlatUnit returns a unit-type so it can be ignored.
+       * Therefore we can just merge the Filter into a FlatFilter.
+       *
+       * Note: We use (head.by _And_ body) to preserve the original filter order, so that:
+       * Filter(FlatFilter(a), _, b) becomes FlatFilter(a AND b), not FlatFilter(b AND a)
+       *
+       * Also note that this transformation RELIES on dealiasing happening first, otherwise would have something like this:
+       *
+       * where { expr }.filter { x -> x.id == 123 }
+       * -> where { expr && x.id == 123 } // x would be an unmoored identifier
+       *
+       * Fortunately we have dealising which should have already gotten rid of `x` for a surrounding variable
+       * because the whole expression should be in a surrounding flatMap
+       *
+       * Assuming we have this:
+       * where { expr }.filter { x -> x.id == 123 }.flatMap { y -> ... }
+       * Dealiasing would have already done something like this:
+       * where { expr }.filter { y -> y.id == 123 }.flatMap { y -> ... }
+       */
+      case(XR.Filter[XR.FlatFilter[Is()], Is()]).then { (flatFilterBy), id, filter ->
+        XR.FlatFilter(flatFilterBy _And_ filter)
       }
+
+
     )
 
 }

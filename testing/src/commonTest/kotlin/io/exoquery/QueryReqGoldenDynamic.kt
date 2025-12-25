@@ -310,7 +310,7 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
       "select { val r = from({ this -> this.filter { it -> it.a.id > 0 } }.toQuery.apply({ select { val a = from(Table(A)); val b = join(Table(B)) { b.aId == a.id }; Composite(a = a, b = b) } }.toQuery.apply())); where(r.b.id > 0); r.a.id }"
     ),
     "filtered joined fragment - duplicate table in FROM clause bug (fixed)" to cr(
-      "SELECT a.id AS value FROM A a INNER JOIN B b ON b.aId = a.id WHERE b.id > 0 AND a.id > 0"
+      "SELECT a.id AS value FROM A a INNER JOIN B b ON b.aId = a.id AND a.id > 0 WHERE b.id > 0"
     ),
     "nested select with filter on nested pair - double nested/XR" to kt(
       "select { val p = from(select { val p = from(Table(PersonCrs)); val a = join(Table(AddressCrs)) { a.ownerId == p.id }; Tuple(first = p, second = a) }.nested); val a = join(Table(AddressCrs)) { a.ownerId == p.first.id }; Tuple(first = p, second = a) }.filter { pair -> pair.first.first.name == JoeOuter }"
@@ -359,6 +359,12 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     ),
     "FlatJoin flattening - explicit dual-heads pattern with flatMap" to cr(
       "SELECT p.name AS first, a.city AS second, r.name AS third FROM Person p INNER JOIN Address a ON a.ownerId = p.id INNER JOIN Robot r ON r.ownerId = p.id"
+    ),
+    "filtered join bundle with aggregation - with CrunchFlatJoins/XR" to kt(
+      "select { val r = from({ base -> base.filter { it -> it.o.status == PAID } }.toQuery.apply({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { o.customerId == c.customerId }; val oi = join(Table(OrderItem)) { oi.orderId == o.orderId }; Row(c = c, o = o, oi = oi) } }.toQuery.apply())); val gross = /*ASI*/ sum_GC(r.oi.qty * r.oi.unitPrice); val orders = /*ASI*/ countDistinct_GC(r.o.orderId); groupBy(r.c.customerId); having(gross > 0.0); Agg(customerId = r.c.customerId, ordersCount = orders, gross = gross) }"
+    ),
+    "filtered join bundle with aggregation - with CrunchFlatJoins" to cr(
+      """SELECT c.customerId, count(DISTINCT o.orderId) AS ordersCount, sum(oi.qty * oi.unitPrice) AS gross FROM Customer c INNER JOIN "Order" o ON o.customerId = c.customerId INNER JOIN OrderItem oi ON oi.orderId = o.orderId AND o.status = 'PAID' GROUP BY c.customerId HAVING sum(oi.qty * oi.unitPrice) > 0.0"""
     ),
   )
 }

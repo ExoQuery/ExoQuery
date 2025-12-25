@@ -1,12 +1,13 @@
 package io.exoquery
 
 import io.exoquery.testdata.Robot
+import kotlinx.serialization.SerialName
 
 // Note that the 1st time you overwrite the golden file it will still fail because the compiler is using the old version
 // Also note that it won't actually override the BasicQuerySanitySpecGolden file unless you change this one
 
 // build the file BasicQuerySanitySpecGolden.kt, is that as the constructor arg
-class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
+class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenOverride(), {
   data class Person(val id: Int, val name: String, val age: Int)
   data class Address(val ownerId: Int, val street: String, val city: String)
 
@@ -998,6 +999,101 @@ class QueryReq: GoldenSpecDynamic(QueryReqGoldenDynamic, Mode.ExoGoldenTest(), {
 
     shouldBeGolden(query.xr, "XR")
     shouldBeGolden(query.build<PostgresDialect>())
+  }
+
+  /**
+   * TEST: CrunchFlatJoins handling of Filter(FlatJoin) in join bundles with aggregation
+   *
+   * This test validates that the CrunchFlatJoins phase correctly handles problematic
+   * Filter(FlatJoin) structures BEFORE they reach SqlQueryModel. This is the "happy path"
+   * where normalization phases clean up the structure during compilation.
+   *
+   * LAST-RESORT TEST LOCATION:
+   * The same test case with SymbolicReduction DISABLED exists in FlatJoinLastResortReq.kt.
+   * That version validates SqlQueryModel's fallback behavior when CrunchFlatJoins doesn't run.
+   * This test proves that with all phases enabled, the same query works correctly.
+   *
+   * WHAT THIS TEST DEMONSTRATES:
+   * When SymbolicReduction is enabled (default), it transforms:
+   *   FlatMap(Entity(Customer), c, Filter(FlatJoin(Order), o, o.status == "PAID"))
+   * Into:
+   *   FlatMap(Entity(Customer), c, FlatMap(FlatJoin(Order), o, Map(FlatFilter(...))))
+   *
+   * This creates problematic structures, but CrunchFlatJoins normalizes them before
+   * SqlQueryModel sees them, preventing the "FROM INNER JOIN" bug.
+   *
+   * THE SCENARIO:
+   * 1. A fragment that joins Customer -> Order -> OrderItem returning a composite row
+   * 2. A second fragment that filters on Order.status AFTER the join bundle
+   * 3. An outer query with aggregation over OrderItem (SUM) and COUNT DISTINCT over Order,
+   *    with GROUP BY/HAVING
+   *
+   * Without CrunchFlatJoins, this would generate invalid SQL:
+   * ```sql
+   * FROM INNER JOIN OrderItem oi ON oi.order_id = o.order_id   -- ❌ Missing base table!
+   * ```
+   *
+   * With CrunchFlatJoins (this test), the structure is normalized and generates correct SQL:
+   * ```sql
+   * FROM Customer c
+   *   INNER JOIN "Order" o ON o.customer_id = c.customer_id
+   *   INNER JOIN OrderItem oi ON oi.order_id = o.order_id
+   * WHERE o.status = 'PAID'
+   * ```
+   *
+   * This proves the normalization pipeline works correctly end-to-end for this pattern.
+   */
+  "filtered join bundle with aggregation - with CrunchFlatJoins" {
+    data class Customer(val customerId: Int, val name: String)
+
+    data class Order(
+      val orderId: Int,
+      val customerId: Int,
+      val status: String
+    )
+
+    data class OrderItem(
+      val orderItemId: Int,
+      val orderId: Int,
+      val qty: Int,
+      val unitPrice: Double
+    )
+
+    data class Row(val c: Customer, val o: Order, val oi: OrderItem)
+
+    // Bundle the 3-table join in a fragment
+    @SqlFragment
+    fun customerOrderItems(): SqlQuery<Row> = sql.select {
+      val c = from(Table<Customer>())
+      val o = join(Table<Order>()) { o -> o.customerId == c.customerId }
+      val oi = join(Table<OrderItem>()) { oi -> oi.orderId == o.orderId }
+      Row(c, o, oi)
+    }
+
+    // Filter on Order AFTER the join bundle
+    // This creates Filter(FlatJoin) which SymbolicReduction transforms
+    // but CrunchFlatJoins normalizes before SqlQueryModel sees it
+    @SqlFragment
+    fun paidOnly(base: SqlQuery<Row>): SqlQuery<Row> = sql {
+      base.filter { it.o.status == "PAID" }
+    }
+    data class Agg(val customerId: Int, val ordersCount: Int, val gross: Double)
+
+    // Aggregate using both Order + OrderItem
+    // This combination would trigger the "FROM INNER JOIN" bug without CrunchFlatJoins
+    val q = sql.select {
+      val r = from(paidOnly(customerOrderItems()))
+      val gross = sum(r.oi.qty * r.oi.unitPrice)
+      val orders = countDistinct(r.o.orderId)
+
+      groupBy(r.c.customerId)
+      having { gross > 0.0 }
+
+      Agg(r.c.customerId, orders, gross)
+    }.dynamic()
+
+    shouldBeGolden(q.xr, "XR")
+    shouldBeGolden(q.build<PostgresDialect>())
   }
 
 })

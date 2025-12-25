@@ -33,22 +33,6 @@ class SymbolicReduction(val traceConfig: TraceConfig, val queryContainsFlatUnits
     with(q) {
       when {
 
-        /**
-         * The Filter(FlatFilter, _, _) case
-         *
-         * This is my own transformation as opposed to being from Wadler's paper. It represents
-         * a situation where a Filter clause is pushed deeper and deeper in the query (see the next transformation)
-         * until eventually it reaches a FlatUnit and you get something like Filter(FlatUnit, x, ...). In this kind
-         * of situation the `x` is meaningless because FlatUnit returns a unit-type so it can be ignored.
-         * Therefore we can just merge the Filter into a FlatFilter.
-         *
-         * Note: We use (head.by _And_ body) to preserve the original filter order, so that:
-         * Filter(FlatFilter(a), _, b) becomes FlatFilter(a AND b), not FlatFilter(b AND a)
-         */
-        this is XR.Filter && head is XR.U.FlatUnit && head is XR.FlatFilter -> { // TODO && head is XR.U.FlatUnit &&  is redundant because FlatFilter extends FlatUnit
-          XR.FlatFilter(head.by _And_ body)
-        }
-
         /*
          * The Filter(Map(FlatJoin(...))) case
          *

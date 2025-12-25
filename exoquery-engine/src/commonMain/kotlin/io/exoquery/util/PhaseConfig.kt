@@ -13,13 +13,18 @@ sealed interface DisableablePhase {
     override val value = "crunch"
   }
 
+  object SymbolicReduction : DisableablePhase {
+    override val value = "symbolic"
+  }
+
   companion object {
     fun fromClassStr(classStr: String) =
       values.find { it::class.simpleName == classStr ?: false }
 
     val values: List<DisableablePhase> = listOf(
       ApplyMap,
-      CrunchFlatJoins
+      CrunchFlatJoins,
+      SymbolicReduction
     )
   }
 }

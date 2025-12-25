@@ -20,7 +20,7 @@ class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig,
   val PushAliasPhase by lazy { PushAliasApply(traceConf) }
   val AvoidAliasConflictPhase by lazy { AvoidAliasConflictApply(traceConf) }
   val NormalizeNestedStructuresPhase by lazy { NormalizeNestedStructures(this) }
-  val SymbolicReductionPhase by lazy { SymbolicReduction(traceConf, queryData.containsFlatUnits) }
+  val SymbolicReductionPhaseLazy by lazy { SymbolicReduction(traceConf, queryData.containsFlatUnits) }
   val AdHocReductionPhase by lazy { AdHocReduction(traceConf) }
   val OrderTermsPhase by lazy { OrderTerms(traceConf) }
 
@@ -57,6 +57,14 @@ class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig,
       null
     } else {
       applyMapInstance(q)
+    }
+
+  fun SymbolicReductionPhase(q: Query): Query? =
+    if (phaseConf.isDisabled(DisableablePhase.SymbolicReduction)) {
+      trace("SymbolicReduction phase disabled. Not executing on: $q").andLog()
+      null
+    } else {
+      SymbolicReductionPhaseLazy(q)
     }
 
 

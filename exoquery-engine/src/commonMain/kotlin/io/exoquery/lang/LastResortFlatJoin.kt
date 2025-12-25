@@ -12,11 +12,8 @@ import io.exoquery.xr.get
 fun XR.Query.isFilteredFlatJoin() =
   this is XR.Filter && this.head is XR.FlatJoin
 
-fun XR.Query.isMappedFlatJoin() =
-  this is XR.Map && this.head is XR.FlatJoin
-
 fun XR.Query.isSomeKindOfFlatJoin() =
-  this is XR.FlatJoin || this.isFilteredFlatJoin() //|| this.isMappedFlatJoin()
+  this is XR.FlatJoin || this.isFilteredFlatJoin()
 
 fun XR.Query.processSomeKindOfFlatJoin(): XR.FlatJoin =
   if (this is XR.FlatJoin)
@@ -31,9 +28,7 @@ private fun XR.Query.processLastResortFlatJoin() =
       val filter = XR.Filter(inner, jid, BetaReduction(filterExpr, id to jid).asExpr())
       XR.FlatJoin(compLeft.joinType, filter, jid, onExpr)
     }
+    // Unfortunately the same last-resort application cannot be done in a Map(FlatJoin) case for the below reason:
     // map( join(B) { b -> a.id == b.fk } , bb -> (bb.x, bb.y) )
-    // -> join( map(B, bb -> (bb.x, bb.y)) ) { b -> a.id == /* shoot, the mapping projection might not contain the data we need! */ }
-
-    // TODO need to do the same thing for Map(FlatJoin) -> FlatJoin(Map).
-    //      Map(FlatJoin(a, b, c), d, e) -> FlatJoin(Map(
+    // -> join( map(B, bb -> (bb.x, bb.y)) ) { b -> a.id == /* the mapping projection might not contain the data we need! */ }
   )
