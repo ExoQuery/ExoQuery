@@ -2,6 +2,7 @@
 
 package io.exoquery.lang
 
+import io.decomat.*
 import io.exoquery.printing.PrintXR
 import io.exoquery.lang.SqlQueryHelper.flattenDualHeadsIfPossible
 import io.exoquery.util.Globals
@@ -324,11 +325,21 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
     with(query) {
       when {
         // A flat-join query with no maps e.g: `qr1.flatMap(e1 => qr1.join(e2 => e1.i == e2.i))`
+        //this is XR.FlatMap && body.isSomeKindOfFlatJoin() ->
+        //  trace("Flattening FlatMap with FlatJoin") andReturn {
+        //    val bodyProcessed = body.processSomeKindOfFlatJoin()
+        //    val cc: XR.Product = XR.Product.fromProductIdent(bodyProcessed.id)
+        //    flattenContexts(FlatMap.csf(head, id, Map(bodyProcessed, bodyProcessed.id, cc, loc))(this))
+        //  }
+
+        // Perhaps this may also benefit form body.isSomeKindOfFlatJoin()/body.processSomeKindOfFlatJoin() but
+        // I haven't found a case where it can be reached unless BOTH CrunchFlatJoins and SymbolicReduction are disabled
         this is XR.FlatMap && body is FlatJoin ->
           trace("Flattening FlatMap with FlatJoin") andReturn {
             val cc: XR.Product = XR.Product.fromProductIdent(body.id)
             flattenContexts(FlatMap.csf(head, id, Map(body, body.id, cc, loc))(this))
           }
+
         this is XR.FlatMap && body is XR.Free ->
           trace("[INVALID] Flattening Flatmap with Free") andReturn {
             xrError("Free can't be use as a `flatMap` body. $query")
@@ -364,9 +375,15 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
         //    (headContexts + bodyContexts to finalBody)
         //  }
 
+        // Filter(FLatJoin(inner, jid, onExpr), id, filterExpr) ->
+        //   FlatJoin(Filter(inner, id, filterExpr), jid, onExpr)
+
         this is XR.FlatMap ->
           trace("Flattening Flatmap with Query") andReturn {
-            val source = sourceSpecific(head, id.name) ?: QueryContext(invoke(head), id.name)
+            val headProcessed =
+              if (head.isSomeKindOfFlatJoin()) head.processSomeKindOfFlatJoin() else head
+
+            val source = sourceSpecific(headProcessed, id.name) ?: QueryContext(invoke(headProcessed), id.name)
             val (nestedContexts, finalFlatMapBody) = flattenContexts(body)
             (listOf(Layer.Context(source)) + nestedContexts to finalFlatMapBody)
           }
@@ -473,8 +490,7 @@ class SqlQueryApply(val traceConfig: TraceConfig) {
 
             else -> trace("base| Nesting 'other' $query") andReturn {
               /*
-               * One of the these rare scenarios is where there's a flat-join
-               * in the 1st part of the query e.g.
+               * Where there's a flat-join in the 1st part of the query e.g.
                * ```
                * FlatMap(FlatJoin(...), ...)
                * or FlatMap(Map(FlatJoin(...), ...), ...)

@@ -1,12 +1,16 @@
 package io.exoquery.lang
 
+import io.exoquery.util.PhaseConfig
 import io.exoquery.util.TraceConfig
 import io.exoquery.util.Tracer
 import io.exoquery.xr.BetaReduction
 import io.exoquery.xr.BetaReduction.Companion.invoke
 import io.exoquery.xr.XR
 
-class GenericDialect(override val traceConf: TraceConfig = TraceConfig.Companion.empty) : SqlIdiom {
+class GenericDialect(
+  override val traceConf: TraceConfig = TraceConfig.Companion.empty,
+  override val phaseConf: PhaseConfig = PhaseConfig.empty
+) : SqlIdiom {
   override val useActionTableAliasAs = SqlIdiom.ActionTableAliasBehavior.UseAs
   override val reservedKeywords: Set<String> = setOf(
     "all",

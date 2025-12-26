@@ -16,7 +16,7 @@ import io.exoquery.xr.XR.Const.Null
 import io.exoquery.xr.XR.ParamType
 import io.exoquery.xrError
 
-interface SqlIdiom : HasPhasePrinting {
+interface SqlIdiom : HasPhasePrinting, HasPhaseDisabling {
   companion object {
     val DefaultMethodMappings =
       mapOf(
@@ -36,7 +36,7 @@ interface SqlIdiom : HasPhasePrinting {
   open fun joinAlias(alias: List<String>): String = alias.joinToString(aliasSeparator)
 
   fun normalizeQuery(xr: XR.Query) = run {
-    SqlNormalize(traceConf = traceConf, disableApplyMap = false)(xr)
+    SqlNormalize(traceConf = traceConf, phaseConf = phaseConf)(xr)
   }
 
   // If we want to inline this we would need move it outisde of SqlIdiom and make it a top-level function, then we would need to pass traceConf to every invocation

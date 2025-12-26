@@ -4,6 +4,7 @@ import io.exoquery.config.ExoCompileOptions
 import io.exoquery.serial.ParamSerializer
 import io.exoquery.lang.SqlIdiom
 import io.exoquery.util.TraceType
+import io.exoquery.util.DisableablePhase
 import kotlin.reflect.KClass
 
 @ExoInternal
@@ -33,6 +34,10 @@ annotation class ErrorDetailsEnabled(
   val stackCount: Int = ExoCompileOptions.DefaultErrorDetailsStackCount
 )
 
+@Target(AnnotationTarget.FILE, AnnotationTarget.TYPE)
+@Retention(AnnotationRetention.BINARY)
+annotation class EnableExperimentalOperations
+
 /**
  * Use it to trace query compilation like this:
  * ```
@@ -42,6 +47,16 @@ annotation class ErrorDetailsEnabled(
 @Target(AnnotationTarget.FILE, AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.BINARY)
 annotation class TracesEnabled(vararg val traceType: KClass<out TraceType>)
+
+/**
+ * Use it to disable normalization phases like this:
+ * ```
+ * @file:PhasesDisabled(DisableablePhase.ApplyMap::class)
+ * ```
+ */
+@Target(AnnotationTarget.FILE, AnnotationTarget.TYPE)
+@Retention(AnnotationRetention.BINARY)
+annotation class PhasesDisabled(vararg val phase: KClass<out DisableablePhase>)
 
 @Target(AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
