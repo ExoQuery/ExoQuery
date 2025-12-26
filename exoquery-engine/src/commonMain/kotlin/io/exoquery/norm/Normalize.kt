@@ -16,8 +16,8 @@ class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig,
   override val traceType: TraceType = TraceType.Normalizations
   override val trace: Tracer = Tracer(traceType, traceConf, 1)
 
-  val DealiasPhase by lazy { DealiasApply(traceConf) }
-  val PushAliasPhase by lazy { PushAliasApply(traceConf) }
+  val dealiasInstance = DealiasApply(traceConf)
+  val pushAliasInstance = PushAliasApply(traceConf)
   val AvoidAliasConflictPhase by lazy { AvoidAliasConflictApply(traceConf) }
   val NormalizeNestedStructuresPhase by lazy { NormalizeNestedStructures(this) }
   val SymbolicReductionPhaseLazy by lazy { SymbolicReduction(traceConf, queryData.containsFlatUnits) }
@@ -33,7 +33,6 @@ class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig,
   override operator fun invoke(q: Query): Query =
     trace("Avoid Capture and Normalize $q into:") andReturn {
       val reduced = BetaReduction(q).asQuery()
-      //norm(PushAliasPhase(DealiasPhase(reduced)))
       norm(DealiasPhase(PushAliasPhase(reduced)))
     }
 
@@ -42,7 +41,7 @@ class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig,
   val crunchFlatJoinsInstance = CrunchFlatJoins(traceConf)
   fun CrunchFlatJoinsPhase(q: Query): Query? =
     if (phaseConf.isDisabled(DisableablePhase.CrunchFlatJoins)) {
-      crunchFlatJoinsInstance.trace("CrunchFlatJoins phase disabled. Not executing on: $q").andLog()
+      trace("CrunchFlatJoins phase disabled. Not executing on: $q").andLog()
       null
     } else {
       crunchFlatJoinsInstance(q)
@@ -53,7 +52,7 @@ class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig,
   fun ApplyMapPhase(q: Query): Query? =
     // For logging that ApplyMap has been disabled
     if (phaseConf.isDisabled(DisableablePhase.ApplyMap)) {
-      applyMapInstance.trace("ApplyMap phase disabled. Not executing on: $q").andLog()
+      trace("ApplyMap phase disabled. Not executing on: $q").andLog()
       null
     } else {
       applyMapInstance(q)
@@ -65,6 +64,22 @@ class Normalize(override val traceConf: TraceConfig, val phaseConf: PhaseConfig,
       null
     } else {
       SymbolicReductionPhaseLazy(q)
+    }
+
+  fun PushAliasPhase(q: Query): Query =
+    if (phaseConf.isDisabled(DisableablePhase.PushAlias)) {
+      trace("PushAlias phase disabled. Not executing on: $q").andLog()
+      q
+    } else {
+      pushAliasInstance(q)
+    }
+
+  fun DealiasPhase(q: Query): Query =
+    if (phaseConf.isDisabled(DisableablePhase.Dealias)) {
+      trace("Dealias phase disabled. Not executing on: $q").andLog()
+      q
+    } else {
+      dealiasInstance(q)
     }
 
 

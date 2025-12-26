@@ -366,5 +366,29 @@ object QueryReqGoldenDynamic: GoldenQueryFile {
     "filtered join bundle with aggregation - with CrunchFlatJoins" to cr(
       """SELECT c.customerId, count(DISTINCT o.orderId) AS ordersCount, sum(oi.qty * oi.unitPrice) AS gross FROM Customer c INNER JOIN "Order" o ON o.customerId = c.customerId INNER JOIN OrderItem oi ON oi.orderId = o.orderId AND o.status = 'PAID' GROUP BY c.customerId HAVING sum(oi.qty * oi.unitPrice) > 0.0"""
     ),
+    "flatJoin bundle tests/map on join bundle with impurities then join - all phases enabled/XR" to kt(
+      """select { val r = from({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { o.customerId == c.customerId }; Row(name = c.name, totalSpend = c.totalSpend, orderId = o.orderId) } }.toQuery.apply().map { rr -> Row(name = rr.name, totalSpend = rr.totalSpend, orderId = rr.orderId + free("rand()").invoke()) }); val io = join(Table(OrderItem)) { io.orderId == r.orderId }; groupBy(r.name); Pair(first = r.name, second = sum_GC(r.totalSpend)) }"""
+    ),
+    "flatJoin bundle tests/map on join bundle with impurities then join - all phases enabled" to cr(
+      """SELECT r.name AS first, sum(r.totalSpend) AS second FROM (SELECT c.name, c.totalSpend, o.orderId + rand() AS orderId FROM Customer c INNER JOIN "Order" o ON o.customerId = c.customerId) AS r INNER JOIN OrderItem io ON io.orderId = r.orderId GROUP BY r.name"""
+    ),
+    "flatJoin bundle tests/map on join bundle with impurities then join - all phases enabled - fully pure/XR" to kt(
+      """select { val r = from({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { o.customerId == c.customerId }; Row(name = c.name, totalSpend = c.totalSpend, orderId = o.orderId) } }.toQuery.apply().map { rr -> Row(name = rr.name, totalSpend = rr.totalSpend, orderId = rr.orderId + free("currentVersion()").asPure()) }); val io = join(Table(OrderItem)) { io.orderId == r.orderId }; groupBy(r.name); Pair(first = r.name, second = sum_GC(r.totalSpend)) }"""
+    ),
+    "flatJoin bundle tests/map on join bundle with impurities then join - all phases enabled - fully pure" to cr(
+      """SELECT c.name AS first, sum(c.totalSpend) AS second FROM Customer c INNER JOIN "Order" o ON o.customerId = c.customerId INNER JOIN OrderItem io ON io.orderId = (o.orderId + currentVersion()) GROUP BY c.name"""
+    ),
+    "flatJoin bundle tests/map on joined table with impurities - all phases enabled/XR" to kt(
+      """select { val r = from({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { o.customerId == c.customerId }; Row(name = c.name, totalSpend = c.totalSpend, orderId = o.orderId) } }.toQuery.apply()); val io = join(Table(OrderItem).map { it -> OrderItemMapped(orderItemId = it.orderItemId, orderId = it.orderId + free("rand()").invoke(), qty = it.qty, unitPrice = it.unitPrice) }) { io.orderId == r.orderId }; groupBy(r.name); Pair(first = r.name, second = sum_GC(r.totalSpend)) }"""
+    ),
+    "flatJoin bundle tests/map on joined table with impurities - all phases enabled" to cr(
+      """SELECT c.name AS first, sum(c.totalSpend) AS second FROM Customer c INNER JOIN "Order" o ON o.customerId = c.customerId INNER JOIN (SELECT io.orderItemId, io.orderId + rand() AS orderId, io.qty, io.unitPrice FROM OrderItem io) AS io ON io.orderId = o.orderId GROUP BY c.name"""
+    ),
+    "flatJoin bundle tests/map on joined table with impurities - all phases enabled - fully pure/XR" to kt(
+      """select { val r = from({ select { val c = from(Table(Customer)); val o = join(Table(Order)) { o.customerId == c.customerId }; Row(name = c.name, totalSpend = c.totalSpend, orderId = o.orderId) } }.toQuery.apply()); val io = join(Table(OrderItem).map { it -> OrderItemMapped(orderItemId = it.orderItemId, orderId = it.orderId + free("currentVersion()").asPure(), qty = it.qty, unitPrice = it.unitPrice) }) { io.orderId == r.orderId }; groupBy(r.name); Pair(first = r.name, second = sum_GC(r.totalSpend)) }"""
+    ),
+    "flatJoin bundle tests/map on joined table with impurities - all phases enabled - fully pure" to cr(
+      """SELECT c.name AS first, sum(c.totalSpend) AS second FROM Customer c INNER JOIN "Order" o ON o.customerId = c.customerId INNER JOIN OrderItem io ON io.orderId = o.orderId AND io.orderItemId, io.orderId + currentVersion(), io.qty, io.unitPrice GROUP BY c.name"""
+    ),
   )
 }
