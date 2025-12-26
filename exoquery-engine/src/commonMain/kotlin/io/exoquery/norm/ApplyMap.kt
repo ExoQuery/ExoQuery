@@ -28,17 +28,6 @@ class ApplyMap(val traceConfig: TraceConfig) {
       }
   }
 
-  object DetachableMap {
-    operator fun <AP : Pattern<XR.Query>, BP : Pattern<XR.Expression>> get(x: AP, y: BP) =
-      customPattern2M("DetachableMap", x, y) { it: XR.Map ->
-        if (it.isDetachableMap()) {
-          Components2M(it.head, it.id, it.body)
-        } else {
-          null
-        }
-      }
-  }
-
 
 // Scala
 //  object DetachableMap {
@@ -280,4 +269,15 @@ class ApplyMap(val traceConfig: TraceConfig) {
 //        trace"ApplyMap inside nested for $q" andReturn Some(Map(Nested(a), b, c))
     )
 
+}
+
+object DetachableMap {
+  operator fun <AP : Pattern<XR.Query>, BP : Pattern<XR.Expression>> get(x: AP, y: BP) =
+    customPattern2M("DetachableMap", x, y) { it: XR.Map ->
+      if (it.isDetachableMap()) {
+        Components2M(it.head, it.id, it.body)
+      } else {
+        null
+      }
+    }
 }

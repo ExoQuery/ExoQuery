@@ -129,6 +129,8 @@ class Lifter(val builderCtx: CX.Builder) {
       DisableablePhase.ApplyMap -> makeObject<DisableablePhase.ApplyMap>()
       DisableablePhase.CrunchFlatJoins -> makeObject<DisableablePhase.CrunchFlatJoins>()
       DisableablePhase.SymbolicReduction -> makeObject<DisableablePhase.SymbolicReduction>()
+      DisableablePhase.PushAlias -> makeObject<DisableablePhase.PushAlias>()
+      DisableablePhase.Dealias -> makeObject<DisableablePhase.Dealias>()
     }
 
   fun TraceType.lift(): IrExpression =

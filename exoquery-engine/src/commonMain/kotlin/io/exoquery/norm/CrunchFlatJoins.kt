@@ -119,7 +119,60 @@ class CrunchFlatJoins(val traceConfig: TraceConfig) {
       },
 
 
+      /*
+       * FlatJoin(Filter(...), id, on) - Merge filter into join ON clause
+       *
+       * This case handles join(source.filter { filterExpr }) { joinExpr } where a filter
+       * is applied to the joined source before the join operation. The filter needs to be
+       * merged into the join's ON clause via beta reduction.
+       *
+       * EXAMPLE:
+       * Input:
+       *   join(Table<Order>.filter { o -> o.status == "active" }) { o -> o.customerId == c.id }
+       *   -> FlatJoin(Filter(Entity(Order), o, o.status == "active"), o2, o2.customerId == c.id)
+       *
+       * Output:
+       *   FlatJoin(Entity(Order), o2, (o2.customerId == c.id) AND BetaReduction(o.status == "active", o -> o2))
+       *   -> FlatJoin(Entity(Order), o2, (o2.customerId == c.id) AND (o2.status == "active"))
+       */
       case(XR.FlatJoin[XR.Filter[Is(), Is()], Is()]).then { (source, fid, filter), jid, on ->
+        XR.FlatJoin.csf(source, jid, on _And_ BetaReduction(filter, fid to jid).asExpr())(comp)
+      },
+
+      /*
+       * FlatJoin(Map(...), id, on) - Flatten map on joined source
+       *
+       * This case handles join(Table.map { ... }) { joinExpr } where a map projection is
+       * applied to the joined source. Without this transformation, SqlQueryModel would create
+       * a nested subquery for the mapped source. Instead, we extract the underlying source
+       * and merge the map's projection into the join's ON clause via beta reduction.
+       *
+       * This is particularly important when PushAlias is disabled, as the map's lambda parameter
+       * (fid) will differ from the join's identifier (jid), requiring BetaReduction to align
+       * the references in the join condition.
+       *
+       * EXAMPLE:
+       * Input:
+       *   join(Table<OrderItem>.map { it -> OrderItemMapped(it.id, it.orderId + 1, it.qty) }) { io -> io.orderId == r.orderId }
+       *   -> FlatJoin(Map(Entity(OrderItem), it, OrderItemMapped(...)), io, io.orderId == r.orderId)
+       *
+       * Output:
+       *   FlatJoin(Entity(OrderItem), io, BetaReduction(io.orderId == r.orderId, it -> io))
+       *   -> FlatJoin(Entity(OrderItem), io, io.orderId == r.orderId)
+       *
+       * Without this transformation, SqlQueryModel would generate:
+       *   FROM ... INNER JOIN (SELECT it.id, it.orderId + 1 AS orderId, it.qty FROM OrderItem it) AS io ON io.orderId = r.orderId
+       *
+       * With this transformation, we generate the flatter:
+       *   FROM ... INNER JOIN OrderItem io ON io.orderId = r.orderId
+       *
+       * Note that this transformation is dangerous to do if the Detachable map has an impure function (e.g. `rand()`) since it can
+       * be reduced to two call sites. If it was a case of Map(FlatJoin) where we have no choice but to perform the normalization
+       * (since the whole query is invalid otherwise and SqlQueryModel would create a "FROM INNER JOIN" scenario), however since here
+       * it is a case of FlatJoin(Map) which SqlQueryModel can faithfully make into a nested query we have the leeway to ensure
+       * complete correctness before making the transformation.
+       */
+      case(XR.FlatJoin[DetachableMap[Is(), Is()], Is()]).then { (source, fid, filter), jid, on ->
         XR.FlatJoin.csf(source, jid, on _And_ BetaReduction(filter, fid to jid).asExpr())(comp)
       }
     )

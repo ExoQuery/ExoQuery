@@ -17,6 +17,14 @@ sealed interface DisableablePhase {
     override val value = "symbolic"
   }
 
+  object PushAlias : DisableablePhase {
+    override val value = "pushalias"
+  }
+
+  object Dealias : DisableablePhase {
+    override val value = "dealias"
+  }
+
   companion object {
     fun fromClassStr(classStr: String) =
       values.find { it::class.simpleName == classStr ?: false }
@@ -24,7 +32,9 @@ sealed interface DisableablePhase {
     val values: List<DisableablePhase> = listOf(
       ApplyMap,
       CrunchFlatJoins,
-      SymbolicReduction
+      SymbolicReduction,
+      PushAlias,
+      Dealias
     )
   }
 }
