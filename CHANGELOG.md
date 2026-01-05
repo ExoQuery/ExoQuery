@@ -3,7 +3,7 @@
 
 ### Version 2.0.0.PL (December 8, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-2.0.0.PL" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-2.0.0.PL" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL") }
  ```
 
@@ -13,7 +13,7 @@ dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL") }
 
 ### Version 2.0.0.PL.RC3 (November 23, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-2.0.0.PL.RC3" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-2.0.0.PL.RC3" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC3") }
  ```
 
@@ -22,7 +22,7 @@ dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC3") }
 
 ### Version 2.0.0.PL.RC2 (November 23, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-2.0.0.PL.RC2" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-2.0.0.PL.RC2" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC2") }
  ```
 - **Infrastructure**: Centralize dependency management and improve Kotlin 2.3.0+ compatibility ([#66](https://github.com/ExoQuery/ExoQuery/pull/66))
@@ -31,7 +31,7 @@ dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC2") }
 
 ### Version 2.0.0.PL.RC1 (November 12, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-2.0.0.PL.RC1" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-2.0.0.PL.RC1" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC1") }
  ```
 
@@ -48,14 +48,14 @@ dependencies { implementation("io.exoquery:exoquery-runner-jdbc:2.0.0.PL.RC1") }
 
 ### Version 1.7.2.PL (October 20, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.2.PL" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-1.7.2.PL" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:1.7.2.PL") }
  ```
 - **Enhancement**: Kotlin 2.2.20+ support and miscellaneous cleanups ([#52](https://github.com/ExoQuery/ExoQuery/pull/52))
 
 ### Version 1.7.1.PL (September 29, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.1.PL" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-1.7.1.PL" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:1.7.1.PL") }
  ```
 - **Bugfix**: Fix having + orderBy ([#48](https://github.com/ExoQuery/ExoQuery/pull/48))
@@ -63,14 +63,14 @@ dependencies { implementation("io.exoquery:exoquery-runner-jdbc:1.7.1.PL") }
 
 ### Version 1.7.0.PL (September 28, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.7.0.PL" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-1.7.0.PL" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:1.7.0.PL") }
  ```
 - **Enhancement**: Implementing HAVING clause ([#47](https://github.com/ExoQuery/ExoQuery/pull/47))
 
 ### Version 1.6.1.PL (September 17, 2025)
  ```kotlin
-plugins { id("io.exoquery.exoquery-plugin") version "2.2.20-1.6.1.PL" }
+plugins { id("io.exoquery.exoquery-plugin") version "2.3.0-1.6.1.PL" }
 dependencies { implementation("io.exoquery:exoquery-runner-jdbc:1.6.1.PL") }
  ```
 - **Infrastructure**: Move to Kotlin 2.2.20 ([#46](https://github.com/ExoQuery/ExoQuery/pull/46))

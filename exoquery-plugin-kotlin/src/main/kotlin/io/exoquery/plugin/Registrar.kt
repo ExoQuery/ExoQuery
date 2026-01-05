@@ -18,10 +18,7 @@ import org.jetbrains.kotlin.diagnostics.BackendErrorMessages
 class Registrar : CompilerPluginRegistrar() {
   override val supportsK2: Boolean get() = true
 
-  // Forward compatibility for Kotlin 2.3.0+
-  @Suppress("unused")
-  @get:JvmName("getPluginId")
-  internal val pluginId: String get() = "io.exoquery.exoquery-plugin"
+  override val pluginId: String = "io.exoquery.exoquery-plugin"
 
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
     val exoOptions = configuration[EXO_OPTIONS]

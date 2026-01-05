@@ -200,7 +200,7 @@ class TransformCompileQuery(val superTransformer: VisitTransformExpressions) : T
                 if (scope.options?.queryPrintingEnabled ?: false)
                   scope.logger.report(scope.outputStringMaker.make(compileTime.inWholeMilliseconds, queryString, "action"), expr)
 
-                val sqlActionTmpVar = builder.builder.scope.createTmpVariable(sqlExpr)
+                val sqlActionTmpVar = builder.builder.scope.createTemporaryVariable(sqlExpr)
                 val output = SqlCompiledActionExpr(builder.builder.irGet(sqlActionTmpVar), queryString, queryTokenized, actionKind, actionReturningKind, parsedArgs.queryLabel, Phase.CompileTime, uprootable.packedXR).plant()
                 // IMPORTANT notes inside of makeRunFunction as to why this is used here
                 makeRunFunction(listOf(sqlActionTmpVar), output)

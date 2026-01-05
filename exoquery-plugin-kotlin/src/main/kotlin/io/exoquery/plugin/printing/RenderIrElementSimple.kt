@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.ir.util.DumpIrTreeOptions
 import org.jetbrains.kotlin.ir.util.DumpIrTreeOptions.ReferenceRenderingStrategy
 import org.jetbrains.kotlin.ir.util.IdSignature.CommonSignature
 import org.jetbrains.kotlin.ir.util.RenderIrElementVisitor
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.getOwnerIfBound
 import org.jetbrains.kotlin.ir.util.isFakeOverride
 import org.jetbrains.kotlin.ir.util.isFileClass
@@ -957,46 +958,7 @@ private fun IrType.renderTypeInner(renderer: RenderIrElementVisitorSimple?, opti
 
     is IrCapturedType -> "IrCapturedType(${constructor.argument.render()}"
 
-    is IrSimpleType -> buildTrimEnd {
-      val isDefinitelyNotNullType =
-        classifier is IrTypeParameterSymbol && nullability == SimpleTypeNullability.DEFINITELY_NOT_NULL
-      if (isDefinitelyNotNullType) append("{")
-      append(classifier.renderClassifierFqn(options))
-      if (arguments.isNotEmpty()) {
-        append(
-          arguments.joinToString(prefix = "<", postfix = ">", separator = ", ") {
-            it.renderTypeArgument(renderer, options)
-          }
-        )
-      }
-      if (isDefinitelyNotNullType) {
-        append(" & Any}")
-      } else if (isMarkedNullable()) {
-        append('?')
-      }
-      if (options.printTypeAbbreviations)
-        abbreviation?.let {
-          append(it.renderTypeAbbreviation(renderer, options))
-        }
-    }
-  }
-
-private fun IrTypeAbbreviation.renderTypeAbbreviation(renderer: RenderIrElementVisitorSimple?, options: DumpIrTreeOptions): String =
-  buildString {
-    append("{ ")
-    append(renderTypeAnnotations(annotations, renderer, options))
-    append(typeAlias.renderTypeAliasFqn(options))
-    if (arguments.isNotEmpty()) {
-      append(
-        arguments.joinToString(prefix = "<", postfix = ">", separator = ", ") {
-          it.renderTypeArgument(renderer, options)
-        }
-      )
-    }
-    if (hasQuestionMark) {
-      append('?')
-    }
-    append(" }")
+    is IrSimpleType -> this.dumpKotlinLike()
   }
 
 private fun IrTypeArgument.renderTypeArgument(renderer: RenderIrElementVisitorSimple?, options: DumpIrTreeOptions): String =
