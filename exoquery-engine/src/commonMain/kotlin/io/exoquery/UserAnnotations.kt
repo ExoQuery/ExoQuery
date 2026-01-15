@@ -1,5 +1,6 @@
 package io.exoquery
 
+import kotlinx.serialization.MetaSerializable
 import org.intellij.lang.annotations.Language
 
 
@@ -51,6 +52,7 @@ annotation class ExoValue
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoField(val name: String)
 
+@MetaSerializable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoEntity(@Language(value = "SQL", prefix = "SELECT * FROM \"", suffix = "\"") val name: String)
