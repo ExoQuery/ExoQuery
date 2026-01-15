@@ -52,6 +52,12 @@ annotation class ExoValue
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoField(val name: String)
 
+/**
+ * Marks the data class as [kotlinx.serialization.Serializable].
+ * Optionally overrides the table used when generating queries for this class
+ *
+ * @param name the table to use in queries
+ **/
 @MetaSerializable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
