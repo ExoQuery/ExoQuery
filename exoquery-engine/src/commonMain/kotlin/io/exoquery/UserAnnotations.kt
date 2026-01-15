@@ -55,7 +55,10 @@ annotation class ExoField(val name: String)
 @MetaSerializable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
-annotation class ExoEntity(@Language(value = "SQL", prefix = "SELECT * FROM \"", suffix = "\"") val name: String)
+annotation class ExoEntity(
+    // language=none
+    @Language(value = "SQL", prefix = "SELECT * FROM \"", suffix = "\"") val name: String = "" // empty string indicates Serializable alias
+)
 
 @Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.LOCAL_VARIABLE)
 @Retention(AnnotationRetention.BINARY)
