@@ -1,5 +1,7 @@
 package io.exoquery
 
+import org.intellij.lang.annotations.Language
+
 
 /**
  * Used to annotate a type so that the ExoQuery system knows that it is a value (i.e. a value-XRType)
@@ -51,7 +53,7 @@ annotation class ExoField(val name: String)
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
-annotation class ExoEntity(val name: String)
+annotation class ExoEntity(@Language(value = "SQL", prefix = "SELECT * FROM \"", suffix = "\"") val name: String)
 
 @Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.LOCAL_VARIABLE)
 @Retention(AnnotationRetention.BINARY)
