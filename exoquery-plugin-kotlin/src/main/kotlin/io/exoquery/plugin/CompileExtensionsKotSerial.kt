@@ -84,14 +84,17 @@ fun IrType.inferSerializerForPropertyType() = run {
   // If there is a serializer defined on the class, try to get it
   val serializerFromTypeOrClass =
     serializerFromType
-      ?: propertyType.classOrNull?.owner?.getAnnotation<kotlinx.serialization.Serializable>()?.let { annotationCtor ->
-        // Note that the despite the fact that `kotlinx.serialization.Serializable` has a default 1st argument (i.e. the `with`)
-        // in the backend-IR when the argument is not explicitly specified on the type that is being annotated, there will be
-        // zero args that show up in the `valueArguments` field. I believe this is by design so that the compiler-writer can
-        // tell the serialization constructor (or any constructor for that matter) is being used with default values.
-        val serializerArg = annotationCtor.regularArgs.firstOrNull()
-        val serializerArgRef = serializerArg?.let { it as? IrClassReference }?.let { KnownSerializer.Ref(it) }
-        serializerArgRef ?: KnownSerializer.Implicit
+      ?: propertyType.classOrNull?.owner?.let { owner ->
+        owner.getAnnotation<kotlinx.serialization.Serializable>()?.let { annotationCtor ->
+          // Note that the despite the fact that `kotlinx.serialization.Serializable` has a default 1st argument (i.e. the `with`)
+          // in the backend-IR when the argument is not explicitly specified on the type that is being annotated, there will be
+          // zero args that show up in the `valueArguments` field. I believe this is by design so that the compiler-writer can
+          // tell the serialization constructor (or any constructor for that matter) is being used with default values.
+          val serializerArg = annotationCtor.regularArgs.firstOrNull()
+          val serializerArgRef = serializerArg?.let { it as? IrClassReference }?.let { KnownSerializer.Ref(it) }
+          serializerArgRef ?: KnownSerializer.Implicit
+        }
+          ?: KnownSerializer.Implicit.takeIf { owner.hasAnnotation<io.exoquery.ExoEntity>() }
       }
 
   serializerFromTypeOrClass ?: KnownSerializer.None

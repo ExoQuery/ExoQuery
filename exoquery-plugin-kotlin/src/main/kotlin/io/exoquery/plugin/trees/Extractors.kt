@@ -201,7 +201,7 @@ object Ir {
           val cls = it.classOrNull
           if (cls != null && cls.isDataClass()) {
             val (name, isRenamed) =
-              cls.owner.getAnnotationArgs<ExoEntity>().firstConstStringOrNull()?.let { it to true } // Try to get entity name from ExoEntity
+              cls.owner.getAnnotationArgs<ExoEntity>().firstConstStringOrNull()?.takeUnless { it.isEmpty() }?.let { it to true } // Try to get entity name from ExoEntity
                 ?: cls.owner.getAnnotationArgs<SerialName>().firstConstStringOrNull()?.let { it to true } // Then try SerialName from the class
                 ?: it.classFqName?.sanitizedClassName()?.let { it to false } // Then try the class fully-qualified name
                 ?: cls.safeName.let { it to false } // If all else fails, use the class symbol name

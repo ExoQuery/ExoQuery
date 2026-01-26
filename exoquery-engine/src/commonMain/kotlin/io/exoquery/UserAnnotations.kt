@@ -1,5 +1,8 @@
 package io.exoquery
 
+import kotlinx.serialization.MetaSerializable
+import org.intellij.lang.annotations.Language
+
 
 /**
  * Used to annotate a type so that the ExoQuery system knows that it is a value (i.e. a value-XRType)
@@ -49,9 +52,19 @@ annotation class ExoValue
 @Retention(AnnotationRetention.BINARY)
 annotation class ExoField(val name: String)
 
+/**
+ * Marks the data class as [kotlinx.serialization.Serializable].
+ * Optionally overrides the table used when generating queries for this class
+ *
+ * @param name the table to use in queries
+ **/
+@MetaSerializable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
-annotation class ExoEntity(val name: String)
+annotation class ExoEntity(
+    // language=none
+    @Language(value = "SQL", prefix = "SELECT * FROM \"", suffix = "\"") val name: String = "" // empty string indicates Serializable alias
+)
 
 @Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.LOCAL_VARIABLE)
 @Retention(AnnotationRetention.BINARY)
